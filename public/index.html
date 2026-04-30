@@ -287,6 +287,34 @@
   .error-msg { font-size: 11px; color: #F09595; padding: 8px; background: #F0959511; border-radius: 6px; }
 
   .hidden { display: none; }
+
+  /* 黒板レイアウト */
+  .board { border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .board-today { background: #2a2a2a; border: 1.5px solid #444; }
+  .board-bottom { background: #1a0a1f; border: 1.5px solid #4a2060; }
+  .board-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.12em;
+    padding: 8px 14px; color: rgba(255,255,255,0.5);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+  }
+  .board-label-red {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    padding: 7px 14px; color: #F09595;
+    background: rgba(240,149,149,0.12);
+    border-bottom: 1px solid rgba(240,149,149,0.2);
+  }
+  .board-label-blue {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    padding: 7px 14px; color: #85B7EB;
+    background: rgba(133,183,235,0.12);
+    border-bottom: 1px solid rgba(133,183,235,0.2);
+  }
+  .board-content { padding: 12px; }
+  .board-bottom-inner { display: grid; grid-template-columns: 1fr 1px 1fr; }
+  .board-half {}
+  .board-content-half { padding: 12px; }
+  .board-divider { background: rgba(255,255,255,0.08); }
 </style>
 </head>
 <body>
@@ -363,8 +391,34 @@
 
     <!-- 選択モード -->
     <div id="select-mode">
-      <div class="sec-label">NEXT ACTIONS — 次やる一覧</div>
-      <div id="next-tasks-list"><div class="loading">読み込み中...</div></div>
+
+      <!-- 今日やること（グレー黒板） -->
+      <div class="board board-today">
+        <div class="board-label">📋 今日やること</div>
+        <div class="board-content">
+          <div id="next-tasks-list"><div class="loading">読み込み中...</div></div>
+        </div>
+      </div>
+
+      <!-- やり残し＋次やること（パープル黒板） -->
+      <div class="board board-bottom">
+        <div class="board-bottom-inner">
+          <div class="board-half">
+            <div class="board-label-red">⚠️ やり残し</div>
+            <div class="board-content-half">
+              <div id="leftover-list"><div class="loading">読み込み中...</div></div>
+            </div>
+          </div>
+          <div class="board-divider"></div>
+          <div class="board-half">
+            <div class="board-label-blue">▶️ 次やること</div>
+            <div class="board-content-half">
+              <div id="next-actions-list"><div class="loading">読み込み中...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- 実行モード -->
@@ -387,20 +441,35 @@
         </div>
       </div>
 
-      <!-- やり残し＋今日のタスク -->
-      <div class="two-col" style="margin-top:12px">
-        <div>
-          <div class="col-head col-head-red">⚠️ やり残し</div>
-          <div id="leftover-list"><div class="loading">読み込み中...</div></div>
-        </div>
-        <div>
-          <div class="sec-label">TODAY'S TASKS</div>
+      <!-- 今日やること（グレー黒板） -->
+      <div class="board board-today" style="margin-top:12px">
+        <div class="board-label">📋 今日やること</div>
+        <div class="board-content">
           <div id="today-tasks-list"><div class="loading">読み込み中...</div></div>
         </div>
       </div>
 
+      <!-- やり残し＋次やること（パープル黒板） -->
+      <div class="board board-bottom">
+        <div class="board-bottom-inner">
+          <div class="board-half">
+            <div class="board-label-red">⚠️ やり残し</div>
+            <div class="board-content-half">
+              <div id="leftover-list-exec"><div class="loading">読み込み中...</div></div>
+            </div>
+          </div>
+          <div class="board-divider"></div>
+          <div class="board-half">
+            <div class="board-label-blue">▶️ 次やること</div>
+            <div class="board-content-half">
+              <div id="next-actions-list-exec"><div class="loading">読み込み中...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- プロジェクト -->
-      <div style="margin-top:8px">
+      <div style="margin-top:12px">
         <div class="sec-label">PROJECTS</div>
         <div id="projects-list"><div class="loading">読み込み中...</div></div>
       </div>
@@ -775,16 +844,48 @@ function renderTasks() {
     leftEl.innerHTML = leftover.map(t => renderTaskCard(t, true)).join('');
   }
 
-  // 今日のタスク（実行モード）
+  // 今日やること（実行モード）= 次やる
   const todayTasks = allTasks.filter(t => {
     const gtd = getProp(t, 'GTD 種別');
     return gtd === '▶️ 次やる';
   });
   const todayEl = document.getElementById('today-tasks-list');
-  if (todayTasks.length === 0) {
-    todayEl.innerHTML = '<div class="loading">タスクがありません</div>';
-  } else {
-    todayEl.innerHTML = todayTasks.map(t => renderTaskCard(t)).join('');
+  if (todayEl) {
+    if (todayTasks.length === 0) {
+      todayEl.innerHTML = '<div class="loading">タスクがありません 🎉</div>';
+    } else {
+      todayEl.innerHTML = todayTasks.map(t => renderTaskCard(t)).join('');
+    }
+  }
+
+  // 次やること（選択モード）
+  const nextActionsEl = document.getElementById('next-actions-list');
+  if (nextActionsEl) {
+    if (nextTasks.length === 0) {
+      nextActionsEl.innerHTML = '<div class="loading">次やるタスクがありません</div>';
+    } else {
+      nextActionsEl.innerHTML = nextTasks.map(t => renderTaskCard(t)).join('');
+    }
+  }
+
+  // 次やること（実行モード）
+  const nextActionsExecEl = document.getElementById('next-actions-list-exec');
+  if (nextActionsExecEl) {
+    if (nextTasks.length === 0) {
+      nextActionsExecEl.innerHTML = '<div class="loading">次やるタスクがありません</div>';
+    } else {
+      nextActionsExecEl.innerHTML = nextTasks.map(t => renderTaskCard(t)).join('');
+    }
+  }
+
+  // やり残し（実行モード）
+  const leftoverExecEl = document.getElementById('leftover-list-exec');
+  if (leftoverExecEl) {
+    if (leftover.length === 0) {
+      leftoverExecEl.innerHTML = '<div class="loading" style="font-size:11px;color:#1D9E75">やり残しなし 🎉</div>';
+    } else {
+      leftoverExecEl.innerHTML = leftover.map(t => renderTaskCard(t, true)).join('');
+    }
   }
 }
 
