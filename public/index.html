@@ -1,1 +1,912 @@
-cp ~/Downloads/homepage_final.html ~/Desktop/index.html && echo "done"
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏠 ホーム</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --border: rgba(255,255,255,0.08);
+    --text: rgba(255,255,255,0.9);
+    --text-sub: rgba(255,255,255,0.45);
+    --text-dim: rgba(255,255,255,0.2);
+    --purple: #7F77DD;
+    --green: #1D9E75;
+    --red: #D85A30;
+    --amber: #EF9F27;
+    --blue: #378ADD;
+    --pink: #D4537E;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 24px 20px;
+  }
+  .page { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+  /* 設定パネル */
+  .config-panel {
+    background: #1a1020;
+    border: 1px solid #D85A3044;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .config-title { font-size: 12px; color: var(--red); letter-spacing: 0.1em; margin-bottom: 4px; }
+  .config-row { display: flex; gap: 8px; align-items: center; }
+  .config-label { font-size: 11px; color: var(--text-sub); min-width: 120px; }
+  .config-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text);
+    font-family: monospace;
+  }
+  .config-input:focus { outline: none; border-color: var(--purple); }
+  .config-btn {
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .config-btn:hover { opacity: 0.8; }
+  .config-note { font-size: 11px; color: var(--text-dim); }
+
+  /* 哲学バナー */
+  .banner {
+    border-radius: 12px;
+    background: #07050f;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .banner-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, var(--banner-color, #7F77DD) 0%, transparent 60%);
+    opacity: 0.12;
+  }
+  .banner-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .banner-content { position: relative; z-index: 1; }
+  .banner-date { font-size: 10px; letter-spacing: 0.3em; color: var(--text-dim); margin-bottom: 12px; font-family: 'Cormorant Garamond', serif; }
+  .banner-jp { font-size: 16px; color: var(--text); line-height: 1.8; margin-bottom: 8px; }
+  .banner-en { font-size: 12px; color: var(--text-sub); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 4px; }
+  .banner-orig { font-size: 11px; color: var(--text-dim); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 12px; }
+  .banner-phil { font-size: 11px; color: var(--purple); display: flex; align-items: center; gap: 10px; }
+  .phil-line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+
+  /* ヘッダー */
+  .header { display: flex; align-items: center; justify-content: space-between; }
+  .greeting { font-size: 22px; font-weight: 500; }
+  .date-str { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+  .mode-bar { display: flex; gap: 6px; }
+  .mode-btn {
+    padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-sub); font-size: 12px;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.2s;
+  }
+  .mode-btn.active { background: var(--purple); border-color: var(--purple); color: white; font-weight: 500; }
+
+  /* 進捗 */
+  .progress-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .progress-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px;
+  }
+  .prog-label { font-size: 10px; color: var(--text-sub); margin-bottom: 6px; }
+  .prog-val { font-size: 20px; font-weight: 500; }
+  .prog-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .prog-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+  /* セクションラベル */
+  .sec-label { font-size: 10px; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 8px; }
+
+  /* タスクカード */
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .task-card:hover { border-color: rgba(255,255,255,0.15); }
+  .task-card.done { opacity: 0.35; }
+  .task-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .tag-kenpou { background: #E1F5EE22; color: #5DCAA5; border-color: #5DCAA533; }
+  .tag-shakai { background: #E8F4FD22; color: #85B7EB; border-color: #85B7EB33; }
+  .tag-kyoiku { background: #EEEDFE22; color: #AFA9EC; border-color: #AFA9EC33; }
+  .tag-ela    { background: #FAEEDA22; color: #EF9F27; border-color: #EF9F2733; }
+  .tag-icu    { background: #FAEEDA22; color: #EF9F27; border-color: #EF9F2733; }
+  .tag-kojin  { background: #FBEAF022; color: #ED93B1; border-color: #ED93B133; }
+  .tag-seikatsu { background: #E6F1FB22; color: #85B7EB; border-color: #85B7EB33; }
+  .tag-red    { background: #FCEBEB22; color: #F09595; border-color: #F0959533; }
+  .tag-amber  { background: #FAEEDA22; color: #EF9F27; border-color: #EF9F2733; }
+  .tag-blue   { background: #E6F1FB22; color: #85B7EB; border-color: #85B7EB33; }
+  .tag-gray   { background: rgba(255,255,255,0.05); color: var(--text-dim); }
+  .tag-purple { background: #EEEDFE22; color: #AFA9EC; border-color: #AFA9EC33; }
+  .task-title { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+  .task-title.done { text-decoration: line-through; color: var(--text-dim); }
+  .task-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .task-meta { font-size: 10px; color: var(--text-dim); }
+  .task-actions { display: flex; align-items: center; gap: 6px; }
+  .time-wrap { display: flex; align-items: center; gap: 4px; }
+  .time-btn {
+    width: 20px; height: 20px; border-radius: 4px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+    color: var(--text); font-size: 11px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .time-btn:active { transform: scale(0.9); }
+  .time-val { font-size: 11px; font-weight: 500; min-width: 28px; text-align: center; }
+  .done-btn {
+    font-size: 10px; padding: 3px 10px; border-radius: 99px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+  .done-btn:hover { background: #1D9E7522; border-color: var(--green); color: var(--green); }
+
+  /* やり残しカード */
+  .leftover-card {
+    background: #1a0f0f; border: 1px solid #F0959533;
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+  }
+  .leftover-row { display: flex; align-items: center; gap: 8px; }
+  .leftover-title { font-size: 12px; flex: 1; }
+  .add-today-btn {
+    font-size: 10px; padding: 3px 10px; border-radius: 99px;
+    border: 1px solid #F09595; background: #FCEBEB22;
+    color: #F09595; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    white-space: nowrap; transition: all 0.2s;
+  }
+  .add-today-btn:hover { background: #FCEBEB44; }
+  .add-today-btn.added { border-color: var(--green); color: var(--green); background: #1D9E7522; }
+
+  /* 2カラム */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .col-head {
+    font-size: 11px; font-weight: 500; color: var(--text-sub);
+    padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;
+  }
+  .col-head-red { background: #F0959511; color: #F09595; }
+  .col-head-amber { background: #EF9F2711; color: #EF9F27; }
+
+  /* プロジェクトカード */
+  .proj-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 8px; cursor: pointer;
+  }
+  .proj-head { padding: 10px 12px; }
+  .proj-title { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
+  .proj-meta { display: flex; align-items: center; gap: 8px; }
+  .proj-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .proj-fill { height: 100%; background: var(--purple); border-radius: 2px; }
+  .proj-pct { font-size: 10px; color: var(--text-sub); min-width: 28px; text-align: right; }
+
+  /* 振り返り */
+  .review-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+  }
+  .review-cheer {
+    font-size: 12px; color: var(--blue); padding: 8px 12px;
+    background: #378ADD11; border-radius: 8px; margin-bottom: 12px;
+    text-align: center;
+  }
+  .review-item { margin-bottom: 12px; }
+  .review-label { font-size: 10px; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
+  .review-input {
+    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif; resize: none; line-height: 1.7;
+  }
+  .review-input:focus { outline: none; border-color: var(--blue); }
+
+  /* クイック入力 */
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .quick-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 3px;
+    transition: border-color 0.2s;
+  }
+  .quick-btn:hover { border-color: rgba(255,255,255,0.2); }
+  .qb-inbox { border-color: #AFA9EC33; }
+  .qb-note { border-color: #5DCAA533; }
+  .qb-icon { font-size: 16px; }
+  .qb-label { font-size: 12px; font-weight: 500; }
+  .qb-sub { font-size: 10px; color: var(--text-sub); }
+
+  /* モーダル */
+  .modal-bg {
+    background: rgba(0,0,0,0.6); border-radius: 12px;
+    padding: 16px; display: none; align-items: flex-start; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #1a1a22; border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; width: 100%;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal-title { font-size: 13px; font-weight: 500; }
+  .modal-input {
+    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .modal-input:focus { outline: none; border-color: var(--purple); }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-cancel {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-sub); font-size: 12px; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-save {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--purple);
+    background: var(--purple); color: white; font-size: 12px; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* クイックナビ */
+  .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .nav-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 6px; text-align: center;
+    cursor: pointer; text-decoration: none; transition: border-color 0.2s;
+    display: block;
+  }
+  .nav-btn:hover { border-color: rgba(255,255,255,0.2); }
+  .nav-icon { font-size: 14px; }
+  .nav-label { font-size: 10px; color: var(--text-sub); margin-top: 2px; font-weight: 500; }
+
+  /* ローディング */
+  .loading { text-align: center; padding: 20px; color: var(--text-dim); font-size: 12px; }
+  .error-msg { font-size: 11px; color: #F09595; padding: 8px; background: #F0959511; border-radius: 6px; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 設定パネル -->
+  <div class="config-panel" id="config-panel" style="display:none">
+    <div class="config-title">⚙️ 初回設定（一度だけ入力してください）</div>
+    <div class="config-row">
+      <span class="config-label">APIキー</span>
+      <input class="config-input" id="api-key-input" type="password" placeholder="secret_xxxx..." />
+    </div>
+    <div class="config-note">※ APIキーはブラウザのlocalStorageに保存されます。このページは自分だけが開くページなので安全です。</div>
+    <button class="config-btn" onclick="saveConfig()">保存して接続</button>
+    <div class="error-msg hidden" id="config-error"></div>
+  </div>
+
+  <!-- メインコンテンツ（設定後に表示） -->
+  <div id="main-content" class="hidden">
+
+    <!-- 哲学バナー -->
+    <div class="banner">
+      <div class="banner-bg" id="banner-bg"></div>
+      <div class="banner-grid"></div>
+      <div class="banner-content">
+        <div class="banner-date" id="banner-date"></div>
+        <div class="banner-jp" id="banner-jp"></div>
+        <div class="banner-en" id="banner-en"></div>
+        <div class="banner-orig" id="banner-orig"></div>
+        <div class="banner-phil">
+          <div class="phil-line"></div>
+          <span id="banner-phil"></span>
+          <div class="phil-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ヘッダー -->
+    <div class="header">
+      <div>
+        <div class="greeting" id="greeting"></div>
+        <div class="date-str" id="date-str"></div>
+      </div>
+      <div class="mode-bar">
+        <button class="mode-btn active" id="btn-select" onclick="setMode('select')">📋 選択</button>
+        <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">▶️ 実行</button>
+      </div>
+    </div>
+
+    <!-- 進捗 -->
+    <div>
+      <div class="sec-label">TODAY'S PROGRESS</div>
+      <div class="progress-grid">
+        <div class="progress-card">
+          <div class="prog-label">全体</div>
+          <div class="prog-val" id="prog-total">—</div>
+          <div class="prog-sub" id="prog-total-sub">読み込み中</div>
+          <div class="prog-bar"><div class="prog-fill" id="prog-total-fill" style="width:0%;background:#7F77DD"></div></div>
+        </div>
+        <div class="progress-card">
+          <div class="prog-label">課題</div>
+          <div class="prog-val" id="prog-task">—</div>
+          <div class="prog-sub" id="prog-task-sub">読み込み中</div>
+          <div class="prog-bar"><div class="prog-fill" id="prog-task-fill" style="width:0%;background:#1D9E75"></div></div>
+        </div>
+        <div class="progress-card">
+          <div class="prog-label">その他</div>
+          <div class="prog-val" id="prog-other">—</div>
+          <div class="prog-sub" id="prog-other-sub">読み込み中</div>
+          <div class="prog-bar"><div class="prog-fill" id="prog-other-fill" style="width:0%;background:#D4537E"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 選択モード -->
+    <div id="select-mode">
+      <div class="sec-label">NEXT ACTIONS — 次やる一覧</div>
+      <div id="next-tasks-list"><div class="loading">読み込み中...</div></div>
+    </div>
+
+    <!-- 実行モード -->
+    <div id="exec-mode" class="hidden">
+
+      <!-- 振り返り -->
+      <div class="review-box">
+        <div class="review-cheer">✍️ 一言でもいいよ！思ったこと書こ！</div>
+        <div class="review-item">
+          <div class="review-label">📅 あったこと</div>
+          <textarea class="review-input" rows="2" placeholder="今日どんなことがあったか..."></textarea>
+        </div>
+        <div class="review-item">
+          <div class="review-label">✨ よかったこと（任意）</div>
+          <textarea class="review-input" rows="1" placeholder="..."></textarea>
+        </div>
+        <div class="review-item" style="margin-bottom:0">
+          <div class="review-label">😤 嫌だったこと（任意）</div>
+          <textarea class="review-input" rows="1" placeholder="..."></textarea>
+        </div>
+      </div>
+
+      <!-- やり残し＋今日のタスク -->
+      <div class="two-col" style="margin-top:12px">
+        <div>
+          <div class="col-head col-head-red">⚠️ やり残し</div>
+          <div id="leftover-list"><div class="loading">読み込み中...</div></div>
+        </div>
+        <div>
+          <div class="sec-label">TODAY'S TASKS</div>
+          <div id="today-tasks-list"><div class="loading">読み込み中...</div></div>
+        </div>
+      </div>
+
+      <!-- プロジェクト -->
+      <div style="margin-top:8px">
+        <div class="sec-label">PROJECTS</div>
+        <div id="projects-list"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+
+    <!-- クイック入力 -->
+    <div>
+      <div class="sec-label">QUICK INPUT</div>
+      <div class="quick-grid">
+        <div class="quick-btn qb-inbox" onclick="openModal('inbox')">
+          <div class="qb-icon">📥</div>
+          <div class="qb-label">Inboxに追加</div>
+          <div class="qb-sub">タスク・思いついたこと</div>
+        </div>
+        <div class="quick-btn qb-note" onclick="openModal('note')">
+          <div class="qb-icon">📝</div>
+          <div class="qb-label">ノートを書く</div>
+          <div class="qb-sub">メモ・アイデア</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- モーダル -->
+    <div class="modal-bg" id="modal-inbox">
+      <div class="modal">
+        <div class="modal-title">📥 Inboxに追加</div>
+        <input class="modal-input" id="inbox-input" placeholder="やること・気になったこと..."/>
+        <div class="modal-btns">
+          <button class="btn-cancel" onclick="closeModal('inbox')">キャンセル</button>
+          <button class="btn-save" onclick="addToInbox()">追加</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-bg" id="modal-note">
+      <div class="modal">
+        <div class="modal-title">📝 ノートを書く</div>
+        <input class="modal-input" id="note-title-input" placeholder="タイトル..." style="margin-bottom:6px"/>
+        <textarea class="modal-input" id="note-body-input" rows="3" placeholder="内容..."></textarea>
+        <div class="modal-btns">
+          <button class="btn-cancel" onclick="closeModal('note')">キャンセル</button>
+          <button class="btn-save" style="border-color:#1D9E75;background:#1D9E75" onclick="closeModal('note')">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- クイックナビ -->
+    <div>
+      <div class="sec-label">QUICK NAV</div>
+      <div class="nav-grid">
+        <a class="nav-btn" href="https://www.notion.so/13d4c1ec140d8275ba1d810e0b8e1e4c" target="_blank">
+          <div class="nav-icon">📋</div><div class="nav-label">タスクDB</div>
+        </a>
+        <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">
+          <div class="nav-icon">🗂</div><div class="nav-label">プロジェクト</div>
+        </a>
+        <a class="nav-btn" href="https://www.notion.so/76f4c1ec140d8375aa5b81c589f9b247" target="_blank">
+          <div class="nav-icon">📔</div><div class="nav-label">振り返り</div>
+        </a>
+        <a class="nav-btn" href="https://calendar.notion.so" target="_blank">
+          <div class="nav-icon">📅</div><div class="nav-label">Calendar</div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =====================
+// 設定
+// =====================
+const DB_IDS = {
+  tasks: '13d4c1ec140d8275ba1d810e0b8e1e4c',
+  projects: '8584c1ec140d83b29e26019b60fe7a3e',
+  journal: '76f4c1ec140d8375aa5b81c589f9b247',
+};
+const PROXY = 'https://notion-proxy.vercel.app/api/notion'; // 後で設定
+
+let API_KEY = '';
+
+// 起動時
+window.onload = () => {
+  setupBanner();
+  setupHeader();
+  showMain();
+  loadAll();
+};
+
+function saveConfig() {
+  const key = document.getElementById('api-key-input').value.trim();
+
+  showMain();
+  loadAll();
+}
+
+function showConfigError(msg) {
+  const el = document.getElementById('config-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function showMain() {
+  document.getElementById('config-panel').classList.add('hidden');
+  document.getElementById('main-content').classList.remove('hidden');
+}
+
+// =====================
+// 哲学バナー
+// =====================
+const quotes = [
+  { jp:"私は思う、ゆえに私は在る。", en:"I think, therefore I am.", orig:"Cogito, ergo sum.", phil:"René Descartes", color:"#7F77DD" },
+  { jp:"実存は本質に先立つ。", en:"Existence precedes essence.", orig:"L'existence précède l'essence.", phil:"Jean-Paul Sartre", color:"#1D9E75" },
+  { jp:"神は死んだ。そして我々が神を殺した。", en:"God is dead.", orig:"Gott ist tot.", phil:"Friedrich Nietzsche", color:"#D85A30" },
+  { jp:"不条理を直視しながら生きること、それが誠実さだ。", en:"One must imagine Sisyphus happy.", orig:"Il faut imaginer Sisyphe heureux.", phil:"Albert Camus", color:"#185FA5" },
+  { jp:"自由とは、選択する運命のことである。", en:"We are condemned to be free.", orig:"Nous sommes condamnés à être libres.", phil:"Jean-Paul Sartre", color:"#1D9E75" },
+  { jp:"汝自身を知れ。", en:"Know thyself.", orig:"Γνῶθι σεαυτόν.", phil:"Socrates", color:"#EF9F27" },
+  { jp:"他者は地獄だ。", en:"Hell is other people.", orig:"L'enfer, c'est les autres.", phil:"Jean-Paul Sartre", color:"#A32D2D" },
+  { jp:"人間は考える葦である。", en:"Man is but a reed.", orig:"L'homme n'est qu'un roseau.", phil:"Blaise Pascal", color:"#7F77DD" },
+  { jp:"道は歩むことによって開かれる。", en:"The path is made by walking.", orig:"Se hace camino al andar.", phil:"Antonio Machado", color:"#1D9E75" },
+  { jp:"超人とは、自らを超えようとする者のことだ。", en:"Man must be surpassed.", orig:"Der Mensch ist etwas, das überwunden werden soll.", phil:"Friedrich Nietzsche", color:"#D85A30" },
+  { jp:"哲学することは死ぬことを学ぶことだ。", en:"To philosophize is to learn how to die.", orig:"Philosopher, c'est apprendre à mourir.", phil:"Michel de Montaigne", color:"#7F77DD" },
+  { jp:"無知の知こそが最大の知恵だ。", en:"The only true wisdom is in knowing you know nothing.", orig:"", phil:"Socrates", color:"#EF9F27" },
+  { jp:"生きることの意味を問うな。生きることで答えよ。", en:"Don't ask what life means. Answer it with your life.", orig:"", phil:"Viktor Frankl", color:"#1D9E75" },
+  { jp:"変化こそが唯一の永続するものだ。", en:"The only constant in life is change.", orig:"", phil:"Heraclitus", color:"#185FA5" },
+  { jp:"存在するとは、知覚されることだ。", en:"To be is to be perceived.", orig:"Esse est percipi.", phil:"George Berkeley", color:"#EF9F27" },
+  { jp:"自由は責任を意味する。だから多くの人は自由を恐れる。", en:"Liberty means responsibility.", orig:"", phil:"George Bernard Shaw", color:"#D85A30" },
+  { jp:"人生は近くで見ると悲劇だが、遠くから見ると喜劇だ。", en:"Life is a tragedy in close-up, but a comedy in long-shot.", orig:"", phil:"Charlie Chaplin", color:"#7F77DD" },
+  { jp:"心の平和は外からは得られない。", en:"Peace comes from within. Do not seek it without.", orig:"", phil:"Buddha", color:"#1D9E75" },
+  { jp:"苦しみは人を強くする。しかし選ぶのは自分だ。", en:"Pain is inevitable. Suffering is optional.", orig:"", phil:"Haruki Murakami", color:"#185FA5" },
+  { jp:"幸福とは、自分の運命を愛することだ。", en:"Amor fati — love your fate.", orig:"Amor fati.", phil:"Friedrich Nietzsche", color:"#D85A30" },
+  { jp:"善く生きることと、善く行動することと、善く在ることは同一だ。", en:"To live well is to act well.", orig:"", phil:"Aristotle", color:"#EF9F27" },
+  { jp:"美しいものはすべて難しい。", en:"All beautiful things are difficult.", orig:"Omnia praeclara rara.", phil:"Spinoza", color:"#7F77DD" },
+  { jp:"すべての人間は生まれながら知ることを欲する。", en:"All men by nature desire knowledge.", orig:"Πάντες ἄνθρωποι τοῦ εἰδέναι.", phil:"Aristotle", color:"#EF9F27" },
+  { jp:"沈黙は真実の言語だ。", en:"Silence is the language of truth.", orig:"", phil:"Martin Heidegger", color:"#1D9E75" },
+  { jp:"思考は行動の種だ。", en:"Thought is the seed of action.", orig:"", phil:"Ralph Waldo Emerson", color:"#D85A30" },
+  { jp:"己を知ることが全知識の始まりだ。", en:"Knowing yourself is the beginning of all wisdom.", orig:"", phil:"Aristotle", color:"#EF9F27" },
+  { jp:"精神の自由こそ、最高の財産だ。", en:"The highest form of wealth is freedom of mind.", orig:"", phil:"Epictetus", color:"#185FA5" },
+  { jp:"過去に縛られるな。未来に怯えるな。今を生きろ。", en:"Concentrate the mind on the present moment.", orig:"", phil:"Buddha", color:"#EF9F27" },
+  { jp:"疑問を持つ者こそが前進する。", en:"He who questions, progresses.", orig:"", phil:"Descartes", color:"#7F77DD" },
+  { jp:"現在の瞬間だけが真実だ。", en:"The present moment is the only reality.", orig:"", phil:"Eckhart Tolle", color:"#1D9E75" },
+];
+
+function setupBanner() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / 86400000);
+  const q = quotes[dayOfYear % quotes.length];
+  document.getElementById('banner-bg').style.background =
+    `radial-gradient(ellipse at 80% 50%, ${q.color} 0%, transparent 60%)`;
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('banner-date').textContent =
+    `${now.getFullYear()}年 ${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+  document.getElementById('banner-jp').textContent = q.jp;
+  document.getElementById('banner-en').textContent = q.en ? `"${q.en}"` : '';
+  document.getElementById('banner-orig').textContent = q.orig || '';
+  document.getElementById('banner-phil').textContent = q.phil;
+}
+
+function setupHeader() {
+  const h = new Date().getHours();
+  document.getElementById('greeting').textContent = h < 12 ? 'おはよう' : h < 18 ? 'こんにちは' : 'こんばんは';
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('date-str').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+}
+
+// =====================
+// Notion API
+// =====================
+async function notionQuery(dbId, filter = null, sorts = null) {
+  const body = {};
+  if (filter) body.filter = filter;
+  if (sorts) body.sorts = sorts;
+
+  const res = await fetch(`/api/notion?path=databases/${dbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('APIキーが無効です');
+    throw new Error(`API Error: ${res.status}`);
+  }
+  return res.json();
+}
+
+async function notionCreate(dbId, properties) {
+  const res = await fetch('/api/notion?path=pages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ parent: { database_id: dbId }, properties }),
+  });
+  if (!res.ok) throw new Error('作成に失敗しました');
+  return res.json();
+}
+
+async function notionUpdate(pageId, properties) {
+  const res = await fetch(`/api/notion?path=pages/${pageId}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ properties }),
+  });
+  if (!res.ok) throw new Error('更新に失敗しました');
+  return res.json();
+}
+
+// =====================
+// データ取得・描画
+// =====================
+async function loadAll() {
+  try {
+    await Promise.all([loadTasks(), loadProjects()]);
+  } catch(e) {
+    console.error(e);
+    console.error(e);
+  }
+}
+
+// タスク取得
+let allTasks = [];
+async function loadTasks() {
+  const today = new Date().toISOString().split('T')[0];
+  const data = await notionQuery(DB_IDS.tasks, {
+    and: [
+      { property: 'GTD 種別', status: { does_not_equal: '🗑 ゴミ箱' } },
+      { property: 'GTD 種別', status: { does_not_equal: '📥 INBOX' } },
+      { property: 'ステータス', status: { does_not_equal: 'Done' } },
+    ]
+  }, [{ property: '締切日', direction: 'ascending' }]);
+
+  allTasks = data.results;
+  renderTasks();
+  updateProgress();
+}
+
+function getProp(page, name) {
+  const p = page.properties[name];
+  if (!p) return null;
+  if (p.type === 'title') return p.title.map(t => t.plain_text).join('');
+  if (p.type === 'rich_text') return p.rich_text.map(t => t.plain_text).join('');
+  if (p.type === 'status') return p.status?.name || null;
+  if (p.type === 'select') return p.select?.name || null;
+  if (p.type === 'multi_select') return p.multi_select.map(s => s.name);
+  if (p.type === 'date') return p.date?.start || null;
+  if (p.type === 'formula') return p.formula?.string || p.formula?.number || null;
+  if (p.type === 'checkbox') return p.checkbox;
+  return null;
+}
+
+function getDeadlineTag(dateStr) {
+  if (!dateStr) return null;
+  const deadline = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.ceil((deadline - now) / 86400000);
+  if (diffDays < 0) return { label: '期限切れ', cls: 'tag-red' };
+  if (diffDays === 0) return { label: '今日締切', cls: 'tag-red' };
+  if (diffDays <= 3) return { label: `${diffDays}日後`, cls: 'tag-amber' };
+  if (diffDays <= 7) return { label: `${diffDays}日後`, cls: 'tag-blue' };
+  return { label: `${diffDays}日後`, cls: 'tag-gray' };
+}
+
+function getAreaTag(area, subjects) {
+  if (area === '課題') {
+    if (subjects && subjects.length > 0) {
+      const s = subjects[0];
+      if (s === '憲法') return { label: '憲法', cls: 'tag-kenpou' };
+      if (s === '社会学') return { label: '社会学', cls: 'tag-shakai' };
+      if (s === '教育原理') return { label: '教育原理', cls: 'tag-kyoiku' };
+      if (s === 'ELA') return { label: 'ELA', cls: 'tag-ela' };
+    }
+    return { label: '課題', cls: 'tag-kenpou' };
+  }
+  if (area === 'ICU') return { label: 'ICU', cls: 'tag-icu' };
+  if (area === '個人') return { label: '個人', cls: 'tag-kojin' };
+  if (area === '生活') return { label: '生活', cls: 'tag-seikatsu' };
+  return { label: area || '—', cls: 'tag-gray' };
+}
+
+const timeSteps = ['5m','30m','1h','2h','3h+'];
+let taskTimeState = {};
+
+function renderTaskCard(task, showAddBtn = false) {
+  const title = getProp(task, 'タイトル') || '無題';
+  const status = getProp(task, 'ステータス');
+  const area = getProp(task, 'エリア');
+  const subjects = getProp(task, '科目') || [];
+  const deadline = getProp(task, '締切日');
+  const timeBlock = getProp(task, '実行時間帯');
+  const soyo = getProp(task, '所要時間');
+  const gtd = getProp(task, 'GTD 種別');
+  const isDone = status === 'Done' || status === '完了';
+
+  const areaTag = getAreaTag(area, subjects);
+  const deadlineTag = getDeadlineTag(deadline);
+  const timeIdx = taskTimeState[task.id] ?? timeSteps.indexOf(soyo ?? '30m');
+  if (!taskTimeState[task.id]) taskTimeState[task.id] = timeIdx < 0 ? 1 : timeIdx;
+
+  const tagsHtml = [
+    `<span class="tag ${areaTag.cls}">${areaTag.label}</span>`,
+    deadlineTag ? `<span class="tag ${deadlineTag.cls}">${deadlineTag.label}</span>` : '',
+    gtd === '▶️ 次やる' || gtd === '▶️ 次に取るべき行動' ? '' :
+      `<span class="tag tag-purple">${gtd || ''}</span>`,
+  ].filter(Boolean).join('');
+
+  if (showAddBtn) {
+    return `
+      <div class="leftover-card">
+        <div class="leftover-row">
+          <span class="tag ${areaTag.cls}" style="font-size:10px">${areaTag.label}</span>
+          <span class="leftover-title">${title}</span>
+          <button class="add-today-btn" onclick="markAddedToday(this, '${task.id}')">今日やる</button>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="task-card ${isDone ? 'done' : ''}" id="tc-${task.id}">
+      <div class="task-tags">${tagsHtml}</div>
+      <div class="task-title ${isDone ? 'done' : ''}" id="tt-${task.id}">${title}</div>
+      <div class="task-bottom">
+        <span class="task-meta">${timeBlock || ''}</span>
+        <div class="task-actions">
+          <div class="time-wrap">
+            <button class="time-btn" onclick="changeTime('${task.id}',-1)">−</button>
+            <span class="time-val" id="tv-${task.id}">${timeSteps[taskTimeState[task.id]]}</span>
+            <button class="time-btn" onclick="changeTime('${task.id}',1)">＋</button>
+          </div>
+          <button class="done-btn" onclick="markDone('${task.id}')">完了</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderTasks() {
+  const today = new Date().toISOString().split('T')[0];
+
+  // 次やる
+  const nextTasks = allTasks.filter(t => {
+    const gtd = getProp(t, 'GTD 種別');
+    return gtd === '▶️ 次やる' || gtd === '▶️ 次に取るべき行動';
+  });
+  const nextEl = document.getElementById('next-tasks-list');
+  if (nextTasks.length === 0) {
+    nextEl.innerHTML = '<div class="loading">次やるタスクがありません</div>';
+  } else {
+    nextEl.innerHTML = nextTasks.map(t => renderTaskCard(t)).join('');
+  }
+
+  // やり残し
+  const leftover = allTasks.filter(t => {
+    const deadline = getProp(t, '締切日');
+    if (!deadline) return false;
+    return deadline < today;
+  });
+  const leftEl = document.getElementById('leftover-list');
+  if (leftover.length === 0) {
+    leftEl.innerHTML = '<div class="loading" style="font-size:11px;color:#1D9E75">やり残しなし 🎉</div>';
+  } else {
+    leftEl.innerHTML = leftover.map(t => renderTaskCard(t, true)).join('');
+  }
+
+  // 今日のタスク（実行モード）
+  const todayTasks = allTasks.filter(t => {
+    const gtd = getProp(t, 'GTD 種別');
+    return gtd === '▶️ 次やる' || gtd === '▶️ 次に取るべき行動';
+  });
+  const todayEl = document.getElementById('today-tasks-list');
+  if (todayTasks.length === 0) {
+    todayEl.innerHTML = '<div class="loading">タスクがありません</div>';
+  } else {
+    todayEl.innerHTML = todayTasks.map(t => renderTaskCard(t)).join('');
+  }
+}
+
+function updateProgress() {
+  const total = allTasks.length;
+  const done = allTasks.filter(t => getProp(t, 'ステータス') === 'Done' || getProp(t, 'ステータス') === '完了').length;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+  document.getElementById('prog-total').textContent = pct + '%';
+  document.getElementById('prog-total-sub').textContent = `${done}/${total} 完了`;
+  document.getElementById('prog-total-fill').style.width = pct + '%';
+
+  const taskTasks = allTasks.filter(t => getProp(t, 'エリア') === '課題');
+  const taskDone = taskTasks.filter(t => getProp(t, 'ステータス') === 'Done' || getProp(t, 'ステータス') === '完了').length;
+  const taskPct = taskTasks.length > 0 ? Math.round(taskDone / taskTasks.length * 100) : 0;
+  document.getElementById('prog-task').textContent = taskPct + '%';
+  document.getElementById('prog-task-sub').textContent = `${taskDone}/${taskTasks.length} 完了`;
+  document.getElementById('prog-task-fill').style.width = taskPct + '%';
+
+  const otherTasks = allTasks.filter(t => getProp(t, 'エリア') !== '課題');
+  const otherDone = otherTasks.filter(t => getProp(t, 'ステータス') === 'Done' || getProp(t, 'ステータス') === '完了').length;
+  const otherPct = otherTasks.length > 0 ? Math.round(otherDone / otherTasks.length * 100) : 0;
+  document.getElementById('prog-other').textContent = otherPct + '%';
+  document.getElementById('prog-other-sub').textContent = `${otherDone}/${otherTasks.length} 完了`;
+  document.getElementById('prog-other-fill').style.width = otherPct + '%';
+}
+
+// プロジェクト
+async function loadProjects() {
+  const data = await notionQuery(DB_IDS.projects, {
+    property: 'ステータス', status: { equals: '進行中' }
+  });
+  const el = document.getElementById('projects-list');
+  if (data.results.length === 0) {
+    el.innerHTML = '<div class="loading">進行中のプロジェクトなし</div>';
+
+  }
+  el.innerHTML = data.results.map(p => {
+    const name = getProp(p, '名前') || '無題';
+    const area = getProp(p, '科目・エリア') || '';
+    const deadline = getProp(p, '終了予定日');
+    const deadlineTag = getDeadlineTag(deadline);
+    return `
+      <div class="proj-card">
+        <div class="proj-head">
+          <div class="proj-title">${name}</div>
+          <div class="proj-meta">
+            <span class="tag tag-gray" style="font-size:10px">${area}</span>
+            ${deadlineTag ? `<span class="tag ${deadlineTag.cls}" style="font-size:10px">${deadlineTag.label}</span>` : ''}
+            <div class="proj-bar"><div class="proj-fill" style="width:0%"></div></div>
+            <span class="proj-pct">—</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// =====================
+// インタラクション
+// =====================
+function changeTime(taskId, dir) {
+  const cur = taskTimeState[taskId] ?? 1;
+  taskTimeState[taskId] = Math.max(0, Math.min(4, cur + dir));
+  const els = document.querySelectorAll(`#tv-${taskId}`);
+  els.forEach(el => el.textContent = timeSteps[taskTimeState[taskId]]);
+}
+
+async function markDone(taskId) {
+  const cards = document.querySelectorAll(`#tc-${taskId}`);
+  const titles = document.querySelectorAll(`#tt-${taskId}`);
+  cards.forEach(c => c.classList.add('done'));
+  titles.forEach(t => t.classList.add('done'));
+  try {
+    await notionUpdate(taskId, {
+      'ステータス': { status: { name: 'Done' } }
+    });
+    // タスクを更新
+    const task = allTasks.find(t => t.id === taskId);
+    if (task) task.properties['ステータス'] = { type: 'status', status: { name: 'Done' } };
+    updateProgress();
+  } catch(e) {
+    console.error('完了更新失敗:', e);
+  }
+}
+
+function markAddedToday(btn, taskId) {
+  btn.textContent = '追加済み';
+  btn.classList.add('added');
+  btn.disabled = true;
+}
+
+function setMode(mode) {
+  const isSelect = mode === 'select';
+  document.getElementById('select-mode').classList.toggle('hidden', !isSelect);
+  document.getElementById('exec-mode').classList.toggle('hidden', isSelect);
+  document.getElementById('btn-select').classList.toggle('active', isSelect);
+  document.getElementById('btn-exec').classList.toggle('active', !isSelect);
+}
+
+async function addToInbox() {
+  const title = document.getElementById('inbox-input').value.trim();
+  if (!title) return;
+  try {
+    await notionCreate(DB_IDS.tasks, {
+      'タイトル': { title: [{ text: { content: title } }] },
+      'GTD 種別': { status: { name: '📥 INBOX' } },
+    });
+    document.getElementById('inbox-input').value = '';
+    closeModal('inbox');
+    await loadTasks();
+  } catch(e) {
+    console.error('Inbox追加失敗:', e);
+  }
+}
+
+function openModal(type) {
+  document.getElementById(`modal-${type}`).classList.add('open');
+  setTimeout(() => document.getElementById(`${type}-input`)?.focus(), 50);
+}
+function closeModal(type) {
+  document.getElementById(`modal-${type}`).classList.remove('open');
+}
+</script>
+</body>
+</html>
