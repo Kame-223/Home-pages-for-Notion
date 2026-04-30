@@ -293,7 +293,7 @@
 <div class="page">
 
   <!-- 設定パネル -->
-  <div class="config-panel" id="config-panel">
+  <div class="config-panel" id="config-panel" style="display:none">
     <div class="config-title">⚙️ 初回設定（一度だけ入力してください）</div>
     <div class="config-row">
       <span class="config-label">APIキー</span>
@@ -479,26 +479,19 @@ const DB_IDS = {
 };
 const PROXY = 'https://notion-proxy.vercel.app/api/notion'; // 後で設定
 
-let API_KEY = localStorage.getItem('notion_api_key') || '';
+let API_KEY = '';
 
 // 起動時
 window.onload = () => {
   setupBanner();
   setupHeader();
-  if (API_KEY) {
-    showMain();
-    loadAll();
-  }
+  showMain();
+  loadAll();
 };
 
 function saveConfig() {
   const key = document.getElementById('api-key-input').value.trim();
-  if (!key.startsWith('secret_')) {
-    showConfigError('APIキーは secret_ から始まります。確認してください。');
-    return;
-  }
-  API_KEY = key;
-  localStorage.setItem('notion_api_key', key);
+
   showMain();
   loadAll();
 }
@@ -586,7 +579,6 @@ async function notionQuery(dbId, filter = null, sorts = null) {
   const res = await fetch(`/api/notion?path=databases/${dbId}/query`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${API_KEY}`,
       'Notion-Version': '2022-06-28',
       'Content-Type': 'application/json',
     },
@@ -636,11 +628,7 @@ async function loadAll() {
     await Promise.all([loadTasks(), loadProjects()]);
   } catch(e) {
     console.error(e);
-    if (e.message.includes('APIキー')) {
-      document.getElementById('main-content').classList.add('hidden');
-      document.getElementById('config-panel').classList.remove('hidden');
-      showConfigError(e.message);
-    }
+    console.error(e);
   }
 }
 
@@ -832,7 +820,7 @@ async function loadProjects() {
   const el = document.getElementById('projects-list');
   if (data.results.length === 0) {
     el.innerHTML = '<div class="loading">進行中のプロジェクトなし</div>';
-    return;
+
   }
   el.innerHTML = data.results.map(p => {
     const name = getProp(p, '名前') || '無題';
