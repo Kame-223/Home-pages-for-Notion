@@ -450,7 +450,7 @@
     <div>
       <div class="sec-label">QUICK NAV</div>
       <div class="nav-grid">
-        <a class="nav-btn" href="https://www.notion.so/13d4c1ec140d8275ba1d810e0b8e1e4c" target="_blank">
+        <a class="nav-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank">
           <div class="nav-icon">📋</div><div class="nav-label">タスクDB</div>
         </a>
         <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">
@@ -473,7 +473,7 @@
 // 設定
 // =====================
 const DB_IDS = {
-  tasks: '13d4c1ec140d8275ba1d810e0b8e1e4c',
+  tasks: '3294c1ec140d838499ae0131fc67976d',
   projects: '8584c1ec140d83b29e26019b60fe7a3e',
   journal: '76f4c1ec140d8375aa5b81c589f9b247',
 };
@@ -638,9 +638,9 @@ async function loadTasks() {
   const today = new Date().toISOString().split('T')[0];
   const data = await notionQuery(DB_IDS.tasks, {
     and: [
-      { property: 'GTD 種別', status: { does_not_equal: '🗑 ゴミ箱' } },
+      { property: 'GTD 種別', status: { does_not_equal: '🗑ゴミ箱' } },
       { property: 'GTD 種別', status: { does_not_equal: '📥 INBOX' } },
-      { property: 'ステータス', status: { does_not_equal: 'Done' } },
+      { property: 'ステータス', status: { does_not_equal: '完了' } },
     ]
   }, [{ property: '締切日', direction: 'ascending' }]);
 
@@ -704,7 +704,7 @@ function renderTaskCard(task, showAddBtn = false) {
   const timeBlock = getProp(task, '実行時間帯');
   const soyo = getProp(task, '所要時間');
   const gtd = getProp(task, 'GTD 種別');
-  const isDone = status === 'Done' || status === '完了';
+  const isDone = status === '完了';
 
   const areaTag = getAreaTag(area, subjects);
   const deadlineTag = getDeadlineTag(deadline);
@@ -714,7 +714,7 @@ function renderTaskCard(task, showAddBtn = false) {
   const tagsHtml = [
     `<span class="tag ${areaTag.cls}">${areaTag.label}</span>`,
     deadlineTag ? `<span class="tag ${deadlineTag.cls}">${deadlineTag.label}</span>` : '',
-    gtd === '▶️ 次やる' || gtd === '▶️ 次に取るべき行動' ? '' :
+    gtd === '▶️ 次やる' ? '' :
       `<span class="tag tag-purple">${gtd || ''}</span>`,
   ].filter(Boolean).join('');
 
@@ -753,7 +753,7 @@ function renderTasks() {
   // 次やる
   const nextTasks = allTasks.filter(t => {
     const gtd = getProp(t, 'GTD 種別');
-    return gtd === '▶️ 次やる' || gtd === '▶️ 次に取るべき行動';
+    return gtd === '▶️ 次やる';
   });
   const nextEl = document.getElementById('next-tasks-list');
   if (nextTasks.length === 0) {
@@ -778,7 +778,7 @@ function renderTasks() {
   // 今日のタスク（実行モード）
   const todayTasks = allTasks.filter(t => {
     const gtd = getProp(t, 'GTD 種別');
-    return gtd === '▶️ 次やる' || gtd === '▶️ 次に取るべき行動';
+    return gtd === '▶️ 次やる';
   });
   const todayEl = document.getElementById('today-tasks-list');
   if (todayTasks.length === 0) {
@@ -859,7 +859,7 @@ async function markDone(taskId) {
   titles.forEach(t => t.classList.add('done'));
   try {
     await notionUpdate(taskId, {
-      'ステータス': { status: { name: 'Done' } }
+      'ステータス': { status: { name: '完了' } }
     });
     // タスクを更新
     const task = allTasks.find(t => t.id === taskId);
