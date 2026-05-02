@@ -4,1010 +4,1063 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🏠 ホーム</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Sans+JP:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0f0f13;
-    --surface: #1a1a22;
-    --border: rgba(255,255,255,0.08);
-    --text: rgba(255,255,255,0.9);
-    --text-sub: rgba(255,255,255,0.45);
-    --text-dim: rgba(255,255,255,0.2);
-    --purple: #7F77DD;
-    --green: #1D9E75;
-    --red: #D85A30;
-    --amber: #EF9F27;
-    --blue: #378ADD;
-    --pink: #D4537E;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 300;
-    min-height: 100vh;
-    padding: 24px 20px;
-  }
-  .page { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1a1a24;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: rgba(255,255,255,0.88);
+  --text-sub: rgba(255,255,255,0.45);
+  --text-dim: rgba(255,255,255,0.2);
+  --purple: #7F77DD;
+  --green: #1D9E75;
+  --red: #D85A30;
+  --amber: #EF9F27;
+  --blue: #378ADD;
+  --pink: #D4537E;
+  --board-today: #161620;
+  --board-bottom: #0f0817;
+  --board-border-today: rgba(127,119,221,0.2);
+  --board-border-bottom: rgba(74,32,96,0.6);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
 
-  /* 設定パネル */
-  .config-panel {
-    background: #1a1020;
-    border: 1px solid #D85A3044;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .config-title { font-size: 12px; color: var(--red); letter-spacing: 0.1em; margin-bottom: 4px; }
-  .config-row { display: flex; gap: 8px; align-items: center; }
-  .config-label { font-size: 11px; color: var(--text-sub); min-width: 120px; }
-  .config-input {
-    flex: 1;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 12px;
-    color: var(--text);
-    font-family: monospace;
-  }
-  .config-input:focus { outline: none; border-color: var(--purple); }
-  .config-btn {
-    background: var(--purple);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 20px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-    transition: opacity 0.2s;
-  }
-  .config-btn:hover { opacity: 0.8; }
-  .config-note { font-size: 11px; color: var(--text-dim); }
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 56px;
+  background: var(--surface);
+  border-right: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.sb-btn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: none; background: transparent;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px; transition: all .2s;
+  text-decoration: none;
+}
+.sb-btn:hover { background: rgba(255,255,255,0.06); }
+.sb-btn.active { background: rgba(127,119,221,0.15); border: 0.5px solid rgba(127,119,221,0.3); }
+.sb-icon { font-size: 16px; }
+.sb-label { font-size: 8px; color: var(--text-dim); font-weight: 400; letter-spacing: 0.05em; }
+.sb-btn.active .sb-label { color: var(--purple); }
 
-  /* 哲学バナー */
-  .banner {
-    border-radius: 12px;
-    background: #07050f;
-    padding: 20px 24px;
-    position: relative;
-    overflow: hidden;
-  }
-  .banner-bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 80% 50%, var(--banner-color, #7F77DD) 0%, transparent 60%);
-    opacity: 0.12;
-  }
-  .banner-grid {
-    position: absolute; inset: 0;
-    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-  .banner-content { position: relative; z-index: 1; }
-  .banner-date { font-size: 10px; letter-spacing: 0.3em; color: var(--text-dim); margin-bottom: 12px; font-family: 'Cormorant Garamond', serif; }
-  .banner-jp { font-size: 16px; color: var(--text); line-height: 1.8; margin-bottom: 8px; }
-  .banner-en { font-size: 12px; color: var(--text-sub); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 4px; }
-  .banner-orig { font-size: 11px; color: var(--text-dim); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 12px; }
-  .banner-phil { font-size: 11px; color: var(--purple); display: flex; align-items: center; gap: 10px; }
-  .phil-line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+/* ===== MAIN ===== */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
 
-  /* ヘッダー */
-  .header { display: flex; align-items: center; justify-content: space-between; }
-  .greeting { font-size: 22px; font-weight: 500; }
-  .date-str { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-  .mode-bar { display: flex; gap: 6px; }
-  .mode-btn {
-    padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border);
-    background: transparent; color: var(--text-sub); font-size: 12px;
-    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.2s;
-  }
-  .mode-btn.active { background: var(--purple); border-color: var(--purple); color: white; font-weight: 500; }
+/* ===== TOPBAR ===== */
+.topbar {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 90px;
+}
+.banner-area {
+  flex: 1;
+  background: #06040e;
+  position: relative;
+  overflow: hidden;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.banner-orb {
+  position: absolute;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.12;
+  top: -60px; right: 20px;
+  transition: background .8s;
+}
+.banner-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.banner-content { position: relative; z-index: 1; }
+.banner-date { font-size: 9px; letter-spacing: 0.25em; color: var(--text-dim); margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
+.banner-jp { font-size: 14px; font-weight: 400; color: var(--text); line-height: 1.6; margin-bottom: 4px; }
+.banner-en { font-size: 11px; color: var(--text-sub); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 6px; }
+.banner-phil { font-size: 9px; color: var(--purple); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
+.phil-line { flex: 1; height: 0.5px; background: rgba(127,119,221,0.2); }
 
-  /* 進捗 */
-  .progress-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .progress-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px;
-  }
-  .prog-label { font-size: 10px; color: var(--text-sub); margin-bottom: 6px; }
-  .prog-val { font-size: 20px; font-weight: 500; }
-  .prog-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
-  .prog-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 8px; overflow: hidden; }
-  .prog-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.topbar-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px;
+  gap: 8px;
+  border-left: 0.5px solid var(--border);
+  background: var(--surface);
+  min-width: 180px;
+}
+.topbar-info { display: flex; flex-direction: column; gap: 1px; }
+.greeting { font-size: 16px; font-weight: 500; color: var(--text); }
+.date-str { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.quick-btn {
+  font-size: 10px; padding: 5px 10px; border-radius: 7px;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .15s; white-space: nowrap;
+}
+.quick-btn:hover { border-color: var(--purple); color: var(--purple); }
+.mode-btns { display: flex; gap: 4px; }
+.mode-btn {
+  font-size: 10px; padding: 5px 12px; border-radius: 7px;
+  border: 0.5px solid var(--border); background: transparent;
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s;
+}
+.mode-btn.active { background: var(--purple); border-color: var(--purple); color: white; }
 
-  /* セクションラベル */
-  .sec-label { font-size: 10px; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 8px; }
+/* ===== PROGRESS ===== */
+.progress-area {
+  display: flex; gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.prog-card {
+  flex: 1; background: var(--surface2);
+  border-radius: 8px; padding: 8px 10px;
+  border: 0.5px solid var(--border);
+}
+.prog-label { font-size: 9px; color: var(--text-dim); margin-bottom: 4px; letter-spacing: 0.08em; }
+.prog-val { font-size: 18px; font-weight: 500; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.prog-sub { font-size: 9px; color: var(--text-dim); margin-top: 1px; }
+.prog-bar { height: 2px; background: var(--border); border-radius: 1px; margin-top: 6px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 1px; transition: width .5s ease; }
 
-  /* タスクカード */
-  .task-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
-    transition: border-color 0.2s;
-  }
-  .task-card:hover { border-color: rgba(255,255,255,0.15); }
-  .task-card.done { opacity: 0.35; }
-  .task-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .tag {
-    font-size: 10px; padding: 2px 8px; border-radius: 99px;
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-  .tag-kenpou { background: #E1F5EE22; color: #5DCAA5; border-color: #5DCAA533; }
-  .tag-shakai { background: #E8F4FD22; color: #85B7EB; border-color: #85B7EB33; }
-  .tag-kyoiku { background: #EEEDFE22; color: #AFA9EC; border-color: #AFA9EC33; }
-  .tag-ela    { background: #FAEEDA22; color: #EF9F27; border-color: #EF9F2733; }
-  .tag-icu    { background: #FAEEDA22; color: #EF9F27; border-color: #EF9F2733; }
-  .tag-kojin  { background: #FBEAF022; color: #ED93B1; border-color: #ED93B133; }
-  .tag-seikatsu { background: #E6F1FB22; color: #85B7EB; border-color: #85B7EB33; }
-  .tag-red    { background: #FCEBEB22; color: #F09595; border-color: #F0959533; }
-  .tag-amber  { background: #FAEEDA22; color: #EF9F27; border-color: #EF9F2733; }
-  .tag-blue   { background: #E6F1FB22; color: #85B7EB; border-color: #85B7EB33; }
-  .tag-gray   { background: rgba(255,255,255,0.05); color: var(--text-dim); }
-  .tag-purple { background: #EEEDFE22; color: #AFA9EC; border-color: #AFA9EC33; }
-  .task-title { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
-  .task-title.done { text-decoration: line-through; color: var(--text-dim); }
-  .task-bottom { display: flex; align-items: center; justify-content: space-between; }
-  .task-meta { font-size: 10px; color: var(--text-dim); }
-  .task-actions { display: flex; align-items: center; gap: 6px; }
-  .time-wrap { display: flex; align-items: center; gap: 4px; }
-  .time-btn {
-    width: 20px; height: 20px; border-radius: 4px;
-    border: 1px solid var(--border); background: rgba(255,255,255,0.05);
-    color: var(--text); font-size: 11px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center;
-  }
-  .time-btn:active { transform: scale(0.9); }
-  .time-val { font-size: 11px; font-weight: 500; min-width: 28px; text-align: center; }
-  .done-btn {
-    font-size: 10px; padding: 3px 10px; border-radius: 99px;
-    border: 1px solid var(--border); background: transparent;
-    color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-    transition: all 0.2s;
-  }
-  .done-btn:hover { background: #1D9E7522; border-color: var(--green); color: var(--green); }
+/* ===== CONTENT GRID ===== */
+.content-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  min-height: 0;
+}
 
-  /* やり残しカード */
-  .leftover-card {
-    background: #1a0f0f; border: 1px solid #F0959533;
-    border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
-  }
-  .leftover-row { display: flex; align-items: center; gap: 8px; }
-  .leftover-title { font-size: 12px; flex: 1; }
-  .add-today-btn {
-    font-size: 10px; padding: 3px 10px; border-radius: 99px;
-    border: 1px solid #F09595; background: #FCEBEB22;
-    color: #F09595; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-    white-space: nowrap; transition: all 0.2s;
-  }
-  .add-today-btn:hover { background: #FCEBEB44; }
-  .add-today-btn.added { border-color: var(--green); color: var(--green); background: #1D9E7522; }
+/* ===== SCHEDULE ===== */
+.schedule-col {
+  grid-row: 1 / 3;
+  border-right: 0.5px solid var(--border);
+  overflow-y: auto;
+  padding: 10px 8px;
+  background: var(--surface);
+}
+.schedule-col::-webkit-scrollbar { width: 3px; }
+.schedule-col::-webkit-scrollbar-track { background: transparent; }
+.schedule-col::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.col-title { font-size: 8px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.2em; margin-bottom: 10px; }
+.cal-slot { display: flex; gap: 5px; margin-bottom: 5px; align-items: flex-start; }
+.cal-time { font-size: 9px; color: var(--text-dim); min-width: 30px; padding-top: 3px; font-family: 'JetBrains Mono', monospace; }
+.cal-event { flex: 1; font-size: 10px; padding: 3px 6px; border-radius: 4px; line-height: 1.4; }
+.ev-class { background: rgba(127,119,221,0.12); color: #AFA9EC; border-left: 2px solid var(--purple); }
+.ev-task { background: rgba(29,158,117,0.1); color: #5DCAA5; border-left: 2px solid var(--green); }
+.ev-empty { color: var(--text-dim); font-size: 9px; padding-top: 2px; }
 
-  /* 2カラム */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .col-head {
-    font-size: 11px; font-weight: 500; color: var(--text-sub);
-    padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;
-  }
-  .col-head-red { background: #F0959511; color: #F09595; }
-  .col-head-amber { background: #EF9F2711; color: #EF9F27; }
+/* ===== TODAY BOARD ===== */
+.today-board {
+  background: var(--board-today);
+  border-bottom: 0.5px solid var(--board-border-today);
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+.today-board::-webkit-scrollbar { width: 3px; }
+.today-board::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.board-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.board-title { font-size: 9px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.2em; }
 
-  /* プロジェクトカード */
-  .proj-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; overflow: hidden; margin-bottom: 8px; cursor: pointer;
-  }
-  .proj-head { padding: 10px 12px; }
-  .proj-title { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
-  .proj-meta { display: flex; align-items: center; gap: 8px; }
-  .proj-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-  .proj-fill { height: 100%; background: var(--purple); border-radius: 2px; }
-  .proj-pct { font-size: 10px; color: var(--text-sub); min-width: 28px; text-align: right; }
+/* ===== BOTTOM SECTION ===== */
+.bottom-section {
+  display: grid;
+  grid-template-columns: 1fr 0.5px 1fr;
+  background: var(--board-bottom);
+  border-top: 0.5px solid var(--board-border-bottom);
+  max-height: 200px;
+  overflow: hidden;
+}
+.bottom-half { overflow-y: auto; padding: 8px 12px; }
+.bottom-half::-webkit-scrollbar { width: 3px; }
+.bottom-half::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.bottom-divider { background: rgba(74,32,96,0.5); }
+.bottom-label-red {
+  font-size: 9px; font-weight: 500; color: #F09595;
+  letter-spacing: 0.1em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.bottom-label-blue {
+  font-size: 9px; font-weight: 500; color: #85B7EB;
+  letter-spacing: 0.1em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.bottom-label-red::before { content:''; flex:1; height:0.5px; background:rgba(240,149,149,0.2); }
+.bottom-label-blue::before { content:''; flex:1; height:0.5px; background:rgba(133,183,235,0.2); }
 
-  /* 振り返り */
-  .review-box {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px;
-  }
-  .review-cheer {
-    font-size: 12px; color: var(--blue); padding: 8px 12px;
-    background: #378ADD11; border-radius: 8px; margin-bottom: 12px;
-    text-align: center;
-  }
-  .review-item { margin-bottom: 12px; }
-  .review-label { font-size: 10px; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
-  .review-input {
-    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif; resize: none; line-height: 1.7;
-  }
-  .review-input:focus { outline: none; border-color: var(--blue); }
+/* ===== 1日のスケジュール（実行モード下段） ===== */
+.day-schedule {
+  background: var(--board-bottom);
+  border-top: 0.5px solid var(--board-border-bottom);
+  overflow-y: auto;
+  padding: 10px 12px;
+  max-height: 220px;
+}
+.day-schedule::-webkit-scrollbar { width: 3px; }
+.day-schedule::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.time-block { margin-bottom: 12px; }
+.time-block-label {
+  font-size: 10px; font-weight: 500; color: var(--text-sub);
+  margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+}
+.time-block-label::after { content:''; flex:1; height:0.5px; background:var(--border); }
 
-  /* クイック入力 */
-  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .quick-btn {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px; cursor: pointer;
-    display: flex; flex-direction: column; gap: 3px;
-    transition: border-color 0.2s;
-  }
-  .quick-btn:hover { border-color: rgba(255,255,255,0.2); }
-  .qb-inbox { border-color: #AFA9EC33; }
-  .qb-note { border-color: #5DCAA533; }
-  .qb-icon { font-size: 16px; }
-  .qb-label { font-size: 12px; font-weight: 500; }
-  .qb-sub { font-size: 10px; color: var(--text-sub); }
+/* ===== TASK CARD ===== */
+.task-card {
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 7px;
+  position: relative;
+  transition: all .2s;
+}
+.task-card.done { opacity: 0.4; }
+.task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
+.task-card.pinned { border-color: rgba(127,119,221,0.4); }
+.pin-badge {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  font-size: 12px; display: none;
+}
+.task-card.pinned .pin-badge { display: block; }
+.tag-row { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; flex-wrap: wrap; }
+.tag { font-size: 9px; padding: 2px 7px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
+.tag-teal { background: rgba(29,158,117,0.12); color: #5DCAA5; border: 0.5px solid rgba(93,202,165,0.3); }
+.tag-blue { background: rgba(55,138,221,0.12); color: #85B7EB; border: 0.5px solid rgba(133,183,235,0.3); }
+.tag-amber { background: rgba(239,159,39,0.12); color: #EF9F27; border: 0.5px solid rgba(239,159,39,0.3); }
+.tag-pink { background: rgba(212,83,126,0.12); color: #ED93B1; border: 0.5px solid rgba(237,147,177,0.3); }
+.tag-purple { background: rgba(127,119,221,0.12); color: #AFA9EC; border: 0.5px solid rgba(175,169,236,0.3); }
+.tag-gray { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 0.5px solid var(--border); }
+.tag-red { background: rgba(240,149,149,0.12); color: #F09595; border: 0.5px solid rgba(240,149,149,0.3); }
+.deadline-tag { margin-left: auto; flex-shrink: 0; }
+.task-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
+.task-bottom { display: flex; align-items: center; gap: 6px; }
+.time-wrap { display: flex; align-items: center; gap: 4px; }
+.time-btn {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 0.5px solid var(--border2); background: rgba(255,255,255,0.04);
+  cursor: pointer; font-size: 10px; color: var(--text-sub);
+  display: flex; align-items: center; justify-content: center;
+}
+.time-btn:active { transform: scale(.9); }
+.time-val { font-size: 10px; font-weight: 500; min-width: 26px; text-align: center; color: var(--text-sub); font-family: 'JetBrains Mono', monospace; }
+.card-actions { margin-left: auto; display: flex; gap: 5px; align-items: center; }
 
-  /* モーダル */
-  .modal-bg {
-    background: rgba(0,0,0,0.6); border-radius: 12px;
-    padding: 16px; display: none; align-items: flex-start; justify-content: center;
-  }
-  .modal-bg.open { display: flex; }
-  .modal {
-    background: #1a1a22; border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px; width: 100%;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .modal-title { font-size: 13px; font-weight: 500; }
-  .modal-input {
-    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-  }
-  .modal-input:focus { outline: none; border-color: var(--purple); }
-  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
-  .btn-cancel {
-    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
-    background: transparent; color: var(--text-sub); font-size: 12px; cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-  }
-  .btn-save {
-    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--purple);
-    background: var(--purple); color: white; font-size: 12px; cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-  }
+/* ボタン */
+.btn-pin {
+  font-size: 10px; padding: 3px 10px; border-radius: 7px;
+  border: 0.5px solid rgba(29,158,117,0.4); background: rgba(29,158,117,0.1);
+  cursor: pointer; color: #5DCAA5; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; white-space: nowrap;
+}
+.btn-pin.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
+.btn-time {
+  font-size: 10px; padding: 3px 10px; border-radius: 7px;
+  border: 0.5px solid rgba(239,159,39,0.3); background: rgba(239,159,39,0.08);
+  cursor: pointer; color: #EF9F27; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; position: relative; white-space: nowrap;
+}
+.btn-start {
+  font-size: 10px; padding: 3px 10px; border-radius: 7px;
+  border: 0.5px solid rgba(29,158,117,0.4); background: rgba(29,158,117,0.1);
+  cursor: pointer; color: #5DCAA5; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; white-space: nowrap;
+}
+.btn-start.restart { border-color: rgba(239,159,39,0.4); background: rgba(239,159,39,0.1); color: #EF9F27; }
+.btn-done {
+  font-size: 10px; padding: 3px 12px; border-radius: 7px;
+  border: none; background: var(--purple);
+  cursor: pointer; color: white; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; white-space: nowrap;
+}
+.btn-done.undo { background: rgba(255,255,255,0.1); color: var(--text-sub); }
 
-  /* クイックナビ */
-  .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .nav-btn {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 6px; text-align: center;
-    cursor: pointer; text-decoration: none; transition: border-color 0.2s;
-    display: block;
-  }
-  .nav-btn:hover { border-color: rgba(255,255,255,0.2); }
-  .nav-icon { font-size: 14px; }
-  .nav-label { font-size: 10px; color: var(--text-sub); margin-top: 2px; font-weight: 500; }
+/* 時間帯ドロップダウン */
+.time-dropdown {
+  position: absolute; bottom: 28px; right: 0;
+  background: #1e1e2e; border: 0.5px solid var(--border2);
+  border-radius: 8px; overflow: hidden; z-index: 100;
+  display: none; min-width: 90px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.time-dropdown.open { display: block; }
+.time-opt {
+  padding: 7px 12px; font-size: 11px; cursor: pointer;
+  color: var(--text-sub); transition: background .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.time-opt:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 
-  /* ローディング */
-  .loading { text-align: center; padding: 20px; color: var(--text-dim); font-size: 12px; }
-  .error-msg { font-size: 11px; color: #F09595; padding: 8px; background: #F0959511; border-radius: 6px; }
+/* ===== 集中モード ===== */
+.focus-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5,3,15,0.96);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+.focus-overlay.open { display: flex; }
+.focus-modal {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 16px;
+  padding: 48px 40px;
+  max-width: 420px; width: 100%;
+  animation: fadeUp .3s ease-out;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.focus-mode-label {
+  font-size: 9px; letter-spacing: 0.4em; color: var(--text-dim);
+  text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+}
+.focus-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+.focus-task { font-size: 20px; font-weight: 400; color: var(--text); text-align: center; line-height: 1.5; }
+.focus-link {
+  font-size: 11px; color: var(--purple); text-decoration: none;
+  padding: 5px 14px; border-radius: 99px;
+  border: 0.5px solid rgba(127,119,221,0.3);
+  background: rgba(127,119,221,0.08);
+  display: none;
+}
+.focus-link.show { display: block; }
+.focus-expected { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.focus-timer {
+  font-size: 52px; font-weight: 300; color: var(--text);
+  font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+}
+.focus-timer.warning { color: var(--amber); }
+.focus-btns { display: flex; gap: 10px; margin-top: 8px; }
+.focus-pause {
+  font-size: 12px; padding: 10px 24px; border-radius: 10px;
+  border: 0.5px solid var(--border2); background: transparent;
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s;
+}
+.focus-pause:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.focus-done-btn {
+  font-size: 12px; padding: 10px 28px; border-radius: 10px;
+  border: none; background: var(--purple);
+  cursor: pointer; color: white; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s;
+}
+.focus-done-btn:hover { background: #6B63C7; }
 
-  .hidden { display: none; }
+/* モーダル */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: none; align-items: flex-end; justify-content: center;
+  z-index: 500;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 16px 16px 0 0; padding: 20px;
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.modal-title { font-size: 13px; font-weight: 500; }
+.modal-input {
+  width: 100%; background: var(--surface);
+  border: 0.5px solid var(--border2); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.modal-input:focus { outline: none; border-color: var(--purple); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-cancel {
+  padding: 6px 14px; border-radius: 8px;
+  border: 0.5px solid var(--border2); background: transparent;
+  cursor: pointer; font-size: 11px; color: var(--text-sub);
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.btn-save {
+  padding: 6px 14px; border-radius: 8px;
+  border: none; background: var(--purple);
+  cursor: pointer; font-size: 11px; color: white;
+  font-family: 'Noto Sans JP', sans-serif; font-weight: 500;
+}
 
-  /* 黒板レイアウト */
-  .board { border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-  .board-today { background: #2a2a2a; border: 1.5px solid #444; }
-  .board-bottom { background: #1a0a1f; border: 1.5px solid #4a2060; }
-  .board-label {
-    font-size: 11px; font-weight: 500; letter-spacing: 0.12em;
-    padding: 8px 14px; color: rgba(255,255,255,0.5);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.04);
-  }
-  .board-label-red {
-    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
-    padding: 7px 14px; color: #F09595;
-    background: rgba(240,149,149,0.12);
-    border-bottom: 1px solid rgba(240,149,149,0.2);
-  }
-  .board-label-blue {
-    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
-    padding: 7px 14px; color: #85B7EB;
-    background: rgba(133,183,235,0.12);
-    border-bottom: 1px solid rgba(133,183,235,0.2);
-  }
-  .board-content { padding: 12px; }
-  .board-bottom-inner { display: grid; grid-template-columns: 1fr 1px 1fr; }
-  .board-half {}
-  .board-content-half { padding: 12px; }
-  .board-divider { background: rgba(255,255,255,0.08); }
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  display: flex; gap: 4px; padding: 8px 10px;
+  border-top: 0.5px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; padding: 6px 4px; border-radius: 7px;
+  border: 0.5px solid var(--border); background: transparent;
+  cursor: pointer; text-align: center;
+  font-size: 9px; color: var(--text-sub); font-weight: 500;
+  font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+.loading { font-size: 11px; color: var(--text-dim); text-align: center; padding: 16px; }
+.hidden { display: none; }
+.section-empty { font-size: 10px; color: var(--text-dim); text-align: center; padding: 12px; }
+
+/* スクロールバー全体 */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- 設定パネル -->
-  <div class="config-panel" id="config-panel" style="display:none">
-    <div class="config-title">⚙️ 初回設定（一度だけ入力してください）</div>
-    <div class="config-row">
-      <span class="config-label">APIキー</span>
-      <input class="config-input" id="api-key-input" type="password" placeholder="secret_xxxx..." />
-    </div>
-    <div class="config-note">※ APIキーはブラウザのlocalStorageに保存されます。このページは自分だけが開くページなので安全です。</div>
-    <button class="config-btn" onclick="saveConfig()">保存して接続</button>
-    <div class="error-msg hidden" id="config-error"></div>
-  </div>
+<!-- サイドバー -->
+<div class="sidebar">
+  <a class="sb-btn active" href="#"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></a>
+  <a class="sb-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank"><span class="sb-icon">📋</span><span class="sb-label">Task</span></a>
+  <a class="sb-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></a>
+  <a class="sb-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank"><span class="sb-icon">📝</span><span class="sb-label">Note</span></a>
+  <a class="sb-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank"><span class="sb-icon">📚</span><span class="sb-label">資料</span></a>
+</div>
 
-  <!-- メインコンテンツ（設定後に表示） -->
-  <div id="main-content" class="hidden">
+<!-- メイン -->
+<div class="main">
 
-    <!-- 哲学バナー -->
-    <div class="banner">
-      <div class="banner-bg" id="banner-bg"></div>
+  <!-- トップバー -->
+  <div class="topbar">
+    <div class="banner-area">
+      <div class="banner-orb" id="banner-orb"></div>
       <div class="banner-grid"></div>
       <div class="banner-content">
         <div class="banner-date" id="banner-date"></div>
         <div class="banner-jp" id="banner-jp"></div>
         <div class="banner-en" id="banner-en"></div>
-        <div class="banner-orig" id="banner-orig"></div>
-        <div class="banner-phil">
-          <div class="phil-line"></div>
-          <span id="banner-phil"></span>
-          <div class="phil-line"></div>
-        </div>
+        <div class="banner-phil"><div class="phil-line"></div><span id="banner-phil"></span><div class="phil-line"></div></div>
       </div>
     </div>
-
-    <!-- ヘッダー -->
-    <div class="header">
-      <div>
+    <div class="topbar-right">
+      <div class="topbar-info">
         <div class="greeting" id="greeting"></div>
         <div class="date-str" id="date-str"></div>
       </div>
-      <div class="mode-bar">
-        <button class="mode-btn active" id="btn-select" onclick="setMode('select')">📋 選択</button>
-        <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">▶️ 実行</button>
+      <div class="topbar-actions">
+        <button class="quick-btn" onclick="openModal('inbox')">＋ INBOX</button>
+        <button class="quick-btn" onclick="openModal('note')">＋ NOTE</button>
       </div>
-    </div>
-
-    <!-- 進捗 -->
-    <div>
-      <div class="sec-label">TODAY'S PROGRESS</div>
-      <div class="progress-grid">
-        <div class="progress-card">
-          <div class="prog-label">全体</div>
-          <div class="prog-val" id="prog-total">—</div>
-          <div class="prog-sub" id="prog-total-sub">読み込み中</div>
-          <div class="prog-bar"><div class="prog-fill" id="prog-total-fill" style="width:0%;background:#7F77DD"></div></div>
-        </div>
-        <div class="progress-card">
-          <div class="prog-label">課題</div>
-          <div class="prog-val" id="prog-task">—</div>
-          <div class="prog-sub" id="prog-task-sub">読み込み中</div>
-          <div class="prog-bar"><div class="prog-fill" id="prog-task-fill" style="width:0%;background:#1D9E75"></div></div>
-        </div>
-        <div class="progress-card">
-          <div class="prog-label">その他</div>
-          <div class="prog-val" id="prog-other">—</div>
-          <div class="prog-sub" id="prog-other-sub">読み込み中</div>
-          <div class="prog-bar"><div class="prog-fill" id="prog-other-fill" style="width:0%;background:#D4537E"></div></div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <div class="mode-btns">
+          <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
+          <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- 選択モード -->
-    <div id="select-mode">
+  <!-- 進捗 -->
+  <div class="progress-area">
+    <div class="prog-card">
+      <div class="prog-label">TOTAL</div>
+      <div class="prog-val" id="prog-total">—</div>
+      <div class="prog-sub" id="prog-total-sub">読み込み中</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-total-fill" style="width:0%;background:var(--purple)"></div></div>
+    </div>
+    <div class="prog-card">
+      <div class="prog-label">課題</div>
+      <div class="prog-val" id="prog-task">—</div>
+      <div class="prog-sub" id="prog-task-sub">読み込み中</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-task-fill" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <div class="prog-card">
+      <div class="prog-label">その他</div>
+      <div class="prog-val" id="prog-other">—</div>
+      <div class="prog-sub" id="prog-other-sub">読み込み中</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-other-fill" style="width:0%;background:var(--pink)"></div></div>
+    </div>
+  </div>
 
-      <!-- 今日やること（グレー黒板） -->
-      <div class="board board-today">
-        <div class="board-label">📋 今日やること</div>
-        <div class="board-content">
-          <div id="next-tasks-list"><div class="loading">読み込み中...</div></div>
+  <!-- コンテンツグリッド -->
+  <div class="content-grid" style="flex:1;overflow:hidden">
+
+    <!-- スケジュール（左・全行） -->
+    <div class="schedule-col">
+      <div class="col-title">SCHEDULE</div>
+      <div class="cal-slot"><span class="cal-time">9:00</span><span class="ev-empty">— 空き</span></div>
+      <div class="cal-slot"><span class="cal-time">10:40</span><div class="cal-event ev-class">憲法への誘い</div></div>
+      <div class="cal-slot"><span class="cal-time">12:10</span><span class="ev-empty">— 昼休み</span></div>
+      <div class="cal-slot"><span class="cal-time">13:00</span><div class="cal-event ev-task">振り返り</div></div>
+      <div class="cal-slot"><span class="cal-time">14:45</span><div class="cal-event ev-class">社会学の原理</div></div>
+      <div class="cal-slot"><span class="cal-time">16:15</span><div class="cal-event ev-task">Writing</div></div>
+      <div class="cal-slot"><span class="cal-time">18:00</span><span class="ev-empty">— 空き</span></div>
+    </div>
+
+    <!-- 右エリア -->
+    <div style="display:flex;flex-direction:column;overflow:hidden;min-height:0">
+
+      <!-- TODAY黒板（共通・上段） -->
+      <div class="today-board" style="flex:1;overflow-y:auto">
+        <div class="board-header">
+          <span class="board-title">TODAY</span>
+        </div>
+        <div id="today-tasks"><div class="loading">読み込み中...</div></div>
+      </div>
+
+      <!-- 選択モード下段 -->
+      <div id="select-bottom" class="bottom-section">
+        <div class="bottom-half">
+          <div class="bottom-label-red">やり残し</div>
+          <div id="leftover-list"><div class="loading">読み込み中...</div></div>
+        </div>
+        <div class="bottom-divider"></div>
+        <div class="bottom-half">
+          <div class="bottom-label-blue">次やること</div>
+          <div id="next-list"><div class="loading">読み込み中...</div></div>
         </div>
       </div>
 
-      <!-- やり残し＋次やること（パープル黒板） -->
-      <div class="board board-bottom">
-        <div class="board-bottom-inner">
-          <div class="board-half">
-            <div class="board-label-red">⚠️ やり残し</div>
-            <div class="board-content-half">
-              <div id="leftover-list"><div class="loading">読み込み中...</div></div>
-            </div>
-          </div>
-          <div class="board-divider"></div>
-          <div class="board-half">
-            <div class="board-label-blue">▶️ 次やること</div>
-            <div class="board-content-half">
-              <div id="next-actions-list"><div class="loading">読み込み中...</div></div>
-            </div>
-          </div>
-        </div>
+      <!-- 実行モード下段（1日のスケジュール） -->
+      <div id="exec-bottom" class="day-schedule hidden">
+        <div id="day-schedule-content"><div class="loading">読み込み中...</div></div>
       </div>
 
     </div>
+  </div>
 
-    <!-- 実行モード -->
-    <div id="exec-mode" class="hidden">
+  <!-- 下部ナビ -->
+  <div class="bottom-nav">
+    <a class="nav-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank">📋 TASK</a>
+    <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">🗂 PROJECT</a>
+    <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
+    <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
+  </div>
 
-      <!-- 振り返り -->
-      <div class="review-box">
-        <div class="review-cheer">✍️ 一言でもいいよ！思ったこと書こ！</div>
-        <div class="review-item">
-          <div class="review-label">📅 あったこと</div>
-          <textarea class="review-input" rows="2" placeholder="今日どんなことがあったか..."></textarea>
-        </div>
-        <div class="review-item">
-          <div class="review-label">✨ よかったこと（任意）</div>
-          <textarea class="review-input" rows="1" placeholder="..."></textarea>
-        </div>
-        <div class="review-item" style="margin-bottom:0">
-          <div class="review-label">😤 嫌だったこと（任意）</div>
-          <textarea class="review-input" rows="1" placeholder="..."></textarea>
-        </div>
-      </div>
+</div>
 
-      <!-- 今日やること（グレー黒板） -->
-      <div class="board board-today" style="margin-top:12px">
-        <div class="board-label">📋 今日やること</div>
-        <div class="board-content">
-          <div id="today-tasks-list"><div class="loading">読み込み中...</div></div>
-        </div>
-      </div>
-
-      <!-- やり残し＋次やること（パープル黒板） -->
-      <div class="board board-bottom">
-        <div class="board-bottom-inner">
-          <div class="board-half">
-            <div class="board-label-red">⚠️ やり残し</div>
-            <div class="board-content-half">
-              <div id="leftover-list-exec"><div class="loading">読み込み中...</div></div>
-            </div>
-          </div>
-          <div class="board-divider"></div>
-          <div class="board-half">
-            <div class="board-label-blue">▶️ 次やること</div>
-            <div class="board-content-half">
-              <div id="next-actions-list-exec"><div class="loading">読み込み中...</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- プロジェクト -->
-      <div style="margin-top:12px">
-        <div class="sec-label">PROJECTS</div>
-        <div id="projects-list"><div class="loading">読み込み中...</div></div>
-      </div>
+<!-- 集中モード -->
+<div class="focus-overlay" id="focus-overlay">
+  <div class="focus-modal">
+    <div class="focus-mode-label">集中モード</div>
+    <div class="focus-tags" id="focus-tags"></div>
+    <div class="focus-task" id="focus-task"></div>
+    <a class="focus-link" id="focus-link" href="#" target="_blank">作業先を開く →</a>
+    <div class="focus-expected" id="focus-expected"></div>
+    <div class="focus-timer" id="focus-timer">00:00</div>
+    <div class="focus-btns">
+      <button class="focus-pause" onclick="pauseFocus()">一時停止</button>
+      <button class="focus-done-btn" onclick="completeFocus()">完了</button>
     </div>
+  </div>
+</div>
 
-    <!-- クイック入力 -->
-    <div>
-      <div class="sec-label">QUICK INPUT</div>
-      <div class="quick-grid">
-        <div class="quick-btn qb-inbox" onclick="openModal('inbox')">
-          <div class="qb-icon">📥</div>
-          <div class="qb-label">Inboxに追加</div>
-          <div class="qb-sub">タスク・思いついたこと</div>
-        </div>
-        <div class="quick-btn qb-note" onclick="openModal('note')">
-          <div class="qb-icon">📝</div>
-          <div class="qb-label">ノートを書く</div>
-          <div class="qb-sub">メモ・アイデア</div>
-        </div>
-      </div>
+<!-- Inboxモーダル -->
+<div class="modal-bg" id="modal-inbox">
+  <div class="modal">
+    <div class="modal-title">📥 Inboxに追加</div>
+    <input class="modal-input" id="inbox-input" placeholder="やること・気になったこと..."/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('inbox')">キャンセル</button>
+      <button class="btn-save" onclick="addToInbox()">追加</button>
     </div>
+  </div>
+</div>
 
-    <!-- モーダル -->
-    <div class="modal-bg" id="modal-inbox">
-      <div class="modal">
-        <div class="modal-title">📥 Inboxに追加</div>
-        <input class="modal-input" id="inbox-input" placeholder="やること・気になったこと..."/>
-        <div class="modal-btns">
-          <button class="btn-cancel" onclick="closeModal('inbox')">キャンセル</button>
-          <button class="btn-save" onclick="addToInbox()">追加</button>
-        </div>
-      </div>
+<!-- Noteモーダル -->
+<div class="modal-bg" id="modal-note">
+  <div class="modal">
+    <div class="modal-title">📝 ノートを書く</div>
+    <input class="modal-input" id="note-title-input" placeholder="タイトル..." style="margin-bottom:6px"/>
+    <textarea class="modal-input" id="note-body-input" rows="3" placeholder="内容..."></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('note')">キャンセル</button>
+      <button class="btn-save" style="background:var(--green)" onclick="closeModal('note')">保存</button>
     </div>
-    <div class="modal-bg" id="modal-note">
-      <div class="modal">
-        <div class="modal-title">📝 ノートを書く</div>
-        <input class="modal-input" id="note-title-input" placeholder="タイトル..." style="margin-bottom:6px"/>
-        <textarea class="modal-input" id="note-body-input" rows="3" placeholder="内容..."></textarea>
-        <div class="modal-btns">
-          <button class="btn-cancel" onclick="closeModal('note')">キャンセル</button>
-          <button class="btn-save" style="border-color:#1D9E75;background:#1D9E75" onclick="closeModal('note')">保存</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- クイックナビ -->
-    <div>
-      <div class="sec-label">QUICK NAV</div>
-      <div class="nav-grid">
-        <a class="nav-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank">
-          <div class="nav-icon">📋</div><div class="nav-label">タスクDB</div>
-        </a>
-        <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">
-          <div class="nav-icon">🗂</div><div class="nav-label">プロジェクト</div>
-        </a>
-        <a class="nav-btn" href="https://www.notion.so/76f4c1ec140d8375aa5b81c589f9b247" target="_blank">
-          <div class="nav-icon">📔</div><div class="nav-label">振り返り</div>
-        </a>
-        <a class="nav-btn" href="https://calendar.notion.so" target="_blank">
-          <div class="nav-icon">📅</div><div class="nav-label">Calendar</div>
-        </a>
-      </div>
-    </div>
-
   </div>
 </div>
 
 <script>
-// =====================
-// 設定
-// =====================
-const DB_IDS = {
+// ===== DB IDs =====
+const DB = {
   tasks: '3294c1ec140d838499ae0131fc67976d',
   projects: '8584c1ec140d83b29e26019b60fe7a3e',
-  journal: '76f4c1ec140d8375aa5b81c589f9b247',
-};
-const PROXY = 'https://notion-proxy.vercel.app/api/notion'; // 後で設定
-
-let API_KEY = '';
-
-// 起動時
-window.onload = () => {
-  setupBanner();
-  setupHeader();
-  showMain();
-  loadAll();
 };
 
-function saveConfig() {
-  const key = document.getElementById('api-key-input').value.trim();
-
-  showMain();
-  loadAll();
-}
-
-function showConfigError(msg) {
-  const el = document.getElementById('config-error');
-  el.textContent = msg;
-  el.classList.remove('hidden');
-}
-
-function showMain() {
-  document.getElementById('config-panel').classList.add('hidden');
-  document.getElementById('main-content').classList.remove('hidden');
-}
-
-// =====================
-// 哲学バナー
-// =====================
+// ===== 哲学バナー =====
 const quotes = [
-  { jp:"私は思う、ゆえに私は在る。", en:"I think, therefore I am.", orig:"Cogito, ergo sum.", phil:"René Descartes", color:"#7F77DD" },
-  { jp:"実存は本質に先立つ。", en:"Existence precedes essence.", orig:"L'existence précède l'essence.", phil:"Jean-Paul Sartre", color:"#1D9E75" },
-  { jp:"神は死んだ。そして我々が神を殺した。", en:"God is dead.", orig:"Gott ist tot.", phil:"Friedrich Nietzsche", color:"#D85A30" },
-  { jp:"不条理を直視しながら生きること、それが誠実さだ。", en:"One must imagine Sisyphus happy.", orig:"Il faut imaginer Sisyphe heureux.", phil:"Albert Camus", color:"#185FA5" },
-  { jp:"自由とは、選択する運命のことである。", en:"We are condemned to be free.", orig:"Nous sommes condamnés à être libres.", phil:"Jean-Paul Sartre", color:"#1D9E75" },
-  { jp:"汝自身を知れ。", en:"Know thyself.", orig:"Γνῶθι σεαυτόν.", phil:"Socrates", color:"#EF9F27" },
-  { jp:"他者は地獄だ。", en:"Hell is other people.", orig:"L'enfer, c'est les autres.", phil:"Jean-Paul Sartre", color:"#A32D2D" },
-  { jp:"人間は考える葦である。", en:"Man is but a reed.", orig:"L'homme n'est qu'un roseau.", phil:"Blaise Pascal", color:"#7F77DD" },
-  { jp:"道は歩むことによって開かれる。", en:"The path is made by walking.", orig:"Se hace camino al andar.", phil:"Antonio Machado", color:"#1D9E75" },
-  { jp:"超人とは、自らを超えようとする者のことだ。", en:"Man must be surpassed.", orig:"Der Mensch ist etwas, das überwunden werden soll.", phil:"Friedrich Nietzsche", color:"#D85A30" },
-  { jp:"哲学することは死ぬことを学ぶことだ。", en:"To philosophize is to learn how to die.", orig:"Philosopher, c'est apprendre à mourir.", phil:"Michel de Montaigne", color:"#7F77DD" },
-  { jp:"無知の知こそが最大の知恵だ。", en:"The only true wisdom is in knowing you know nothing.", orig:"", phil:"Socrates", color:"#EF9F27" },
-  { jp:"生きることの意味を問うな。生きることで答えよ。", en:"Don't ask what life means. Answer it with your life.", orig:"", phil:"Viktor Frankl", color:"#1D9E75" },
-  { jp:"変化こそが唯一の永続するものだ。", en:"The only constant in life is change.", orig:"", phil:"Heraclitus", color:"#185FA5" },
-  { jp:"存在するとは、知覚されることだ。", en:"To be is to be perceived.", orig:"Esse est percipi.", phil:"George Berkeley", color:"#EF9F27" },
-  { jp:"自由は責任を意味する。だから多くの人は自由を恐れる。", en:"Liberty means responsibility.", orig:"", phil:"George Bernard Shaw", color:"#D85A30" },
-  { jp:"人生は近くで見ると悲劇だが、遠くから見ると喜劇だ。", en:"Life is a tragedy in close-up, but a comedy in long-shot.", orig:"", phil:"Charlie Chaplin", color:"#7F77DD" },
-  { jp:"心の平和は外からは得られない。", en:"Peace comes from within. Do not seek it without.", orig:"", phil:"Buddha", color:"#1D9E75" },
-  { jp:"苦しみは人を強くする。しかし選ぶのは自分だ。", en:"Pain is inevitable. Suffering is optional.", orig:"", phil:"Haruki Murakami", color:"#185FA5" },
-  { jp:"幸福とは、自分の運命を愛することだ。", en:"Amor fati — love your fate.", orig:"Amor fati.", phil:"Friedrich Nietzsche", color:"#D85A30" },
-  { jp:"善く生きることと、善く行動することと、善く在ることは同一だ。", en:"To live well is to act well.", orig:"", phil:"Aristotle", color:"#EF9F27" },
-  { jp:"美しいものはすべて難しい。", en:"All beautiful things are difficult.", orig:"Omnia praeclara rara.", phil:"Spinoza", color:"#7F77DD" },
-  { jp:"すべての人間は生まれながら知ることを欲する。", en:"All men by nature desire knowledge.", orig:"Πάντες ἄνθρωποι τοῦ εἰδέναι.", phil:"Aristotle", color:"#EF9F27" },
-  { jp:"沈黙は真実の言語だ。", en:"Silence is the language of truth.", orig:"", phil:"Martin Heidegger", color:"#1D9E75" },
-  { jp:"思考は行動の種だ。", en:"Thought is the seed of action.", orig:"", phil:"Ralph Waldo Emerson", color:"#D85A30" },
-  { jp:"己を知ることが全知識の始まりだ。", en:"Knowing yourself is the beginning of all wisdom.", orig:"", phil:"Aristotle", color:"#EF9F27" },
-  { jp:"精神の自由こそ、最高の財産だ。", en:"The highest form of wealth is freedom of mind.", orig:"", phil:"Epictetus", color:"#185FA5" },
-  { jp:"過去に縛られるな。未来に怯えるな。今を生きろ。", en:"Concentrate the mind on the present moment.", orig:"", phil:"Buddha", color:"#EF9F27" },
-  { jp:"疑問を持つ者こそが前進する。", en:"He who questions, progresses.", orig:"", phil:"Descartes", color:"#7F77DD" },
-  { jp:"現在の瞬間だけが真実だ。", en:"The present moment is the only reality.", orig:"", phil:"Eckhart Tolle", color:"#1D9E75" },
+  {jp:"私は思う、ゆえに私は在る。",en:'"I think, therefore I am."',phil:"René Descartes",color:"#7F77DD"},
+  {jp:"実存は本質に先立つ。",en:'"Existence precedes essence."',phil:"Jean-Paul Sartre",color:"#1D9E75"},
+  {jp:"神は死んだ。そして我々が神を殺した。",en:'"God is dead."',phil:"Friedrich Nietzsche",color:"#D85A30"},
+  {jp:"不条理を直視しながら生きること。",en:'"One must imagine Sisyphus happy."',phil:"Albert Camus",color:"#185FA5"},
+  {jp:"自由とは、選択する運命のことである。",en:'"We are condemned to be free."',phil:"Jean-Paul Sartre",color:"#1D9E75"},
+  {jp:"汝自身を知れ。",en:'"Know thyself."',phil:"Socrates",color:"#EF9F27"},
+  {jp:"他者は地獄だ。",en:'"Hell is other people."',phil:"Jean-Paul Sartre",color:"#A32D2D"},
+  {jp:"人間は考える葦である。",en:'"Man is but a reed."',phil:"Blaise Pascal",color:"#7F77DD"},
+  {jp:"道は歩むことによって開かれる。",en:'"The path is made by walking."',phil:"Antonio Machado",color:"#1D9E75"},
+  {jp:"変化こそが唯一の永続するものだ。",en:'"The only constant is change."',phil:"Heraclitus",color:"#185FA5"},
+  {jp:"心の平和は外からは得られない。",en:'"Peace comes from within."',phil:"Buddha",color:"#1D9E75"},
+  {jp:"苦しみは人を強くする。選ぶのは自分だ。",en:'"Pain is inevitable. Suffering is optional."',phil:"Haruki Murakami",color:"#D85A30"},
 ];
 
 function setupBanner() {
   const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((now - start) / 86400000);
-  const q = quotes[dayOfYear % quotes.length];
-  document.getElementById('banner-bg').style.background =
-    `radial-gradient(ellipse at 80% 50%, ${q.color} 0%, transparent 60%)`;
+  const dy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
+  const q = quotes[dy % quotes.length];
+  document.getElementById('banner-orb').style.background = q.color;
   const days = ['日','月','火','水','木','金','土'];
   document.getElementById('banner-date').textContent =
-    `${now.getFullYear()}年 ${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+    `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${days[now.getDay()]}`;
   document.getElementById('banner-jp').textContent = q.jp;
-  document.getElementById('banner-en').textContent = q.en ? `"${q.en}"` : '';
-  document.getElementById('banner-orig').textContent = q.orig || '';
+  document.getElementById('banner-en').textContent = q.en;
   document.getElementById('banner-phil').textContent = q.phil;
 }
 
 function setupHeader() {
   const h = new Date().getHours();
-  document.getElementById('greeting').textContent = h < 12 ? 'おはよう' : h < 18 ? 'こんにちは' : 'こんばんは';
+  document.getElementById('greeting').textContent = h<12?'おはよう':h<18?'こんにちは':'こんばんは';
   const now = new Date();
   const days = ['日','月','火','水','木','金','土'];
   document.getElementById('date-str').textContent =
     `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
 }
 
-// =====================
-// Notion API
-// =====================
-async function notionQuery(dbId, filter = null, sorts = null) {
+// ===== API =====
+async function notionQuery(dbId, filter, sorts) {
   const body = {};
   if (filter) body.filter = filter;
   if (sorts) body.sorts = sorts;
-
   const res = await fetch(`/api/notion?path=databases/${dbId}/query`, {
     method: 'POST',
-    headers: {
-      'Notion-Version': '2022-06-28',
-      'Content-Type': 'application/json',
-    },
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify(body),
   });
-
-  if (!res.ok) {
-    if (res.status === 401) throw new Error('APIキーが無効です');
-    throw new Error(`API Error: ${res.status}`);
-  }
-  return res.json();
-}
-
-async function notionCreate(dbId, properties) {
-  const res = await fetch('/api/notion?path=pages', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${API_KEY}`,
-      'Notion-Version': '2022-06-28',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ parent: { database_id: dbId }, properties }),
-  });
-  if (!res.ok) throw new Error('作成に失敗しました');
+  if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
 
 async function notionUpdate(pageId, properties) {
   const res = await fetch(`/api/notion?path=pages/${pageId}`, {
     method: 'PATCH',
-    headers: {
-      'Authorization': `Bearer ${API_KEY}`,
-      'Notion-Version': '2022-06-28',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ properties }),
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({properties}),
   });
-  if (!res.ok) throw new Error('更新に失敗しました');
+  if (!res.ok) throw new Error(`Update failed ${res.status}`);
   return res.json();
 }
 
-// =====================
-// データ取得・描画
-// =====================
-async function loadAll() {
-  try {
-    await Promise.all([loadTasks(), loadProjects()]);
-  } catch(e) {
-    console.error(e);
-    console.error(e);
-  }
+async function notionCreate(dbId, properties) {
+  const res = await fetch('/api/notion?path=pages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({parent:{database_id:dbId}, properties}),
+  });
+  if (!res.ok) throw new Error(`Create failed ${res.status}`);
+  return res.json();
 }
 
-// タスク取得
-let allTasks = [];
-async function loadTasks() {
-  const today = new Date().toISOString().split('T')[0];
-  const data = await notionQuery(DB_IDS.tasks, {
-    and: [
-      { property: 'GTD 種別', status: { does_not_equal: '🗑ゴミ箱' } },
-      { property: 'GTD 種別', status: { does_not_equal: '📥 INBOX' } },
-      { property: 'ステータス', status: { does_not_equal: '完了' } },
-    ]
-  }, [{ property: '締切日', direction: 'ascending' }]);
-
-  allTasks = data.results;
-  renderTasks();
-  updateProgress();
-}
-
+// ===== ユーティリティ =====
 function getProp(page, name) {
   const p = page.properties[name];
   if (!p) return null;
-  if (p.type === 'title') return p.title.map(t => t.plain_text).join('');
-  if (p.type === 'rich_text') return p.rich_text.map(t => t.plain_text).join('');
-  if (p.type === 'status') return p.status?.name || null;
-  if (p.type === 'select') return p.select?.name || null;
-  if (p.type === 'multi_select') return p.multi_select.map(s => s.name);
-  if (p.type === 'date') return p.date?.start || null;
-  if (p.type === 'formula') return p.formula?.string || p.formula?.number || null;
-  if (p.type === 'checkbox') return p.checkbox;
+  if (p.type==='title') return p.title.map(t=>t.plain_text).join('');
+  if (p.type==='rich_text') return p.rich_text.map(t=>t.plain_text).join('');
+  if (p.type==='status') return p.status?.name||null;
+  if (p.type==='select') return p.select?.name||null;
+  if (p.type==='multi_select') return p.multi_select.map(s=>s.name);
+  if (p.type==='date') return p.date?.start||null;
+  if (p.type==='formula') return p.formula?.string||p.formula?.number||null;
+  if (p.type==='url') return p.url||null;
   return null;
 }
 
-function getDeadlineTag(dateStr) {
+function deadlineTag(dateStr) {
   if (!dateStr) return null;
-  const deadline = new Date(dateStr);
-  const now = new Date();
-  const diffDays = Math.ceil((deadline - now) / 86400000);
-  if (diffDays < 0) return { label: '期限切れ', cls: 'tag-red' };
-  if (diffDays === 0) return { label: '今日締切', cls: 'tag-red' };
-  if (diffDays <= 3) return { label: `${diffDays}日後`, cls: 'tag-amber' };
-  if (diffDays <= 7) return { label: `${diffDays}日後`, cls: 'tag-blue' };
-  return { label: `${diffDays}日後`, cls: 'tag-gray' };
+  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  if (diff < 0) return {label:'期限切れ', cls:'tag-red'};
+  if (diff === 0) return {label:'今日締切', cls:'tag-red'};
+  if (diff <= 3) return {label:`${diff}日後`, cls:'tag-amber'};
+  if (diff <= 7) return {label:`${diff}日後`, cls:'tag-blue'};
+  return {label:`${diff}日後`, cls:'tag-gray'};
 }
 
-function getAreaTag(area, subjects) {
-  if (area === '課題') {
-    if (subjects && subjects.length > 0) {
+function areaTag(area, subjects) {
+  if (area==='課題') {
+    if (subjects?.length) {
       const s = subjects[0];
-      if (s === '憲法') return { label: '憲法', cls: 'tag-kenpou' };
-      if (s === '社会学') return { label: '社会学', cls: 'tag-shakai' };
-      if (s === '教育原理') return { label: '教育原理', cls: 'tag-kyoiku' };
-      if (s === 'ELA') return { label: 'ELA', cls: 'tag-ela' };
+      if (s==='憲法') return {label:'憲法', cls:'tag-teal'};
+      if (s==='社会学') return {label:'社会学', cls:'tag-blue'};
+      if (s==='教育原理') return {label:'教育原理', cls:'tag-purple'};
+      if (s==='ELA') return {label:'ELA', cls:'tag-amber'};
     }
-    return { label: '課題', cls: 'tag-kenpou' };
+    return {label:'課題', cls:'tag-teal'};
   }
-  if (area === 'ICU') return { label: 'ICU', cls: 'tag-icu' };
-  if (area === '個人') return { label: '個人', cls: 'tag-kojin' };
-  if (area === '生活') return { label: '生活', cls: 'tag-seikatsu' };
-  return { label: area || '—', cls: 'tag-gray' };
+  if (area==='ICU') return {label:'ICU', cls:'tag-amber'};
+  if (area==='個人') return {label:'個人', cls:'tag-pink'};
+  if (area==='生活') return {label:'生活', cls:'tag-blue'};
+  return {label:area||'—', cls:'tag-gray'};
 }
 
+// ===== タスクデータ =====
+let allTasks = [];
 const timeSteps = ['5m','30m','1h','2h','3h+'];
-let taskTimeState = {};
+const taskState = {};
 
-function renderTaskCard(task, showAddBtn = false) {
-  const title = getProp(task, 'タイトル') || '無題';
-  const status = getProp(task, 'ステータス');
-  const area = getProp(task, 'エリア');
-  const subjects = getProp(task, '科目') || [];
-  const deadline = getProp(task, '締切日');
-  const timeBlock = getProp(task, '実行時間帯');
-  const soyo = getProp(task, '所要時間');
-  const gtd = getProp(task, 'GTD 種別');
-  const isDone = status === '完了';
+async function loadTasks() {
+  try {
+    const data = await notionQuery(DB.tasks, {
+      and: [
+        {property:'ステータス', status:{does_not_equal:'完了'}},
+        {property:'GTD 種別', status:{does_not_equal:'🗑ゴミ箱'}},
+      ]
+    }, [{property:'締切日', direction:'ascending'}]);
+    allTasks = data.results;
+    renderAll();
+    updateProgress();
+  } catch(e) {
+    console.error('loadTasks:', e);
+    ['today-tasks','leftover-list','next-list'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="loading" style="color:#F09595">読み込みエラー</div>';
+    });
+  }
+}
 
-  const areaTag = getAreaTag(area, subjects);
-  const deadlineTag = getDeadlineTag(deadline);
-  const timeIdx = taskTimeState[task.id] ?? timeSteps.indexOf(soyo ?? '30m');
-  if (!taskTimeState[task.id]) taskTimeState[task.id] = timeIdx < 0 ? 1 : timeIdx;
+// ===== タスクカード描画 =====
+function renderCard(task, mode='today') {
+  const id = task.id;
+  const title = getProp(task,'タイトル') || '無題';
+  const area = getProp(task,'エリア');
+  const subjects = getProp(task,'科目') || [];
+  const ela = getProp(task,'ELAサブタグ');
+  const deadline = getProp(task,'締切日');
+  const soyo = getProp(task,'所要時間');
+  const jikantai = getProp(task,'実行時間帯');
+  const link = getProp(task,'作業リンク');
+  const gtd = getProp(task,'GTD 種別');
+
+  if (!taskState[id]) taskState[id] = {
+    done: false, pinned: false,
+    timeIdx: timeSteps.indexOf(soyo||'30m') >= 0 ? timeSteps.indexOf(soyo||'30m') : 1,
+    focusSeconds: 0, jikantai: jikantai||null, link: link||null,
+  };
+  const s = taskState[id];
+
+  const at = areaTag(area, subjects);
+  const dt = deadlineTag(deadline);
 
   const tagsHtml = [
-    `<span class="tag ${areaTag.cls}">${areaTag.label}</span>`,
-    deadlineTag ? `<span class="tag ${deadlineTag.cls}">${deadlineTag.label}</span>` : '',
-    gtd === '▶️ 次やる' ? '' :
-      `<span class="tag tag-purple">${gtd || ''}</span>`,
+    `<span class="tag ${at.cls}">${at.label}</span>`,
+    ela ? `<span class="tag tag-amber">${ela}</span>` : '',
+    dt ? `<span class="tag ${dt.cls} deadline-tag">${dt.label}</span>` : '',
   ].filter(Boolean).join('');
 
-  if (showAddBtn) {
-    return `
-      <div class="leftover-card">
-        <div class="leftover-row">
-          <span class="tag ${areaTag.cls}" style="font-size:10px">${areaTag.label}</span>
-          <span class="leftover-title">${title}</span>
-          <button class="add-today-btn" onclick="markAddedToday(this, '${task.id}')">今日やる</button>
-        </div>
-      </div>`;
-  }
+  const timeBlockHtml = s.jikantai ?
+    `<span class="tag tag-gray">${s.jikantai==='午前'?'🌅':s.jikantai==='午後'?'🌇':'🌙'} ${s.jikantai}</span>` : '';
 
-  return `
-    <div class="task-card ${isDone ? 'done' : ''}" id="tc-${task.id}">
-      <div class="task-tags">${tagsHtml}</div>
-      <div class="task-title ${isDone ? 'done' : ''}" id="tt-${task.id}">${title}</div>
+  if (mode === 'leftover' || mode === 'next') {
+    return `
+    <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
+      <div class="pin-badge">📌</div>
+      <div class="tag-row">${tagsHtml}</div>
+      <div class="task-title" id="tt-${id}">${title}</div>
       <div class="task-bottom">
-        <span class="task-meta">${timeBlock || ''}</span>
-        <div class="task-actions">
-          <div class="time-wrap">
-            <button class="time-btn" onclick="changeTime('${task.id}',-1)">−</button>
-            <span class="time-val" id="tv-${task.id}">${timeSteps[taskTimeState[task.id]]}</span>
-            <button class="time-btn" onclick="changeTime('${task.id}',1)">＋</button>
-          </div>
-          <button class="done-btn" onclick="markDone('${task.id}')">完了</button>
+        <div class="time-wrap">
+          <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+          <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
+          <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+        </div>
+        <div class="card-actions">
+          <button class="btn-pin ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'取り消し':'今日する'}</button>
         </div>
       </div>
     </div>`;
+  }
+
+  // today / exec mode
+  return `
+  <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
+    <div class="pin-badge">📌</div>
+    <div class="tag-row">${tagsHtml}${timeBlockHtml}</div>
+    <div class="task-title" id="tt-${id}">${title}</div>
+    <div class="task-bottom">
+      <div class="time-wrap">
+        <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+        <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
+        <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+      </div>
+      <div class="card-actions">
+        <div style="position:relative">
+          <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${s.jikantai||'時間帯'}</button>
+          <div class="time-dropdown" id="tdd-${id}">
+            <div class="time-opt" onclick="setJikantai('${id}','午前')">🌅 午前</div>
+            <div class="time-opt" onclick="setJikantai('${id}','午後')">🌇 午後</div>
+            <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
+          </div>
+        </div>
+        <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')">${s.focusSeconds>0?'Restart':'Start'}</button>
+        <button class="btn-done ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
+      </div>
+    </div>
+  </div>`;
 }
 
-function renderTasks() {
+function renderAll() {
   const today = new Date().toISOString().split('T')[0];
+  const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ 次やる';};
+  const isDone = t => getProp(t,'ステータス')==='完了';
 
-  // 次やる
-  const nextTasks = allTasks.filter(t => {
-    const gtd = getProp(t, 'GTD 種別');
-    return gtd === '▶️ 次やる';
-  });
-  const nextEl = document.getElementById('next-tasks-list');
-  if (nextTasks.length === 0) {
-    nextEl.innerHTML = '<div class="loading">次やるタスクがありません</div>';
-  } else {
-    nextEl.innerHTML = nextTasks.map(t => renderTaskCard(t)).join('');
-  }
+  // TODAY（ピン留め or 全次やる）
+  const todayTasks = allTasks.filter(t => !isDone(t) && (gtdNext(t) || taskState[t.id]?.pinned));
+  const todayEl = document.getElementById('today-tasks');
+  todayEl.innerHTML = todayTasks.length
+    ? todayTasks.map(t=>renderCard(t,'today')).join('')
+    : '<div class="section-empty">今日のタスクがありません</div>';
 
   // やり残し
-  const leftover = allTasks.filter(t => {
-    const deadline = getProp(t, '締切日');
-    if (!deadline) return false;
-    return deadline < today;
-  });
+  const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
   const leftEl = document.getElementById('leftover-list');
-  if (leftover.length === 0) {
-    leftEl.innerHTML = '<div class="loading" style="font-size:11px;color:#1D9E75">やり残しなし 🎉</div>';
-  } else {
-    leftEl.innerHTML = leftover.map(t => renderTaskCard(t, true)).join('');
-  }
+  leftEl.innerHTML = leftover.length
+    ? leftover.map(t=>renderCard(t,'leftover')).join('')
+    : '<div class="section-empty" style="color:var(--green)">やり残しなし 🎉</div>';
 
-  // 今日やること（実行モード）= 次やる
-  const todayTasks = allTasks.filter(t => {
-    const gtd = getProp(t, 'GTD 種別');
-    return gtd === '▶️ 次やる';
+  // 次やること
+  const nextTasks = allTasks.filter(t => !isDone(t) && gtdNext(t) && !taskState[t.id]?.pinned);
+  const nextEl = document.getElementById('next-list');
+  nextEl.innerHTML = nextTasks.length
+    ? nextTasks.map(t=>renderCard(t,'next')).join('')
+    : '<div class="section-empty">次やるタスクがありません</div>';
+
+  // 1日のスケジュール（実行モード）
+  const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
+  allTasks.filter(t=>!isDone(t)&&(gtdNext(t)||taskState[t.id]?.pinned)).forEach(t=>{
+    const jk = taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || '未設定';
+    (blocks[jk]||blocks['未設定']).push(t);
   });
-  const todayEl = document.getElementById('today-tasks-list');
-  if (todayEl) {
-    if (todayTasks.length === 0) {
-      todayEl.innerHTML = '<div class="loading">タスクがありません 🎉</div>';
-    } else {
-      todayEl.innerHTML = todayTasks.map(t => renderTaskCard(t)).join('');
-    }
-  }
-
-  // 次やること（選択モード）
-  const nextActionsEl = document.getElementById('next-actions-list');
-  if (nextActionsEl) {
-    if (nextTasks.length === 0) {
-      nextActionsEl.innerHTML = '<div class="loading">次やるタスクがありません</div>';
-    } else {
-      nextActionsEl.innerHTML = nextTasks.map(t => renderTaskCard(t)).join('');
-    }
-  }
-
-  // 次やること（実行モード）
-  const nextActionsExecEl = document.getElementById('next-actions-list-exec');
-  if (nextActionsExecEl) {
-    if (nextTasks.length === 0) {
-      nextActionsExecEl.innerHTML = '<div class="loading">次やるタスクがありません</div>';
-    } else {
-      nextActionsExecEl.innerHTML = nextTasks.map(t => renderTaskCard(t)).join('');
-    }
-  }
-
-  // やり残し（実行モード）
-  const leftoverExecEl = document.getElementById('leftover-list-exec');
-  if (leftoverExecEl) {
-    if (leftover.length === 0) {
-      leftoverExecEl.innerHTML = '<div class="loading" style="font-size:11px;color:#1D9E75">やり残しなし 🎉</div>';
-    } else {
-      leftoverExecEl.innerHTML = leftover.map(t => renderTaskCard(t, true)).join('');
-    }
-  }
+  const dsEl = document.getElementById('day-schedule-content');
+  const blockLabels = {午前:'🌅 午前', 午後:'🌇 午後', 夜:'🌙 夜', 未設定:'⬜ 時間帯未設定'};
+  let html = '';
+  Object.entries(blocks).forEach(([key, tasks]) => {
+    if (!tasks.length) return;
+    html += `<div class="time-block">
+      <div class="time-block-label">${blockLabels[key]}</div>
+      ${tasks.map(t=>renderCard(t,'exec')).join('')}
+    </div>`;
+  });
+  dsEl.innerHTML = html || '<div class="section-empty">タスクがありません</div>';
 }
 
 function updateProgress() {
-  const total = allTasks.length;
-  const done = allTasks.filter(t => getProp(t, 'ステータス') === 'Done' || getProp(t, 'ステータス') === '完了').length;
-  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const active = allTasks.filter(t=>getProp(t,'GTD 種別')!=='🗑ゴミ箱'&&getProp(t,'GTD 種別')!=='📥 INBOX');
+  const done = active.filter(t=>getProp(t,'ステータス')==='完了').length;
+  const pct = active.length ? Math.round(done/active.length*100) : 0;
+  document.getElementById('prog-total').textContent = pct+'%';
+  document.getElementById('prog-total-sub').textContent = `${done}/${active.length}完了`;
+  document.getElementById('prog-total-fill').style.width = pct+'%';
 
-  document.getElementById('prog-total').textContent = pct + '%';
-  document.getElementById('prog-total-sub').textContent = `${done}/${total} 完了`;
-  document.getElementById('prog-total-fill').style.width = pct + '%';
+  const kadai = active.filter(t=>getProp(t,'エリア')==='課題');
+  const kdone = kadai.filter(t=>getProp(t,'ステータス')==='完了').length;
+  const kpct = kadai.length ? Math.round(kdone/kadai.length*100) : 0;
+  document.getElementById('prog-task').textContent = kpct+'%';
+  document.getElementById('prog-task-sub').textContent = `${kdone}/${kadai.length}完了`;
+  document.getElementById('prog-task-fill').style.width = kpct+'%';
 
-  const taskTasks = allTasks.filter(t => getProp(t, 'エリア') === '課題');
-  const taskDone = taskTasks.filter(t => getProp(t, 'ステータス') === 'Done' || getProp(t, 'ステータス') === '完了').length;
-  const taskPct = taskTasks.length > 0 ? Math.round(taskDone / taskTasks.length * 100) : 0;
-  document.getElementById('prog-task').textContent = taskPct + '%';
-  document.getElementById('prog-task-sub').textContent = `${taskDone}/${taskTasks.length} 完了`;
-  document.getElementById('prog-task-fill').style.width = taskPct + '%';
-
-  const otherTasks = allTasks.filter(t => getProp(t, 'エリア') !== '課題');
-  const otherDone = otherTasks.filter(t => getProp(t, 'ステータス') === 'Done' || getProp(t, 'ステータス') === '完了').length;
-  const otherPct = otherTasks.length > 0 ? Math.round(otherDone / otherTasks.length * 100) : 0;
-  document.getElementById('prog-other').textContent = otherPct + '%';
-  document.getElementById('prog-other-sub').textContent = `${otherDone}/${otherTasks.length} 完了`;
-  document.getElementById('prog-other-fill').style.width = otherPct + '%';
+  const other = active.filter(t=>getProp(t,'エリア')!=='課題');
+  const odone = other.filter(t=>getProp(t,'ステータス')==='完了').length;
+  const opct = other.length ? Math.round(odone/other.length*100) : 0;
+  document.getElementById('prog-other').textContent = opct+'%';
+  document.getElementById('prog-other-sub').textContent = `${odone}/${other.length}完了`;
+  document.getElementById('prog-other-fill').style.width = opct+'%';
 }
 
-// プロジェクト
-async function loadProjects() {
-  const data = await notionQuery(DB_IDS.projects, {
-    property: 'ステータス', status: { equals: '進行中' }
+// ===== インタラクション =====
+function chTime(id, d) {
+  if (!taskState[id]) return;
+  taskState[id].timeIdx = Math.max(0, Math.min(4, taskState[id].timeIdx+d));
+  document.querySelectorAll(`#tv-${id}`).forEach(el=>el.textContent=timeSteps[taskState[id].timeIdx]);
+}
+
+function toggleDone(id) {
+  if (!taskState[id]) return;
+  taskState[id].done = !taskState[id].done;
+  const isDone = taskState[id].done;
+  document.querySelectorAll(`#tc-${id}`).forEach(el=>el.classList.toggle('done',isDone));
+  document.querySelectorAll(`#tt-${id}`).forEach(el=>el.classList.toggle('done',isDone));
+  document.querySelectorAll(`#done-${id}`).forEach(el=>{
+    el.textContent = isDone?'取り消し':'完了';
+    el.classList.toggle('undo',isDone);
   });
-  const el = document.getElementById('projects-list');
-  if (data.results.length === 0) {
-    el.innerHTML = '<div class="loading">進行中のプロジェクトなし</div>';
+  document.querySelectorAll(`#start-${id}`).forEach(el=>el.style.display=isDone?'none':'');
+  // Notionに反映
+  notionUpdate(id, {'ステータス':{status:{name:isDone?'完了':'ToDo'}}}).catch(console.error);
+  updateProgress();
+}
 
+function togglePin(id) {
+  if (!taskState[id]) return;
+  taskState[id].pinned = !taskState[id].pinned;
+  // 時間帯が未設定なら時間帯選択を促す
+  if (taskState[id].pinned && !taskState[id].jikantai) {
+    setTimeout(()=>toggleTimeDropdown(id), 200);
   }
-  el.innerHTML = data.results.map(p => {
-    const name = getProp(p, '名前') || '無題';
-    const area = getProp(p, '科目・エリア') || '';
-    const deadline = getProp(p, '終了予定日');
-    const deadlineTag = getDeadlineTag(deadline);
-    return `
-      <div class="proj-card">
-        <div class="proj-head">
-          <div class="proj-title">${name}</div>
-          <div class="proj-meta">
-            <span class="tag tag-gray" style="font-size:10px">${area}</span>
-            ${deadlineTag ? `<span class="tag ${deadlineTag.cls}" style="font-size:10px">${deadlineTag.label}</span>` : ''}
-            <div class="proj-bar"><div class="proj-fill" style="width:0%"></div></div>
-            <span class="proj-pct">—</span>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
+  renderAll();
 }
 
-// =====================
-// インタラクション
-// =====================
-function changeTime(taskId, dir) {
-  const cur = taskTimeState[taskId] ?? 1;
-  taskTimeState[taskId] = Math.max(0, Math.min(4, cur + dir));
-  const els = document.querySelectorAll(`#tv-${taskId}`);
-  els.forEach(el => el.textContent = timeSteps[taskTimeState[taskId]]);
+function toggleTimeDropdown(id) {
+  document.querySelectorAll('.time-dropdown').forEach(el=>{
+    if (el.id !== `tdd-${id}`) el.classList.remove('open');
+  });
+  const el = document.getElementById(`tdd-${id}`);
+  if (el) el.classList.toggle('open');
 }
 
-async function markDone(taskId) {
-  const cards = document.querySelectorAll(`#tc-${taskId}`);
-  const titles = document.querySelectorAll(`#tt-${taskId}`);
-  cards.forEach(c => c.classList.add('done'));
-  titles.forEach(t => t.classList.add('done'));
-  try {
-    await notionUpdate(taskId, {
-      'ステータス': { status: { name: '完了' } }
+function setJikantai(id, val) {
+  if (!taskState[id]) return;
+  taskState[id].jikantai = val;
+  const el = document.getElementById(`tdd-${id}`);
+  if (el) el.classList.remove('open');
+  notionUpdate(id, {'実行時間帯':{select:{name:val}}}).catch(console.error);
+  renderAll();
+}
+
+// クリックで閉じる
+document.addEventListener('click', e => {
+  if (!e.target.closest('.btn-time')) {
+    document.querySelectorAll('.time-dropdown').forEach(el=>el.classList.remove('open'));
+  }
+});
+
+// ===== 集中モード =====
+let focusInterval = null;
+let currentFocusId = null;
+
+function startFocus(id) {
+  const task = allTasks.find(t=>t.id===id);
+  if (!task) return;
+  if (!taskState[id]) return;
+  const s = taskState[id];
+
+  const title = getProp(task,'タイトル') || '無題';
+  const area = getProp(task,'エリア');
+  const subjects = getProp(task,'科目')||[];
+  const at = areaTag(area,subjects);
+  const link = s.link || getProp(task,'作業リンク');
+  const expected = timeSteps[s.timeIdx];
+
+  document.getElementById('focus-task').textContent = title;
+  document.getElementById('focus-tags').innerHTML = `<span class="tag ${at.cls}">${at.label}</span>`;
+  document.getElementById('focus-expected').textContent = `想定時間：${expected}`;
+
+  const linkEl = document.getElementById('focus-link');
+  if (link) {
+    linkEl.href = link; linkEl.classList.add('show');
+  } else {
+    linkEl.classList.remove('show');
+  }
+
+  document.getElementById('focus-overlay').classList.add('open');
+  currentFocusId = id;
+
+  clearInterval(focusInterval);
+  focusInterval = setInterval(() => {
+    taskState[id].focusSeconds++;
+    const m = String(Math.floor(taskState[id].focusSeconds/60)).padStart(2,'0');
+    const sec = String(taskState[id].focusSeconds%60).padStart(2,'0');
+    document.getElementById('focus-timer').textContent = m+':'+sec;
+  }, 1000);
+}
+
+function pauseFocus() {
+  clearInterval(focusInterval);
+  focusInterval = null;
+  document.getElementById('focus-overlay').classList.remove('open');
+  if (currentFocusId) {
+    document.querySelectorAll(`#start-${currentFocusId}`).forEach(el=>{
+      el.textContent = 'Restart';
+      el.classList.add('restart');
     });
-    // タスクを更新
-    const task = allTasks.find(t => t.id === taskId);
-    if (task) task.properties['ステータス'] = { type: 'status', status: { name: 'Done' } };
-    updateProgress();
-  } catch(e) {
-    console.error('完了更新失敗:', e);
   }
 }
 
-function markAddedToday(btn, taskId) {
-  btn.textContent = '追加済み';
-  btn.classList.add('added');
-  btn.disabled = true;
+function completeFocus() {
+  clearInterval(focusInterval);
+  document.getElementById('focus-overlay').classList.remove('open');
+  if (currentFocusId) toggleDone(currentFocusId);
+  currentFocusId = null;
 }
 
+// ===== モード切替 =====
 function setMode(mode) {
   const isSelect = mode === 'select';
-  document.getElementById('select-mode').classList.toggle('hidden', !isSelect);
-  document.getElementById('exec-mode').classList.toggle('hidden', isSelect);
+  document.getElementById('select-bottom').classList.toggle('hidden', !isSelect);
+  document.getElementById('exec-bottom').classList.toggle('hidden', isSelect);
   document.getElementById('btn-select').classList.toggle('active', isSelect);
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
+  renderAll();
 }
 
-async function addToInbox() {
-  const title = document.getElementById('inbox-input').value.trim();
-  if (!title) return;
-  try {
-    await notionCreate(DB_IDS.tasks, {
-      'タイトル': { title: [{ text: { content: title } }] },
-      'GTD 種別': { status: { name: '📥 INBOX' } },
-    });
-    document.getElementById('inbox-input').value = '';
-    closeModal('inbox');
-    await loadTasks();
-  } catch(e) {
-    console.error('Inbox追加失敗:', e);
-  }
-}
-
+// ===== モーダル =====
 function openModal(type) {
   document.getElementById(`modal-${type}`).classList.add('open');
-  setTimeout(() => document.getElementById(`${type}-input`)?.focus(), 50);
+  setTimeout(()=>document.getElementById(`${type}-input`)?.focus(),50);
 }
 function closeModal(type) {
   document.getElementById(`modal-${type}`).classList.remove('open');
 }
+async function addToInbox() {
+  const title = document.getElementById('inbox-input').value.trim();
+  if (!title) return;
+  try {
+    await notionCreate(DB.tasks, {
+      'タイトル':{title:[{text:{content:title}}]},
+      'GTD 種別':{status:{name:'📥 INBOX'}},
+    });
+    document.getElementById('inbox-input').value = '';
+    closeModal('inbox');
+    await loadTasks();
+  } catch(e) { console.error(e); }
+}
+
+// ===== 起動 =====
+window.onload = () => {
+  setupBanner();
+  setupHeader();
+  loadTasks();
+};
 </script>
 </body>
 </html>
