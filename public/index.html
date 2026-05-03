@@ -27,7 +27,6 @@
   --board-border-bottom: rgba(74,32,96,0.6);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -35,8 +34,7 @@ body {
   font-weight: 300;
   display: flex;
   justify-content: center;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 /* ===== PAGE WRAPPER ===== */
@@ -44,8 +42,8 @@ body {
   display: flex;
   width: 70vw;
   min-width: 820px;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  align-items: flex-start;
 }
 
 /* ===== SIDEBAR ===== */
@@ -60,6 +58,10 @@ body {
   gap: 4px;
   flex-shrink: 0;
   z-index: 10;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
 }
 .sb-btn {
   width: 40px; height: 40px;
@@ -82,7 +84,6 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   min-width: 0;
 }
 
@@ -180,12 +181,9 @@ body {
 
 /* ===== CONTENT GRID ===== */
 .content-grid {
-  flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  overflow: hidden;
-  min-height: 0;
+  grid-template-rows: auto auto;
 }
 
 /* ===== SCHEDULE ===== */
@@ -200,13 +198,12 @@ body {
 }
 .col-title { font-size: 8px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.2em; margin-bottom: 8px; }
 .cal-iframe-wrap {
-  flex: 1;
+  height: 560px;
   overflow: hidden;
   border-radius: 6px;
   border: 0.5px solid var(--border);
   background: var(--surface2);
   position: relative;
-  min-height: 0;
 }
 .cal-placeholder {
   display: flex;
@@ -238,8 +235,8 @@ body {
 .today-board {
   background: var(--board-today);
   border-bottom: 0.5px solid var(--board-border-today);
-  overflow-y: auto;
   padding: 10px 12px;
+  min-height: 200px;
 }
 .today-board::-webkit-scrollbar { width: 3px; }
 .today-board::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
@@ -251,19 +248,15 @@ body {
   grid-column: 1 / 3;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 .bottom-section {
   display: grid;
   grid-template-columns: 1fr 0.5px 1fr;
   background: var(--board-bottom);
   border-top: 0.5px solid var(--board-border-bottom);
-  flex: 1;
-  overflow: hidden;
+  min-height: 200px;
 }
-.bottom-half { overflow-y: auto; padding: 8px 12px; }
-.bottom-half::-webkit-scrollbar { width: 3px; }
-.bottom-half::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.bottom-half { padding: 8px 12px; }
 .bottom-divider { background: rgba(74,32,96,0.5); }
 .bottom-label-red {
   font-size: 9px; font-weight: 500; color: #F09595;
@@ -566,7 +559,7 @@ body {
   </div>
 
   <!-- コンテンツグリッド -->
-  <div class="content-grid" style="flex:1;overflow:hidden">
+  <div class="content-grid">
 
     <!-- スケジュール（左・全行） -->
     <div class="schedule-col">
@@ -812,10 +805,7 @@ const taskState = {};
 async function loadTasks() {
   try {
     const data = await notionQuery(DB.tasks, {
-      and: [
-        {property:'ステータス', status:{does_not_equal:'完了'}},
-        {property:'GTD 種別', status:{does_not_equal:'🗑ゴミ箱'}},
-      ]
+      property:'GTD 種別', status:{does_not_equal:'🗑ゴミ箱'}
     }, [{property:'締切日', direction:'ascending'}]);
     allTasks = data.results;
     renderAll();
@@ -883,7 +873,7 @@ function renderCard(task, mode='today') {
   // today / exec mode
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
-    <div class="pin-badge">📌</div>
+    <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer;title='TODAYから外す'">📌</div>
     <div class="tag-row">${tagsHtml}${timeBlockHtml}</div>
     <div class="task-title" id="tt-${id}">${title}</div>
     <div class="task-bottom">
@@ -911,7 +901,7 @@ function renderCard(task, mode='today') {
 function renderAll() {
   const today = new Date().toISOString().split('T')[0];
   const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ 次やる';};
-  const isDone = t => getProp(t,'ステータス')==='完了';
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
   // TODAY（ピン留め or 全次やる）
   const todayTasks = allTasks.filter(t => !isDone(t) && (gtdNext(t) || taskState[t.id]?.pinned));
@@ -927,8 +917,8 @@ function renderAll() {
     ? leftover.map(t=>renderCard(t,'leftover')).join('')
     : '<div class="section-empty" style="color:var(--green)">やり残しなし 🎉</div>';
 
-  // 次やること
-  const nextTasks = allTasks.filter(t => !isDone(t) && gtdNext(t) && !taskState[t.id]?.pinned);
+  // 次やること（ピン済みも表示して取り消しボタンを出す）
+  const nextTasks = allTasks.filter(t => !isDone(t) && gtdNext(t));
   const nextEl = document.getElementById('next-list');
   nextEl.innerHTML = nextTasks.length
     ? nextTasks.map(t=>renderCard(t,'next')).join('')
@@ -954,22 +944,23 @@ function renderAll() {
 }
 
 function updateProgress() {
+  const isDoneTask = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
   const active = allTasks.filter(t=>getProp(t,'GTD 種別')!=='🗑ゴミ箱'&&getProp(t,'GTD 種別')!=='📥 INBOX');
-  const done = active.filter(t=>getProp(t,'ステータス')==='完了').length;
+  const done = active.filter(isDoneTask).length;
   const pct = active.length ? Math.round(done/active.length*100) : 0;
   document.getElementById('prog-total').textContent = pct+'%';
   document.getElementById('prog-total-sub').textContent = `${done}/${active.length}完了`;
   document.getElementById('prog-total-fill').style.width = pct+'%';
 
   const kadai = active.filter(t=>getProp(t,'エリア')==='課題');
-  const kdone = kadai.filter(t=>getProp(t,'ステータス')==='完了').length;
+  const kdone = kadai.filter(isDoneTask).length;
   const kpct = kadai.length ? Math.round(kdone/kadai.length*100) : 0;
   document.getElementById('prog-task').textContent = kpct+'%';
   document.getElementById('prog-task-sub').textContent = `${kdone}/${kadai.length}完了`;
   document.getElementById('prog-task-fill').style.width = kpct+'%';
 
   const other = active.filter(t=>getProp(t,'エリア')!=='課題');
-  const odone = other.filter(t=>getProp(t,'ステータス')==='完了').length;
+  const odone = other.filter(isDoneTask).length;
   const opct = other.length ? Math.round(odone/other.length*100) : 0;
   document.getElementById('prog-other').textContent = opct+'%';
   document.getElementById('prog-other-sub').textContent = `${odone}/${other.length}完了`;
