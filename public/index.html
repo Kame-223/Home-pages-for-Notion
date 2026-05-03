@@ -254,12 +254,20 @@ body {
   border: none;
   filter: invert(0.88) hue-rotate(180deg) saturate(0.65) brightness(0.85);
 }
-.cal-slot { display: flex; gap: 5px; margin-bottom: 5px; align-items: flex-start; }
-.cal-time { font-size: 9px; color: var(--text-dim); min-width: 30px; padding-top: 3px; font-family: 'JetBrains Mono', monospace; }
-.cal-event { flex: 1; font-size: 10px; padding: 3px 6px; border-radius: 4px; line-height: 1.4; }
-.ev-class { background: rgba(127,119,221,0.12); color: #AFA9EC; border-left: 2px solid var(--purple); }
-.ev-task { background: rgba(29,158,117,0.1); color: #5DCAA5; border-left: 2px solid var(--green); }
-.ev-empty { color: var(--text-dim); font-size: 9px; padding-top: 2px; }
+.sched-content { padding: 10px 8px; }
+.sched-event {
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+  border-left: 3px solid var(--purple);
+}
+.sched-purple { background: rgba(127,119,221,0.08); border-left-color: var(--purple); }
+.sched-blue { background: rgba(55,138,221,0.08); border-left-color: var(--blue); }
+.sched-green { background: rgba(29,158,117,0.08); border-left-color: var(--green); }
+.sched-amber { background: rgba(239,159,39,0.08); border-left-color: var(--amber); }
+.sched-pink { background: rgba(212,83,126,0.08); border-left-color: var(--pink); }
+.sched-teal { background: rgba(29,158,117,0.08); border-left-color: var(--green); }
+.sched-time { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-bottom: 3px; }
+.sched-title { font-size: 13px; font-weight: 500; color: var(--text); }
+.sched-empty { font-size: 11px; color: var(--text-dim); text-align: center; padding: 24px 12px; }
 
 /* ===== TODAY BOARD ===== */
 .today-board {
@@ -651,15 +659,8 @@ body {
 
     <!-- スケジュール -->
     <div class="schedule-col">
-      <div class="section-header">📅 スケジュール<a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank">編集 →</a></div>
-      <div class="cal-iframe-wrap" style="margin:8px;flex:1">
-        <div class="cal-placeholder" id="cal-placeholder">
-          <div class="cal-placeholder-icon">📅</div>
-          <div class="cal-placeholder-text">カレンダー未設定</div>
-          <div class="cal-placeholder-sub">Google Calendar IDを<br>設定すると表示されます</div>
-        </div>
-        <iframe id="cal-iframe" src="" frameborder="0" scrolling="yes" style="display:none"></iframe>
-      </div>
+      <div class="section-header">📅 今日の授業<a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank">Googleカレンダー →</a></div>
+      <div class="sched-content" id="schedule-content"></div>
     </div>
 
     <!-- 今日やること -->
@@ -790,10 +791,25 @@ body {
 </div>
 
 <script>
-// ===== Google Calendar 設定 =====
-const GCAL_IDS = [
-  'matsuyamakosei31@gmail.com',
-];
+// ===== 週間スケジュール設定 =====
+// 0=日 1=月 2=火 3=水 4=木 5=金 6=土
+// color: purple / blue / green / amber / pink / teal
+const WEEKLY_SCHEDULE = {
+  0: [], // 日
+  1: [   // 月
+    {start:'10:40', end:'12:10', title:'憲法への誘い', color:'purple'},
+    {start:'14:45', end:'16:15', title:'社会学の原理', color:'blue'},
+  ],
+  2: [], // 火
+  3: [], // 水
+  4: [], // 木
+  5: [], // 金
+  6: [], // 土
+};
+// ← ここに授業スケジュールを入力してください
+
+// Google Calendar 設定（編集ボタン用）
+const GCAL_EMAIL = 'matsuyamakosei31@gmail.com';
 
 // ===== DB IDs =====
 const DB = {
@@ -840,23 +856,25 @@ function setupHeader() {
 }
 
 // ===== カレンダー =====
-function setupCalendarEditBtn() {
+function renderSchedule() {
   const now = new Date();
+  const events = WEEKLY_SCHEDULE[now.getDay()] || [];
+  const el = document.getElementById('schedule-content');
+  if (!el) return;
+  if (!events.length) {
+    el.innerHTML = '<div class="sched-empty">今日の授業はありません 🎉</div>';
+    return;
+  }
+  el.innerHTML = events.map(ev => `
+    <div class="sched-event sched-${ev.color}">
+      <div class="sched-time">${ev.start} — ${ev.end}</div>
+      <div class="sched-title">${ev.title}</div>
+    </div>
+  `).join('');
+  // Googleカレンダーへのリンクも今日の日付に設定
   const y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
   const btn = document.getElementById('cal-edit-btn');
   if (btn) btn.href = `https://calendar.google.com/calendar/r/day/${y}/${m}/${d}`;
-}
-
-function setupCalendar() {
-  if (!GCAL_IDS.length) return;
-  const iframe = document.getElementById('cal-iframe');
-  const placeholder = document.getElementById('cal-placeholder');
-  const srcParams = GCAL_IDS.map(id => `src=${encodeURIComponent(id)}`).join('&');
-  const today = new Date();
-  const d = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-  iframe.src = `https://calendar.google.com/calendar/embed?${srcParams}&ctz=Asia%2FTokyo&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=DAY&dates=${d}/${d}`;
-  iframe.style.display = 'block';
-  if (placeholder) placeholder.style.display = 'none';
 }
 
 // ===== API =====
@@ -942,27 +960,19 @@ const taskState = {};
 
 async function loadTasks() {
   try {
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
     const data = await notionQuery(DB.tasks, {
       and: [
+        {property:'ステータス', status:{does_not_equal:'完了'}},
         {property:'GTD 種別', status:{does_not_equal:'🗑ゴミ箱'}},
       ]
     }, [{property:'締切日', direction:'ascending'}]);
-    // 完了タスクのうち昨日以前に編集されたものは非表示
-    allTasks = (data.results || []).filter(t => {
-      if (getProp(t,'ステータス') !== '完了') return true;
-      const edited = new Date(t.last_edited_time);
-      edited.setHours(0,0,0,0);
-      return edited >= todayStart;
-    });
+    allTasks = data.results || [];
     renderAll();
     updateProgress();
   } catch(e) {
-    console.error('loadTasks:', e);
-    ['today-tasks','leftover-list','next-list'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = '<div class="loading" style="color:#F09595">読み込みエラー</div>';
-    });
+    console.error('loadTasks error:', e);
+    document.getElementById('today-tasks').innerHTML =
+      '<div class="loading" style="color:#F09595">読み込みエラー（Notion API）</div>';
   }
 }
 
@@ -1359,8 +1369,7 @@ async function addToInbox() {
 window.onload = () => {
   setupBanner();
   setupHeader();
-  setupCalendar();
-  setupCalendarEditBtn();
+  renderSchedule();
   setupFurikaeri();
   loadTasks();
 };
