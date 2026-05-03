@@ -268,6 +268,24 @@ body {
 .sched-time { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-bottom: 3px; }
 .sched-title { font-size: 13px; font-weight: 500; color: var(--text); }
 .sched-empty { font-size: 11px; color: var(--text-dim); text-align: center; padding: 24px 12px; }
+.sched-event-wrap { position: relative; }
+.sched-delete {
+  position: absolute; top: 6px; right: 6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: none; background: rgba(255,255,255,0.08);
+  color: var(--text-dim); font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .15s;
+}
+.sched-event-wrap:hover .sched-delete { opacity: 1; }
+.sched-add-btn {
+  margin-left: auto; font-size: 9px; font-weight: 500;
+  color: var(--text-dim); background: transparent;
+  border: 0.5px solid var(--border); border-radius: 4px;
+  padding: 2px 8px; cursor: pointer; transition: all .15s;
+  font-family: 'Noto Sans JP';
+}
+.sched-add-btn:hover { color: var(--text); border-color: var(--border2); }
 
 /* ===== TODAY BOARD ===== */
 .today-board {
@@ -659,7 +677,7 @@ body {
 
     <!-- スケジュール -->
     <div class="schedule-col">
-      <div class="section-header">📅 今日の授業<a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank">Googleカレンダー →</a></div>
+      <div class="section-header">📅 今日の授業<button class="sched-add-btn" onclick="openModal('schedule')">＋ 追加</button><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
       <div class="sched-content" id="schedule-content"></div>
     </div>
 
@@ -765,6 +783,22 @@ body {
   </div>
 </div>
 
+<!-- スケジュール追加モーダル -->
+<div class="modal-bg" id="modal-schedule">
+  <div class="modal">
+    <div class="modal-title">📅 予定を追加</div>
+    <input class="modal-input" id="sched-input-title" placeholder="授業・予定名"/>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input class="modal-input" id="sched-input-start" placeholder="開始 例: 09:00" style="flex:1"/>
+      <input class="modal-input" id="sched-input-end" placeholder="終了 例: 10:30" style="flex:1"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('schedule')">キャンセル</button>
+      <button class="btn-save" onclick="addScheduleEvent()">追加</button>
+    </div>
+  </div>
+</div>
+
 <!-- Inboxモーダル -->
 <div class="modal-bg" id="modal-inbox">
   <div class="modal">
@@ -856,25 +890,65 @@ function setupHeader() {
 }
 
 // ===== カレンダー =====
+function getSchedKey() {
+  const d = new Date();
+  return `sched_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+}
+function getSchedAdditions() {
+  try { return JSON.parse(localStorage.getItem(getSchedKey()) || '[]'); } catch { return []; }
+}
+function saveSchedAdditions(list) {
+  localStorage.setItem(getSchedKey(), JSON.stringify(list));
+}
+
 function renderSchedule() {
   const now = new Date();
-  const events = WEEKLY_SCHEDULE[now.getDay()] || [];
+  const base = WEEKLY_SCHEDULE[now.getDay()] || [];
+  const additions = getSchedAdditions();
+  const events = [...base, ...additions].sort((a,b) => a.start.localeCompare(b.start));
   const el = document.getElementById('schedule-content');
   if (!el) return;
-  if (!events.length) {
-    el.innerHTML = '<div class="sched-empty">今日の授業はありません 🎉</div>';
-    return;
-  }
-  el.innerHTML = events.map(ev => `
-    <div class="sched-event sched-${ev.color}">
-      <div class="sched-time">${ev.start} — ${ev.end}</div>
-      <div class="sched-title">${ev.title}</div>
-    </div>
-  `).join('');
-  // Googleカレンダーへのリンクも今日の日付に設定
+
+  // Googleカレンダーリンクを今日の日付に
   const y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
   const btn = document.getElementById('cal-edit-btn');
   if (btn) btn.href = `https://calendar.google.com/calendar/r/day/${y}/${m}/${d}`;
+
+  if (!events.length) {
+    el.innerHTML = '<div class="sched-empty">今日の予定はありません 🎉</div>';
+    return;
+  }
+  el.innerHTML = events.map((ev, i) => `
+    <div class="sched-event-wrap">
+      <div class="sched-event sched-${ev.color || 'purple'}">
+        <div class="sched-time">${ev.start}${ev.end ? ' — ' + ev.end : ''}</div>
+        <div class="sched-title">${ev.title}</div>
+      </div>
+      ${ev.temp ? `<button class="sched-delete" onclick="deleteSchedEvent(${base.length + (i - base.length)})" title="削除">×</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function deleteSchedEvent(addIdx) {
+  const list = getSchedAdditions();
+  list.splice(addIdx, 1);
+  saveSchedAdditions(list);
+  renderSchedule();
+}
+
+function addScheduleEvent() {
+  const title = document.getElementById('sched-input-title').value.trim();
+  const start = document.getElementById('sched-input-start').value.trim();
+  const end = document.getElementById('sched-input-end').value.trim();
+  if (!title || !start) return;
+  const list = getSchedAdditions();
+  list.push({start, end, title, color:'teal', temp:true});
+  saveSchedAdditions(list);
+  document.getElementById('sched-input-title').value = '';
+  document.getElementById('sched-input-start').value = '';
+  document.getElementById('sched-input-end').value = '';
+  closeModal('schedule');
+  renderSchedule();
 }
 
 // ===== API =====
@@ -967,13 +1041,16 @@ async function loadTasks() {
       ]
     }, [{property:'締切日', direction:'ascending'}]);
     allTasks = data.results || [];
-    renderAll();
-    updateProgress();
   } catch(e) {
-    console.error('loadTasks error:', e);
-    document.getElementById('today-tasks').innerHTML =
-      '<div class="loading" style="color:#F09595">読み込みエラー（Notion API）</div>';
+    console.error('loadTasks API error:', e);
+    ['today-tasks','leftover-list','next-list'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="section-empty" style="color:var(--red)">Notion接続エラー</div>';
+    });
+    return;
   }
+  try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
+  try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
 }
 
 // ===== タスクカード描画 =====
