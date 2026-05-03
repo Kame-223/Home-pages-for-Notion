@@ -717,7 +717,9 @@ function setupCalendar() {
   const iframe = document.getElementById('cal-iframe');
   const placeholder = document.getElementById('cal-placeholder');
   const srcParams = GCAL_IDS.map(id => `src=${encodeURIComponent(id)}`).join('&');
-  iframe.src = `https://calendar.google.com/calendar/embed?${srcParams}&ctz=Asia%2FTokyo&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=DAY`;
+  const today = new Date();
+  const d = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  iframe.src = `https://calendar.google.com/calendar/embed?${srcParams}&ctz=Asia%2FTokyo&showTitle=0&showNav=0&showDate=0&showPrint=0&showTabs=0&showCalendars=0&mode=DAY&dates=${d}%2F${d}`;
   iframe.style.display = 'block';
   if (placeholder) placeholder.style.display = 'none';
 }
