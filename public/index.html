@@ -144,20 +144,26 @@ body {
 .date-str { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
 .topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .quick-btn {
-  font-size: 10px; padding: 5px 10px; border-radius: 7px;
+  font-size: 12px; padding: 7px 14px; border-radius: 8px;
   border: 0.5px solid var(--border2); background: var(--surface2);
   cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .15s; white-space: nowrap;
 }
-.quick-btn:hover { border-color: var(--purple); color: var(--purple); }
-.mode-btns { display: flex; gap: 4px; }
+#btn-inbox { border-color: rgba(239,159,39,0.4); color: var(--amber); }
+#btn-inbox:hover { background: rgba(239,159,39,0.1); }
+#btn-note { border-color: rgba(55,138,221,0.4); color: var(--blue); }
+#btn-note:hover { background: rgba(55,138,221,0.1); }
+.mode-btns { display: flex; gap: 6px; }
 .mode-btn {
-  font-size: 10px; padding: 5px 12px; border-radius: 7px;
-  border: 0.5px solid var(--border); background: transparent;
-  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px; padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border2); background: var(--surface2);
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s;
 }
-.mode-btn.active { background: var(--purple); border-color: var(--purple); color: white; }
+#btn-select { color: var(--purple); border-color: rgba(127,119,221,0.4); }
+#btn-select.active { background: var(--purple); border-color: var(--purple); color: white; }
+#btn-exec { color: var(--green); border-color: rgba(29,158,117,0.4); }
+#btn-exec.active { background: var(--green); border-color: var(--green); color: white; }
 
 /* ===== PROGRESS ===== */
 .progress-area {
@@ -303,8 +309,8 @@ body {
 .task-card.pinned { border-color: rgba(127,119,221,0.4); }
 .task-card.confirmed-dim { opacity: 0.4; border-color: var(--border); }
 .pin-badge {
-  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
-  font-size: 12px; display: none;
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  font-size: 18px; display: none; line-height: 1;
 }
 .task-card.pinned .pin-badge { display: block; }
 .tag-row { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; flex-wrap: wrap; }
@@ -482,6 +488,30 @@ body {
 }
 .nav-btn:hover { background: var(--surface2); border-color: var(--purple); color: var(--purple); }
 
+.furikaeri-wrap {
+  margin-top: 16px;
+  border-top: 0.5px solid var(--border);
+  padding-top: 12px;
+}
+.furikaeri-label { font-size: 10px; font-weight: 500; color: var(--text-sub); letter-spacing: 0.1em; margin-bottom: 8px; }
+.furikaeri-input {
+  width: 100%; background: var(--surface);
+  border: 0.5px solid var(--border2); border-radius: 8px;
+  padding: 10px 12px; font-size: 12px; color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif; resize: vertical;
+  min-height: 80px; line-height: 1.6;
+}
+.furikaeri-input:focus { outline: none; border-color: var(--green); }
+.furikaeri-input::placeholder { color: var(--text-dim); }
+.furikaeri-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.furikaeri-hint { font-size: 10px; color: var(--text-dim); }
+.furikaeri-save {
+  font-size: 11px; padding: 6px 16px; border-radius: 8px;
+  border: none; background: var(--green);
+  cursor: pointer; color: white; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s;
+}
+.furikaeri-save:hover { background: #188A5E; }
 .loading { font-size: 11px; color: var(--text-dim); text-align: center; padding: 16px; }
 .hidden { display: none; }
 .section-empty { font-size: 10px; color: var(--text-dim); text-align: center; padding: 12px; }
@@ -525,8 +555,8 @@ body {
         <div class="date-str" id="date-str"></div>
       </div>
       <div class="topbar-actions">
-        <button class="quick-btn" onclick="openModal('inbox')">＋ INBOX</button>
-        <button class="quick-btn" onclick="openModal('note')">＋ NOTE</button>
+        <button class="quick-btn" id="btn-inbox" onclick="openModal('inbox')">＋ INBOX</button>
+        <button class="quick-btn" id="btn-note" onclick="openModal('note')">＋ NOTE</button>
       </div>
       <div style="display:flex;gap:4px;align-items:center">
         <div class="mode-btns">
@@ -602,6 +632,14 @@ body {
       <!-- 実行モード -->
       <div id="exec-bottom" class="day-schedule hidden">
         <div id="day-schedule-content"><div class="loading">読み込み中...</div></div>
+        <div class="furikaeri-wrap">
+          <div class="furikaeri-label">📝 今日の振り返り</div>
+          <textarea class="furikaeri-input" id="furikaeri-input" placeholder="今日何を学んだ？うまくいったこと・次に改善することは？"></textarea>
+          <div class="furikaeri-actions">
+            <span class="furikaeri-hint" id="furikaeri-hint"></span>
+            <button class="furikaeri-save" onclick="saveFurikaeri()">Notionに保存</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -946,26 +984,48 @@ function renderAll() {
 
 function updateProgress() {
   const isDoneTask = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  const active = allTasks.filter(t=>getProp(t,'GTD 種別')!=='🗑ゴミ箱'&&getProp(t,'GTD 種別')!=='📥 INBOX');
-  const done = active.filter(isDoneTask).length;
-  const pct = active.length ? Math.round(done/active.length*100) : 0;
+  // 進捗は「今日やる」（ピン済み）タスクのみ
+  const todayAll = allTasks.filter(t => taskState[t.id]?.pinned);
+  const done = todayAll.filter(isDoneTask).length;
+  const pct = todayAll.length ? Math.round(done/todayAll.length*100) : 0;
   document.getElementById('prog-total').textContent = pct+'%';
-  document.getElementById('prog-total-sub').textContent = `${done}/${active.length}完了`;
+  document.getElementById('prog-total-sub').textContent = `${done}/${todayAll.length}完了`;
   document.getElementById('prog-total-fill').style.width = pct+'%';
 
-  const kadai = active.filter(t=>getProp(t,'エリア')==='課題');
+  const kadai = todayAll.filter(t=>getProp(t,'エリア')==='課題');
   const kdone = kadai.filter(isDoneTask).length;
   const kpct = kadai.length ? Math.round(kdone/kadai.length*100) : 0;
   document.getElementById('prog-task').textContent = kpct+'%';
   document.getElementById('prog-task-sub').textContent = `${kdone}/${kadai.length}完了`;
   document.getElementById('prog-task-fill').style.width = kpct+'%';
 
-  const other = active.filter(t=>getProp(t,'エリア')!=='課題');
+  const other = todayAll.filter(t=>getProp(t,'エリア')!=='課題');
   const odone = other.filter(isDoneTask).length;
   const opct = other.length ? Math.round(odone/other.length*100) : 0;
   document.getElementById('prog-other').textContent = opct+'%';
   document.getElementById('prog-other-sub').textContent = `${odone}/${other.length}完了`;
   document.getElementById('prog-other-fill').style.width = opct+'%';
+}
+
+// ===== 振り返り保存 =====
+async function saveFurikaeri() {
+  const text = document.getElementById('furikaeri-input').value.trim();
+  if (!text) return;
+  const now = new Date();
+  const title = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} 振り返り`;
+  const hint = document.getElementById('furikaeri-hint');
+  hint.textContent = '保存中...';
+  try {
+    await notionCreate('76f4c1ec140d8375aa5b81c589f9b247', {
+      'タイトル': {title: [{text: {content: title + ' — ' + text}}]},
+    });
+    document.getElementById('furikaeri-input').value = '';
+    hint.textContent = '✓ 保存しました';
+    setTimeout(() => { hint.textContent = ''; }, 3000);
+  } catch(e) {
+    hint.textContent = '保存に失敗しました';
+    console.error(e);
+  }
 }
 
 // ===== インタラクション =====
