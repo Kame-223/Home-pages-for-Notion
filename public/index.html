@@ -272,9 +272,7 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.bottom-section {
-  display: contents;
-}
+.bottom-section { display: contents; }
 .bottom-panel {
   border: 0.5px solid var(--border2);
   border-radius: 10px;
@@ -288,13 +286,13 @@ body {
 .bottom-divider { display: none; }
 .bottom-label-red, .bottom-label-blue { display: none; }
 
-/* ===== 1日のスケジュール（実行モード下段） ===== */
+/* ===== 実行モード下段 ===== */
 .day-schedule {
   background: var(--board-bottom);
-  border-top: 0.5px solid var(--board-border-bottom);
-  overflow-y: auto;
-  padding: 10px 12px;
-  max-height: 220px;
+  border-radius: 10px;
+  border: 0.5px solid var(--border2);
+  padding: 12px;
+  grid-column: 1 / 3;
 }
 .day-schedule::-webkit-scrollbar { width: 3px; }
 .day-schedule::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
@@ -357,8 +355,8 @@ body {
 .btn-pin.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
 .btn-time {
   font-size: 10px; padding: 3px 10px; border-radius: 7px;
-  border: 0.5px solid rgba(239,159,39,0.3); background: rgba(239,159,39,0.08);
-  cursor: pointer; color: #EF9F27; font-family: 'Noto Sans JP', sans-serif;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s; position: relative; white-space: nowrap;
 }
 .btn-start {
@@ -513,13 +511,16 @@ body {
 .fr-label { font-size: 10px; color: var(--text-sub); min-width: 28px; }
 .fr-options { display: flex; gap: 4px; }
 .fr-opt {
-  font-size: 22px; background: transparent;
-  border: 1.5px solid transparent; border-radius: 8px;
-  padding: 4px 6px; cursor: pointer; transition: all .15s;
-  opacity: 0.35; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: transparent; border: 1.5px solid transparent; border-radius: 8px;
+  padding: 6px 8px; cursor: pointer; transition: all .15s;
+  opacity: 1; line-height: 1;
 }
-.fr-opt:hover { opacity: 0.7; transform: scale(1.1); }
-.fr-opt.selected { border-color: var(--purple); opacity: 1; background: rgba(127,119,221,0.12); transform: scale(1.1); }
+.fr-opt:hover { transform: scale(1.08); }
+.fr-opt.selected { border-color: var(--purple); background: rgba(127,119,221,0.12); transform: scale(1.1); }
+.fr-opt.dimmed { opacity: 0.2; }
+.fr-emoji { font-size: 22px; line-height: 1; }
+.fr-opt-label { font-size: 8px; color: var(--text-dim); font-family: 'Noto Sans JP'; white-space: nowrap; }
 .fr-section-label {
   font-size: 10px; font-weight: 500; color: var(--text-sub);
   margin: 12px 0 5px; display: flex; align-items: center; gap: 6px;
@@ -660,43 +661,40 @@ body {
     <!-- 下段 -->
     <div class="bottom-row">
 
-      <!-- 選択モード -->
-      <div id="select-bottom" class="bottom-section">
-        <div class="bottom-panel">
-          <div class="section-header red">⚠️ やり残し</div>
-          <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
-        </div>
-        <div class="bottom-panel">
-          <div class="section-header blue">▶️ 次やること</div>
-          <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
-        </div>
+      <!-- 選択モード：直接パネル -->
+      <div id="leftover-panel" class="bottom-panel">
+        <div class="section-header red">⚠️ やり残し</div>
+        <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
+      </div>
+      <div id="next-panel" class="bottom-panel">
+        <div class="section-header blue">▶️ 次やること</div>
+        <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
 
-      <!-- 実行モード -->
-      <div id="exec-bottom" class="day-schedule hidden" style="grid-column:1/3">
-        <div id="day-schedule-content"><div class="loading">読み込み中...</div></div>
-        <div class="furikaeri-wrap">
+      <!-- 実行モード：振り返りのみ -->
+      <div id="exec-bottom" class="day-schedule hidden">
+        <div class="furikaeri-wrap" style="margin-top:0;border-top:none;padding-top:0">
           <div class="furikaeri-label">📔 今日の振り返り</div>
           <div class="furikaeri-date" id="furikaeri-date"></div>
 
           <div class="fr-row">
             <span class="fr-label">気分</span>
             <div class="fr-options" id="fr-mood">
-              <button class="fr-opt" data-val="☀ 最高">☀️</button>
-              <button class="fr-opt" data-val="🌤 良い">🌤</button>
-              <button class="fr-opt" data-val="⛅ 普通">⛅</button>
-              <button class="fr-opt" data-val="🌧 しんどい">🌧</button>
-              <button class="fr-opt" data-val="⛈ 最悪">⛈</button>
+              <button class="fr-opt" data-val="☀ 最高"><span class="fr-emoji">☀️</span><span class="fr-opt-label">最高</span></button>
+              <button class="fr-opt" data-val="🌤 良い"><span class="fr-emoji">🌤</span><span class="fr-opt-label">良い</span></button>
+              <button class="fr-opt" data-val="⛅ 普通"><span class="fr-emoji">⛅</span><span class="fr-opt-label">普通</span></button>
+              <button class="fr-opt" data-val="🌧 しんどい"><span class="fr-emoji">🌧</span><span class="fr-opt-label">しんどい</span></button>
+              <button class="fr-opt" data-val="⛈ 最悪"><span class="fr-emoji">⛈</span><span class="fr-opt-label">最悪</span></button>
             </div>
           </div>
           <div class="fr-row">
             <span class="fr-label">体調</span>
             <div class="fr-options" id="fr-energy">
-              <button class="fr-opt" data-val="💪 元気">💪</button>
-              <button class="fr-opt" data-val="🙂 まあまあ">🙂</button>
-              <button class="fr-opt" data-val="😪 疲れてる">😪</button>
-              <button class="fr-opt" data-val="🤒 体調悪い">🤒</button>
-              <button class="fr-opt" data-val="💀 最悪">💀</button>
+              <button class="fr-opt" data-val="💪 元気"><span class="fr-emoji">💪</span><span class="fr-opt-label">元気</span></button>
+              <button class="fr-opt" data-val="🙂 まあまあ"><span class="fr-emoji">🙂</span><span class="fr-opt-label">まあまあ</span></button>
+              <button class="fr-opt" data-val="😪 疲れてる"><span class="fr-emoji">😪</span><span class="fr-opt-label">疲れてる</span></button>
+              <button class="fr-opt" data-val="🤒 体調悪い"><span class="fr-emoji">🤒</span><span class="fr-opt-label">体調悪い</span></button>
+              <button class="fr-opt" data-val="💀 最悪"><span class="fr-emoji">💀</span><span class="fr-opt-label">最悪</span></button>
             </div>
           </div>
 
@@ -927,9 +925,17 @@ const taskState = {};
 
 async function loadTasks() {
   try {
+    const today = new Date(); today.setHours(0,0,0,0);
     const data = await notionQuery(DB.tasks, {
       property:'GTD 種別', status:{does_not_equal:'🗑ゴミ箱'}
     }, [{property:'締切日', direction:'ascending'}]);
+    // 完了タスクのうち昨日以前に完了したものを除外
+    data.results = data.results.filter(t => {
+      if (getProp(t,'ステータス') !== '完了') return true;
+      const edited = new Date(t.last_edited_time);
+      edited.setHours(0,0,0,0);
+      return edited >= today;
+    });
     allTasks = data.results;
     renderAll();
     updateProgress();
@@ -1029,9 +1035,25 @@ function renderAll() {
   // TODAY（明示的に「今日やる」を押したタスクのみ）
   const todayTasks = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
   const todayEl = document.getElementById('today-tasks');
-  todayEl.innerHTML = todayTasks.length
-    ? todayTasks.map(t=>renderCard(t,'today')).join('')
-    : '<div class="section-empty">今日のタスクがありません</div>';
+  if (!todayTasks.length) {
+    todayEl.innerHTML = '<div class="section-empty">今日のタスクがありません</div>';
+  } else if (currentMode === 'exec') {
+    // 実行モード：時間帯でグルーピング
+    const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
+    todayTasks.forEach(t => {
+      const jk = taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || '未設定';
+      (blocks[jk] || blocks['未設定']).push(t);
+    });
+    const bLabels = {午前:'🌞 午前', 午後:'🌆 午後', 夜:'🌃 夜', 未設定:'⬜ 未設定'};
+    let html = '';
+    Object.entries(blocks).forEach(([key, bTasks]) => {
+      if (!bTasks.length) return;
+      html += `<div class="time-block"><div class="time-block-label">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
+    });
+    todayEl.innerHTML = html || '<div class="section-empty">今日のタスクがありません</div>';
+  } else {
+    todayEl.innerHTML = todayTasks.map(t=>renderCard(t,'today')).join('');
+  }
 
   // やり残し
   const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
@@ -1100,12 +1122,16 @@ function setupFurikaeri() {
     `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
   // 日曜なら週次レビューを表示
   if (now.getDay() === 0) document.getElementById('weekly-section').classList.remove('hidden');
-  // 気分・体調ボタンのセレクト
+  // 気分・体調ボタンのセレクト（選択→強調、他→暗く）
   document.querySelectorAll('.fr-options').forEach(group => {
     group.querySelectorAll('.fr-opt').forEach(btn => {
       btn.addEventListener('click', () => {
-        group.querySelectorAll('.fr-opt').forEach(b => b.classList.remove('selected'));
+        group.querySelectorAll('.fr-opt').forEach(b => {
+          b.classList.remove('selected');
+          b.classList.add('dimmed');
+        });
         btn.classList.add('selected');
+        btn.classList.remove('dimmed');
       });
     });
   });
@@ -1177,11 +1203,20 @@ function toggleDone(id) {
 function togglePin(id) {
   if (!taskState[id]) return;
   taskState[id].pinned = !taskState[id].pinned;
-  // 時間帯が未設定なら時間帯選択を促す
-  if (taskState[id].pinned && !taskState[id].jikantai) {
+  if (!taskState[id].pinned) {
+    // TODAYから外す：完了状態を取り消す
+    if (taskState[id].done) {
+      taskState[id].done = false;
+      notionUpdate(id, {'ステータス':{status:{name:'ToDo'}}}).catch(console.error);
+    }
+    // 時間帯をリセット
+    taskState[id].jikantai = null;
+    notionUpdate(id, {'実行時間帯':{select:null}}).catch(console.error);
+  } else if (!taskState[id].jikantai) {
     setTimeout(()=>toggleTimeDropdown(id), 200);
   }
   renderAll();
+  updateProgress();
 }
 
 function toggleTimeDropdown(id) {
@@ -1268,9 +1303,12 @@ function completeFocus() {
 }
 
 // ===== モード切替 =====
+let currentMode = 'select';
 function setMode(mode) {
+  currentMode = mode;
   const isSelect = mode === 'select';
-  document.getElementById('select-bottom').classList.toggle('hidden', !isSelect);
+  document.getElementById('leftover-panel').classList.toggle('hidden', !isSelect);
+  document.getElementById('next-panel').classList.toggle('hidden', !isSelect);
   document.getElementById('exec-bottom').classList.toggle('hidden', isSelect);
   document.getElementById('btn-select').classList.toggle('active', isSelect);
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
