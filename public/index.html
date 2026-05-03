@@ -301,6 +301,7 @@ body {
 .task-card.done { opacity: 0.4; }
 .task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
 .task-card.pinned { border-color: rgba(127,119,221,0.4); }
+.task-card.confirmed-dim { opacity: 0.4; border-color: var(--border); }
 .pin-badge {
   position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
   font-size: 12px; display: none;
@@ -853,7 +854,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
+    <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
       <div class="tag-row">${tagsHtml}</div>
       <div class="task-title" id="tt-${id}">${title}</div>
@@ -903,8 +904,8 @@ function renderAll() {
   const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ 次やる';};
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
-  // TODAY（ピン留め or 全次やる）
-  const todayTasks = allTasks.filter(t => !isDone(t) && (gtdNext(t) || taskState[t.id]?.pinned));
+  // TODAY（明示的に「今日やる」を押したタスクのみ）
+  const todayTasks = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
   const todayEl = document.getElementById('today-tasks');
   todayEl.innerHTML = todayTasks.length
     ? todayTasks.map(t=>renderCard(t,'today')).join('')
@@ -926,7 +927,7 @@ function renderAll() {
 
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
-  allTasks.filter(t=>!isDone(t)&&(gtdNext(t)||taskState[t.id]?.pinned)).forEach(t=>{
+  allTasks.filter(t=>!isDone(t)&&taskState[t.id]?.pinned).forEach(t=>{
     const jk = taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || '未設定';
     (blocks[jk]||blocks['未設定']).push(t);
   });
