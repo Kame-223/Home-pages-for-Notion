@@ -152,7 +152,7 @@ body::before {
   padding: 6px 12px;
   gap: 4px;
   border-left: 0.5px solid var(--border);
-  background: var(--surface);
+  background: rgba(13,13,26,0.72);
   min-width: 180px;
 }
 .topbar-info { display: flex; flex-direction: column; gap: 1px; }
@@ -161,7 +161,7 @@ body::before {
 .topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .quick-btn {
   font-size: 12px; padding: 7px 14px; border-radius: 8px;
-  border: 0.5px solid var(--border2); background: var(--surface2);
+  border: 0.5px solid var(--border2); background: rgba(26,26,36,0.65);
   cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .15s; white-space: nowrap;
 }
@@ -172,7 +172,7 @@ body::before {
 .mode-btns { display: flex; gap: 6px; }
 .mode-btn {
   font-size: 12px; padding: 7px 18px; border-radius: 8px;
-  border: 1px solid var(--border2); background: var(--surface2);
+  border: 1px solid var(--border2); background: rgba(26,26,36,0.65);
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s;
 }
@@ -187,10 +187,10 @@ body::before {
   padding: 5px 12px;
   border-bottom: 0.5px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
-  background: rgba(13,13,26,0.65);
+  background: rgba(13,13,26,0.55);
 }
 .prog-card {
-  flex: 1; background: var(--surface2);
+  flex: 1; background: rgba(26,26,36,0.6);
   border-radius: 6px; padding: 5px 10px;
   border: 0.5px solid var(--border);
   display: flex; align-items: center; gap: 8px;
@@ -208,7 +208,7 @@ body::before {
   grid-template-rows: auto auto;
   gap: 12px;
   padding: 12px;
-  background: var(--bg);
+  background: transparent;
 }
 
 /* ===== SCHEDULE ===== */
@@ -224,8 +224,8 @@ body::before {
   padding: 8px 12px;
   font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
   color: var(--text-sub);
-  border-bottom: 0.5px solid var(--border);
-  background: var(--surface);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  background: rgba(13,13,26,0.5);
   text-transform: uppercase;
   flex-shrink: 0;
   display: flex; align-items: center;
@@ -360,6 +360,7 @@ body::before {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  background: transparent;
 }
 .bottom-section { display: contents; }
 .bottom-panel {
