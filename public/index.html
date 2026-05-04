@@ -59,12 +59,24 @@ body::before {
   min-width: 820px;
   min-height: 100vh;
   align-items: flex-start;
-  padding-bottom: 80px;
 }
 
 /* ===== SIDEBAR ===== */
 .sidebar {
-  display: none;
+  width: 56px;
+  background: rgba(13,13,26,0.75);
+  border-right: 0.5px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+  flex-shrink: 0;
+  z-index: 10;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
 }
 .sb-btn {
   width: 40px; height: 40px;
@@ -197,7 +209,7 @@ body::before {
   grid-template-rows: auto auto;
   gap: 12px;
   padding: 12px;
-  padding-bottom: calc(50vh + 80px);
+  padding-bottom: 50vh;
   background: transparent;
 }
 
@@ -561,16 +573,12 @@ body::before {
 
 /* ===== BOTTOM NAV ===== */
 .bottom-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  display: flex; gap: 10px; padding: 8px 24px;
+  grid-column: 1 / 3;
+  display: flex; gap: 10px; padding: 12px 8px;
   border-top: 0.5px solid rgba(255,255,255,0.08);
-  background: rgba(8,8,18,0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 200;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
 }
 .nav-btn {
   padding: 8px 16px; border-radius: 8px;
@@ -701,6 +709,16 @@ body::before {
         <div class="greeting" id="greeting"></div>
         <div class="date-str" id="date-str"></div>
       </div>
+      <div class="topbar-actions">
+        <button class="quick-btn" id="btn-inbox" onclick="openModal('inbox')">＋ INBOX</button>
+        <button class="quick-btn" id="btn-note" onclick="openModal('note')">＋ NOTE</button>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <div class="mode-btns">
+          <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
+          <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -808,21 +826,22 @@ body::before {
       </div>
 
     </div>
-  </div>
 
-  <!-- 下部ナビ -->
-  <div class="bottom-nav">
-    <a class="nav-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank">📋 TASK</a>
-    <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">🗂 PROJECT</a>
-    <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
-    <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
-    <div class="nav-divider"></div>
-    <div class="nav-actions">
-      <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
-      <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
-      <button class="mode-btn" id="btn-select" onclick="setMode('select')">選択</button>
-      <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
+    <!-- 下部ナビ -->
+    <div class="bottom-nav">
+      <a class="nav-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank">📋 TASK</a>
+      <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">🗂 PROJECT</a>
+      <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
+      <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
+      <div class="nav-divider"></div>
+      <div class="nav-actions">
+        <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
+        <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
+        <button class="mode-btn" onclick="setMode('select')">選択</button>
+        <button class="mode-btn" onclick="setMode('exec')">実行</button>
+      </div>
     </div>
+
   </div>
 
 </div>
