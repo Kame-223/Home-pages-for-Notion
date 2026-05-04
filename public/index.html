@@ -494,6 +494,87 @@ body::before {
 }
 .time-opt:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 
+/* ===== 編集ボタン・リンクボタン ===== */
+.card-edit-btn {
+  font-size: 9px; padding: 2px 7px; border-radius: 4px;
+  background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.1);
+  cursor: pointer; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+  transition: all .15s; margin-right: 2px; flex-shrink: 0;
+}
+.card-edit-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); border-color: rgba(255,255,255,0.25); }
+.btn-link {
+  font-size: 9px; padding: 2px 8px; border-radius: 5px;
+  border: 0.5px solid rgba(55,138,221,0.4); background: rgba(55,138,221,0.08);
+  cursor: pointer; color: var(--blue); font-family: 'Noto Sans JP', sans-serif;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
+  transition: all .15s; white-space: nowrap;
+}
+.btn-link:hover { background: rgba(55,138,221,0.16); }
+
+/* ===== タスク編集モーダル ===== */
+.task-edit-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.78);
+  display: none; align-items: center; justify-content: center;
+  z-index: 500;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.task-edit-overlay.open { display: flex; }
+.task-edit-modal {
+  background: #15151e;
+  border: 0.5px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  padding: 22px 24px;
+  width: 440px; max-width: 92vw;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.65);
+  animation: fadeUp .22s ease-out;
+}
+.edit-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; gap: 10px; }
+.edit-task-name { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.45; flex: 1; }
+.edit-close-btn {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: rgba(255,255,255,0.06); border: none;
+  cursor: pointer; color: var(--text-sub); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.edit-close-btn:hover { background: rgba(255,255,255,0.11); color: var(--text); }
+.edit-field { margin-bottom: 14px; }
+.edit-field-label {
+  font-size: 8px; letter-spacing: 0.18em; color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace; margin-bottom: 7px;
+  text-transform: uppercase; display: block;
+}
+.edit-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.edit-chip {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 400; transition: all .15s;
+}
+.edit-chip:hover { border-color: var(--purple); color: var(--purple); }
+.edit-chip.active { background: rgba(127,119,221,0.2); border-color: var(--purple); color: var(--purple); font-weight: 500; }
+.edit-input {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  color: var(--text); font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
+  outline: none; transition: border-color .15s; box-sizing: border-box;
+}
+.edit-input:focus { border-color: rgba(127,119,221,0.5); }
+.edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.edit-cancel-btn {
+  font-size: 12px; padding: 8px 18px; border-radius: 8px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
+}
+.edit-cancel-btn:hover { background: var(--surface); color: var(--text); }
+.edit-save-btn {
+  font-size: 12px; padding: 8px 22px; border-radius: 8px;
+  background: var(--purple); border: none;
+  cursor: pointer; color: white; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .15s;
+}
+.edit-save-btn:hover { background: #6b64c8; }
+
 /* ===== 集中モード ===== */
 .focus-overlay {
   position: fixed; inset: 0;
@@ -1417,11 +1498,13 @@ function renderCard(task, mode='today') {
   const timeBlockHtml = s.jikantai ?
     `<span class="tag tag-gray">${s.jikantai==='午前'?'🌞':s.jikantai==='午後'?'🌆':'🌃'} ${s.jikantai}</span>` : '';
 
+  const linkBtn = (s.link || link) ? `<a class="btn-link" href="${s.link||link}" target="_blank">🔗 リンク</a>` : '';
+
   if (mode === 'leftover' || mode === 'next') {
     return `
     <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
-      <div class="tag-row">${tagsHtml}</div>
+      <div class="tag-row"><button class="card-edit-btn" onclick="openEditModal('${id}',event)">✎</button>${tagsHtml}</div>
       <div class="task-title" id="tt-${id}">${title}</div>
       <div class="task-bottom">
         <div class="time-wrap">
@@ -1430,6 +1513,7 @@ function renderCard(task, mode='today') {
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
         <div class="card-actions">
+          ${linkBtn}
           <button class="btn-pin ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'取り消し':'今日する'}</button>
         </div>
       </div>
@@ -1440,7 +1524,7 @@ function renderCard(task, mode='today') {
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer;title='TODAYから外す'">📌</div>
-    <div class="tag-row">${tagsHtml}${timeBlockHtml}</div>
+    <div class="tag-row"><button class="card-edit-btn" onclick="openEditModal('${id}',event)">✎</button>${tagsHtml}${timeBlockHtml}</div>
     <div class="task-title" id="tt-${id}">${title}</div>
     <div class="task-bottom">
       <div class="time-wrap">
@@ -1457,6 +1541,7 @@ function renderCard(task, mode='today') {
             <div class="time-opt" onclick="setJikantai('${id}','夜')">🌃 夜</div>
           </div>
         </div>
+        ${linkBtn}
         <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')">${s.focusSeconds>0?'Restart':'Start'}</button>
         <button class="btn-done ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
       </div>
@@ -1753,6 +1838,80 @@ function setMode(mode) {
   renderAll();
 }
 
+// ===== タスク編集 =====
+let editingTaskId = null;
+
+function openEditModal(id, e) {
+  e.stopPropagation();
+  editingTaskId = id;
+  const task = allTasks.find(t => t.id === id);
+  if (!task) return;
+
+  document.getElementById('edit-task-name').textContent = getProp(task,'タイトル') || '無題';
+
+  const area = getProp(task,'エリア') || '';
+  document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === area));
+
+  const subjects = getProp(task,'科目') || [];
+  document.querySelectorAll('#edit-subject .edit-chip').forEach(c => c.classList.toggle('active', subjects.includes(c.dataset.val)));
+
+  const ela = getProp(task,'ELAサブタグ') || '';
+  document.querySelectorAll('#edit-ela .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ela));
+
+  document.getElementById('edit-deadline').value = getProp(task,'締切日') || '';
+  document.getElementById('edit-link').value = taskState[id]?.link || getProp(task,'作業リンク') || '';
+
+  document.getElementById('task-edit-overlay').classList.add('open');
+}
+
+function closeEditModal() {
+  editingTaskId = null;
+  document.getElementById('task-edit-overlay').classList.remove('open');
+}
+
+function toggleEditChip(el, groupId, multi) {
+  if (!multi) {
+    document.querySelectorAll(`#${groupId} .edit-chip`).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  } else {
+    el.classList.toggle('active');
+  }
+}
+
+async function saveEditModal() {
+  if (!editingTaskId) return;
+  const id = editingTaskId;
+  const task = allTasks.find(t => t.id === id);
+
+  const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
+  const subjects = [...document.querySelectorAll('#edit-subject .edit-chip.active')].map(c => c.dataset.val);
+  const ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
+  const deadline = document.getElementById('edit-deadline').value || null;
+  const link = document.getElementById('edit-link').value.trim() || null;
+
+  if (task) {
+    if (area !== null) task.properties['エリア'] = {type:'select', select: area ? {name:area} : null};
+    task.properties['科目'] = {type:'multi_select', multi_select: subjects.map(s => ({name:s}))};
+    if (ela !== null) task.properties['ELAサブタグ'] = {type:'select', select: ela ? {name:ela} : null};
+    task.properties['締切日'] = {type:'date', date: deadline ? {start:deadline} : null};
+    task.properties['作業リンク'] = {type:'url', url: link};
+  }
+  if (taskState[id]) taskState[id].link = link;
+
+  closeEditModal();
+  renderAll();
+
+  const props = {
+    '科目': {multi_select: subjects.map(s => ({name:s}))},
+    '締切日': {date: deadline ? {start:deadline} : null},
+    '作業リンク': {url: link},
+  };
+  if (area !== null) props['エリア'] = {select: area ? {name:area} : null};
+  if (ela !== null) props['ELAサブタグ'] = {select: ela ? {name:ela} : null};
+
+  notionUpdate(id, props).catch(console.error);
+}
+
 // ===== モーダル =====
 function openModal(type) {
   document.getElementById(`modal-${type}`).classList.add('open');
@@ -1796,5 +1955,57 @@ window.onload = () => {
   document.querySelector('.content-grid').classList.add('select-mode');
 };
 </script>
+
+<!-- タスク編集モーダル -->
+<div class="task-edit-overlay" id="task-edit-overlay" onclick="closeEditModal()">
+  <div class="task-edit-modal" onclick="event.stopPropagation()">
+    <div class="edit-header">
+      <div class="edit-task-name" id="edit-task-name"></div>
+      <button class="edit-close-btn" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="edit-field">
+      <span class="edit-field-label">AREA</span>
+      <div class="edit-chips" id="edit-area">
+        <button class="edit-chip" data-val="課題" onclick="toggleEditChip(this,'edit-area',false)">課題</button>
+        <button class="edit-chip" data-val="ICU" onclick="toggleEditChip(this,'edit-area',false)">ICU</button>
+        <button class="edit-chip" data-val="個人" onclick="toggleEditChip(this,'edit-area',false)">個人</button>
+        <button class="edit-chip" data-val="生活" onclick="toggleEditChip(this,'edit-area',false)">生活</button>
+      </div>
+    </div>
+    <div class="edit-field">
+      <span class="edit-field-label">SUBJECT</span>
+      <div class="edit-chips" id="edit-subject">
+        <button class="edit-chip" data-val="憲法" onclick="toggleEditChip(this,'edit-subject',true)">憲法</button>
+        <button class="edit-chip" data-val="社会学" onclick="toggleEditChip(this,'edit-subject',true)">社会学</button>
+        <button class="edit-chip" data-val="教育原理" onclick="toggleEditChip(this,'edit-subject',true)">教育原理</button>
+        <button class="edit-chip" data-val="ELA" onclick="toggleEditChip(this,'edit-subject',true)">ELA</button>
+        <button class="edit-chip" data-val="その他" onclick="toggleEditChip(this,'edit-subject',true)">その他</button>
+      </div>
+    </div>
+    <div class="edit-field">
+      <span class="edit-field-label">ELA SUBTAG</span>
+      <div class="edit-chips" id="edit-ela">
+        <button class="edit-chip" data-val="ER4" onclick="toggleEditChip(this,'edit-ela',false)">ER4</button>
+        <button class="edit-chip" data-val="S&L4" onclick="toggleEditChip(this,'edit-ela',false)">S&L4</button>
+        <button class="edit-chip" data-val="RCA" onclick="toggleEditChip(this,'edit-ela',false)">RCA</button>
+        <button class="edit-chip" data-val="ATS4" onclick="toggleEditChip(this,'edit-ela',false)">ATS4</button>
+        <button class="edit-chip" data-val="ARW" onclick="toggleEditChip(this,'edit-ela',false)">ARW</button>
+      </div>
+    </div>
+    <div class="edit-field">
+      <span class="edit-field-label">DEADLINE</span>
+      <input class="edit-input" type="date" id="edit-deadline">
+    </div>
+    <div class="edit-field">
+      <span class="edit-field-label">WORK LINK</span>
+      <input class="edit-input" type="url" id="edit-link" placeholder="https://...">
+    </div>
+    <div class="edit-actions">
+      <button class="edit-cancel-btn" onclick="closeEditModal()">キャンセル</button>
+      <button class="edit-save-btn" onclick="saveEditModal()">保存</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
