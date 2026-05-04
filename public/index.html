@@ -97,11 +97,13 @@ body {
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  min-height: 68px;
+  min-height: 140px;
 }
 .banner-area {
   flex: 1;
   background: #06040e;
+  background-size: cover;
+  background-position: center;
   position: relative;
   overflow: hidden;
   padding: 8px 18px;
@@ -109,6 +111,14 @@ body {
   flex-direction: column;
   justify-content: flex-end;
 }
+.banner-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(6,4,14,0.75) 100%);
+  z-index: 0;
+}
+.banner-content { position: relative; z-index: 2; }
 .banner-orb {
   position: absolute;
   width: 200px; height: 200px;
@@ -865,6 +875,28 @@ body {
 </div>
 
 <script>
+// ===== 日替わり背景 =====
+const BACKGROUNDS = [
+  '/backgrounds/00__6__by_anfherion_dlz2fnb.png',
+  '/backgrounds/_88b9d9db_d5d8_4b79_b425_97a18d86db18_by_redsingularities_dja47uz.jpg',
+  '/backgrounds/aldebaran_by_ooastrovibesoo_diqohax.jpg',
+  '/backgrounds/fighting_2016____by_bayardwu_d9mffqc.jpg',
+  '/backgrounds/full_moon_by_satoruwada_dfpn03g.jpg',
+  '/backgrounds/grim_reaper_by_azraelseraph_dlz3qnn.png',
+  '/backgrounds/the_emergence_of_the_kordrion_from_the_blackabyss1_by_vatvor_dlz166e.jpg',
+  '/backgrounds/the_infernal_bestiary_by_domaru01_dlyttx4.jpg',
+  '/backgrounds/what_remained_of_the_beast_by_anatofinnstark_dkvr8j4.jpg',
+  '/backgrounds/ww656_by_aaron888_ai_dkhab2e.png',
+];
+
+function setupBackground() {
+  const now = new Date();
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  const bg = BACKGROUNDS[dayOfYear % BACKGROUNDS.length];
+  const banner = document.querySelector('.banner-area');
+  if (banner) banner.style.backgroundImage = `url('${bg}')`;
+}
+
 // ===== Google Calendar OAuth =====
 const GCAL_CLIENT_ID = '844288249513-ch0fp313ij9ivaef37js157l1f24kupm.apps.googleusercontent.com';
 const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar';
@@ -948,8 +980,9 @@ function renderFullCalendar() {
 async function fetchGCalEvents(info, success, failure) {
   if (!gToken) { success([]); return; }
   try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${info.startStr}&timeMax=${info.endStr}&singleEvents=true&orderBy=startTime`,
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${info.startStr}&timeMax=${info.endStr}&singleEvents=true&orderBy=startTime&timeZone=${encodeURIComponent(tz)}`,
       { headers: { Authorization: `Bearer ${gToken}` } }
     );
     if (res.status === 401) { gToken = null; sessionStorage.removeItem('gcal_token'); initGoogleCalendar(); return; }
@@ -1626,6 +1659,7 @@ async function addToInbox() {
 
 // ===== 起動 =====
 window.onload = () => {
+  setupBackground();
   setupBanner();
   setupHeader();
   initGoogleCalendar();
