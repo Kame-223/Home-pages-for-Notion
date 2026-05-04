@@ -425,7 +425,7 @@ body::before {
 }
 .task-card.pinned .pin-badge { display: block; }
 .tag-row { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; flex-wrap: wrap; }
-.tag { font-size: 9px; padding: 2px 7px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
+.tag { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
 .tag-teal { background: rgba(29,158,117,0.12); color: #5DCAA5; border: 0.5px solid rgba(93,202,165,0.3); }
 .tag-blue { background: rgba(55,138,221,0.12); color: #85B7EB; border: 0.5px solid rgba(133,183,235,0.3); }
 .tag-amber { background: rgba(239,159,39,0.12); color: #EF9F27; border: 0.5px solid rgba(239,159,39,0.3); }
@@ -516,8 +516,7 @@ body::before {
 }
 .task-title-box {
   flex: 1; font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.5;
-  background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.07);
-  border-radius: 7px; padding: 8px 10px; min-height: 42px;
+  padding: 4px 2px; min-height: 36px;
 }
 .card-side {
   display: flex; flex-direction: column; gap: 5px;
@@ -555,13 +554,13 @@ body::before {
 
 /* 今日するボタン（大） */
 .btn-pin-big {
-  flex: 1; min-height: 52px; font-size: 11px; border-radius: 8px;
-  border: 0.5px solid rgba(212,83,126,0.45); background: rgba(212,83,126,0.18);
-  cursor: pointer; color: var(--pink); font-family: 'Noto Sans JP', sans-serif;
+  flex: 1; min-height: 38px; max-height: 52px; font-size: 10px; border-radius: 8px;
+  border: 0.5px solid rgba(29,158,117,0.45); background: rgba(29,158,117,0.15);
+  cursor: pointer; color: var(--green); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s; white-space: nowrap;
 }
 .btn-pin-big.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
-.btn-pin-big:hover { background: rgba(212,83,126,0.28); }
+.btn-pin-big:hover { background: rgba(29,158,117,0.25); }
 
 /* 完了ボタン（大） */
 .btn-done-big {
@@ -1555,7 +1554,8 @@ function renderCard(task, mode='today') {
   const ela = getProp(task,'ELAサブタグ');
   const deadline = getProp(task,'締切日');
   const soyo = getProp(task,'所要時間');
-  const jikantai = getProp(task,'実行時間帯');
+  const jikantaiRaw = getProp(task,'実行時間帯');
+  const jikantai = jikantaiRaw==='午前'?'朝':jikantaiRaw==='午後'?'昼':jikantaiRaw||null;
   const link = getProp(task,'作業リンク');
   const gtd = getProp(task,'GTD 種別');
 
@@ -1620,21 +1620,21 @@ function renderCard(task, mode='today') {
   }
 
   // today / exec mode
-  const jikantaiTag = s.jikantai
-    ? `<span class="tag tag-gray clickable" onclick="toggleTimeDropdown('${id}')">${s.jikantai==='午前'?'🌞':s.jikantai==='午後'?'🌆':'🌃'} ${s.jikantai}</span>` : '';
+  const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
+  const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰ 時間帯';
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
-    <div class="tag-row">${editBtn}${propTags}${jikantaiTag}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}</div>
+    <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}</div>
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
         <div style="position:relative">
-          <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${s.jikantai||'時間帯'}</button>
+          <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${jikantaiLabel}</button>
           <div class="time-dropdown" id="tdd-${id}">
-            <div class="time-opt" onclick="setJikantai('${id}','午前')">🌞 午前</div>
-            <div class="time-opt" onclick="setJikantai('${id}','午後')">🌆 午後</div>
-            <div class="time-opt" onclick="setJikantai('${id}','夜')">🌃 夜</div>
+            <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
+            <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
+            <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
           </div>
         </div>
         <div style="display:flex;gap:4px;flex:1">
@@ -1665,12 +1665,12 @@ function renderAll() {
     todayEl.innerHTML = '<div class="section-empty">今日のタスクがありません</div>';
   } else if (currentMode === 'exec') {
     // 実行モード：時間帯でグルーピング
-    const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
+    const blocks = {朝:[], 昼:[], 夜:[], 未設定:[]};
     todayTasks.forEach(t => {
       const jk = taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || '未設定';
       (blocks[jk] || blocks['未設定']).push(t);
     });
-    const bLabels = {午前:'🌞 午前', 午後:'🌆 午後', 夜:'🌃 夜', 未設定:'⬜ 未設定'};
+    const bLabels = {朝:'🌅 朝', 昼:'🌞 昼', 夜:'🌙 夜', 未設定:'⬜ 未設定'};
     let html = '';
     Object.entries(blocks).forEach(([key, bTasks]) => {
       if (!bTasks.length) return;
@@ -1702,7 +1702,7 @@ function renderAll() {
     (blocks[jk]||blocks['未設定']).push(t);
   });
   const dsEl = document.getElementById('day-schedule-content');
-  const blockLabels = {午前:'🌞 午前', 午後:'🌆 午後', 夜:'🌃 夜', 未設定:'⬜ 時間帯未設定'};
+  const blockLabels = {朝:'🌅 朝', 昼:'🌞 昼', 夜:'🌙 夜', 未設定:'⬜ 時間帯未設定'};
   let html = '';
   Object.entries(blocks).forEach(([key, tasks]) => {
     if (!tasks.length) return;
