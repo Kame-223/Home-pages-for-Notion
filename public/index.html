@@ -427,6 +427,28 @@ body::before {
 }
 .task-card.pinned .pin-badge { display: block; }
 .tag-row { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; flex-wrap: wrap; }
+.gtd-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; padding: 3px 8px; border-radius: 5px;
+  cursor: pointer; margin-bottom: 6px;
+  background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.1);
+  color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em; user-select: none; transition: all .15s;
+}
+.gtd-badge:hover { background: rgba(255,255,255,0.09); color: var(--text); border-color: rgba(255,255,255,0.2); }
+.gtd-menu {
+  position: absolute; top: 36px; left: 10px;
+  background: #1c1c2e; border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 10px; padding: 5px; z-index: 50; min-width: 170px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6); display: none;
+}
+.gtd-opt {
+  padding: 8px 12px; border-radius: 6px; font-size: 11px;
+  cursor: pointer; color: var(--text-sub); transition: all .12s;
+  display: flex; align-items: center; gap: 6px;
+}
+.gtd-opt:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+.gtd-opt.current { color: var(--purple); font-weight: 600; }
 .tag { font-size: 9px; padding: 2px 7px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
 .tag-teal { background: rgba(29,158,117,0.12); color: #5DCAA5; border: 0.5px solid rgba(93,202,165,0.3); }
 .tag-blue { background: rgba(55,138,221,0.12); color: #85B7EB; border: 0.5px solid rgba(133,183,235,0.3); }
@@ -1417,10 +1439,20 @@ function renderCard(task, mode='today') {
   const timeBlockHtml = s.jikantai ?
     `<span class="tag tag-gray">${s.jikantai==='午前'?'🌞':s.jikantai==='午後'?'🌆':'🌃'} ${s.jikantai}</span>` : '';
 
+  const gtdLabel = gtd || 'GTD';
+  const gtdMenuHtml = `
+    <div class="gtd-menu" id="gtdm-${id}">
+      <div class="gtd-opt ${gtd==='📥 INBOX'?'current':''}" onclick="setGtd('${id}','📥 INBOX')">📥 INBOX</div>
+      <div class="gtd-opt ${gtd==='▶️ 次やる'?'current':''}" onclick="setGtd('${id}','▶️ 次やる')">▶️ 次やる</div>
+      <div class="gtd-opt ${gtd==='⏳ いつかやる'?'current':''}" onclick="setGtd('${id}','⏳ いつかやる')">⏳ いつかやる</div>
+      <div class="gtd-opt" onclick="setGtd('${id}','🗑ゴミ箱')" style="color:var(--red)">🗑 ゴミ箱</div>
+    </div>`;
+
   if (mode === 'leftover' || mode === 'next') {
     return `
     <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
+      <div style="position:relative"><div class="gtd-badge" onclick="openGtdMenu('${id}',event)">${gtdLabel} ▾</div>${gtdMenuHtml}</div>
       <div class="tag-row">${tagsHtml}</div>
       <div class="task-title" id="tt-${id}">${title}</div>
       <div class="task-bottom">
@@ -1440,6 +1472,7 @@ function renderCard(task, mode='today') {
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer;title='TODAYから外す'">📌</div>
+    <div style="position:relative"><div class="gtd-badge" onclick="openGtdMenu('${id}',event)">${gtdLabel} ▾</div>${gtdMenuHtml}</div>
     <div class="tag-row">${tagsHtml}${timeBlockHtml}</div>
     <div class="task-title" id="tt-${id}">${title}</div>
     <div class="task-bottom">
@@ -1752,6 +1785,29 @@ function setMode(mode) {
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   renderAll();
 }
+
+// ===== GTD種別変更 =====
+function openGtdMenu(id, e) {
+  e.stopPropagation();
+  document.querySelectorAll('.gtd-menu').forEach(m => m.style.display = 'none');
+  const menu = document.getElementById(`gtdm-${id}`);
+  if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+async function setGtd(id, status) {
+  document.querySelectorAll('.gtd-menu').forEach(m => m.style.display = 'none');
+  const task = allTasks.find(t => t.id === id);
+  if (task) {
+    if (!task.properties['GTD 種別']) task.properties['GTD 種別'] = {type:'status', status:{name:''}};
+    task.properties['GTD 種別'].status.name = status;
+  }
+  renderAll();
+  notionUpdate(id, {'GTD 種別': {status: {name: status}}}).catch(console.error);
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.gtd-menu').forEach(m => m.style.display = 'none');
+});
 
 // ===== モーダル =====
 function openModal(type) {
