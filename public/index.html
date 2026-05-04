@@ -634,11 +634,13 @@ body::before {
 .edit-chip:hover { border-color: var(--purple); color: var(--purple); }
 .edit-chip.active { background: rgba(127,119,221,0.2); border-color: var(--purple); color: var(--purple); font-weight: 500; }
 .edit-input {
-  width: 100%; padding: 8px 12px; border-radius: 8px;
+  width: 100%; padding: 10px 14px; border-radius: 8px;
   background: var(--surface2); border: 0.5px solid var(--border2);
-  color: var(--text); font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
+  color: var(--text); font-size: 13px; font-family: 'Noto Sans JP', sans-serif;
   outline: none; transition: border-color .15s; box-sizing: border-box;
+  min-height: 42px; display: block;
 }
+input[type="date"].edit-input { min-width: 100%; cursor: pointer; }
 .edit-input:focus { border-color: rgba(127,119,221,0.5); }
 .edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 .edit-cancel-btn {
