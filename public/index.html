@@ -217,6 +217,11 @@ body::before {
   padding-bottom: 50vh;
   background: transparent;
 }
+.content-grid.select-mode .bottom-row { order: -1; }
+.content-grid.select-mode .schedule-col { order: 0; }
+.content-grid.select-mode .today-board { order: 0; }
+.content-grid {
+}
 
 /* ===== SCHEDULE ===== */
 .schedule-col {
@@ -1744,6 +1749,7 @@ function setMode(mode) {
   document.getElementById('exec-bottom').classList.toggle('hidden', isSelect);
   document.getElementById('btn-select').classList.toggle('active', isSelect);
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
+  document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   renderAll();
 }
 
@@ -1787,6 +1793,7 @@ window.onload = () => {
   initGoogleCalendar();
   setupFurikaeri();
   loadTasks();
+  document.querySelector('.content-grid').classList.add('select-mode');
 };
 </script>
 </body>
