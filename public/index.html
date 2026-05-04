@@ -2043,7 +2043,8 @@ async function saveEditModal() {
   const task = allTasks.find(t => t.id === id);
 
   const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
-  const subjects = [...document.querySelectorAll('#edit-subject .edit-chip.active')].map(c => c.dataset.val);
+  const subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val || null;
+  const subjects = subject ? [subject] : [];
   const ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
   const deadline = document.getElementById('edit-deadline').value || null;
   const links = editLinks.map(l => l.trim()).filter(Boolean);
@@ -2135,11 +2136,11 @@ window.onload = () => {
     <div class="edit-field">
       <span class="edit-field-label">SUBJECT</span>
       <div class="edit-chips" id="edit-subject">
-        <button class="edit-chip" data-val="憲法" onclick="toggleEditChip(this,'edit-subject',true)">憲法</button>
-        <button class="edit-chip" data-val="社会学" onclick="toggleEditChip(this,'edit-subject',true)">社会学</button>
-        <button class="edit-chip" data-val="教育原理" onclick="toggleEditChip(this,'edit-subject',true)">教育原理</button>
-        <button class="edit-chip" data-val="ELA" onclick="toggleEditChip(this,'edit-subject',true)">ELA</button>
-        <button class="edit-chip" data-val="その他" onclick="toggleEditChip(this,'edit-subject',true)">その他</button>
+        <button class="edit-chip" data-val="憲法" onclick="toggleEditChip(this,'edit-subject',false)">憲法</button>
+        <button class="edit-chip" data-val="社会学" onclick="toggleEditChip(this,'edit-subject',false)">社会学</button>
+        <button class="edit-chip" data-val="教育原理" onclick="toggleEditChip(this,'edit-subject',false)">教育原理</button>
+        <button class="edit-chip" data-val="ELA" onclick="toggleEditChip(this,'edit-subject',false)">ELA</button>
+        <button class="edit-chip" data-val="その他" onclick="toggleEditChip(this,'edit-subject',false)">その他</button>
       </div>
     </div>
     <div class="edit-field">
