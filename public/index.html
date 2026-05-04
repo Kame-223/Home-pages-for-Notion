@@ -908,7 +908,7 @@ function initGoogleCalendar() {
 }
 
 function requestGCalAuth() {
-  const redirectUri = 'https://home-pages-for-notion-n5f9.vercel.app';
+  const redirectUri = window.location.origin + window.location.pathname;
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' +
     'client_id=' + encodeURIComponent(GCAL_CLIENT_ID) +
     '&redirect_uri=' + encodeURIComponent(redirectUri) +
