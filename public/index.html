@@ -31,13 +31,26 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   background: var(--bg);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: var(--text);
   font-family: 'Noto Sans JP', sans-serif;
   font-weight: 300;
   display: flex;
   justify-content: center;
   min-height: 100vh;
+  position: relative;
 }
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 3, 15, 0.62);
+  z-index: 0;
+  pointer-events: none;
+}
+.page-wrapper { position: relative; z-index: 1; }
 
 /* ===== PAGE WRAPPER ===== */
 .page-wrapper {
@@ -51,8 +64,10 @@ body {
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 56px;
-  background: var(--surface);
-  border-right: 0.5px solid var(--border);
+  background: rgba(13,13,26,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 0.5px solid rgba(255,255,255,0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -101,22 +116,13 @@ body {
 }
 .banner-area {
   flex: 1;
-  background: #06040e;
-  background-size: cover;
-  background-position: center;
+  background: transparent;
   position: relative;
   overflow: hidden;
   padding: 8px 18px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-}
-.banner-area::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(6,4,14,0.75) 100%);
-  z-index: 0;
 }
 .banner-content { position: relative; z-index: 2; }
 .banner-orb {
@@ -181,9 +187,11 @@ body {
 .progress-area {
   display: flex; gap: 6px;
   padding: 5px 12px;
-  border-bottom: 0.5px solid var(--border);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
-  background: var(--surface);
+  background: rgba(13,13,26,0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .prog-card {
   flex: 1; background: var(--surface2);
@@ -209,10 +217,12 @@ body {
 
 /* ===== SCHEDULE ===== */
 .schedule-col {
-  border: 0.5px solid var(--border2);
+  border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--surface);
+  background: rgba(13,13,26,0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
 }
@@ -338,8 +348,10 @@ body {
 
 /* ===== TODAY BOARD ===== */
 .today-board {
-  background: var(--board-today);
-  border: 0.5px solid var(--board-border-today);
+  background: rgba(13,13,26,0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   overflow: hidden;
   min-height: 200px;
@@ -359,10 +371,12 @@ body {
 }
 .bottom-section { display: contents; }
 .bottom-panel {
-  border: 0.5px solid var(--border2);
+  border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--board-bottom);
+  background: rgba(10,8,20,0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   min-height: 200px;
   display: flex;
   flex-direction: column;
@@ -566,8 +580,11 @@ body {
 /* ===== BOTTOM NAV ===== */
 .bottom-nav {
   display: flex; gap: 8px; padding: 6px 12px;
-  border-top: 0.5px solid var(--border);
-  background: var(--bg); flex-shrink: 0;
+  border-top: 0.5px solid rgba(255,255,255,0.08);
+  background: rgba(5,3,15,0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  flex-shrink: 0;
   justify-content: center;
 }
 .nav-btn {
@@ -893,8 +910,7 @@ function setupBackground() {
   const now = new Date();
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   const bg = BACKGROUNDS[dayOfYear % BACKGROUNDS.length];
-  const banner = document.querySelector('.banner-area');
-  if (banner) banner.style.backgroundImage = `url('${bg}')`;
+  document.body.style.backgroundImage = `url('${bg}')`;
 }
 
 // ===== Google Calendar OAuth =====
