@@ -64,14 +64,14 @@ body::before {
 
 /* ===== SIDEBAR ===== */
 .sidebar {
-  width: 56px;
+  width: 68px;
   background: rgba(13,13,26,0.75);
   border-right: 0.5px solid rgba(255,255,255,0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0;
-  gap: 4px;
+  padding: 20px 0;
+  gap: 5px;
   flex-shrink: 0;
   z-index: 10;
   position: sticky;
@@ -80,8 +80,8 @@ body::before {
   align-self: flex-start;
 }
 .sb-btn {
-  width: 40px; height: 40px;
-  border-radius: 10px;
+  width: 48px; height: 48px;
+  border-radius: 12px;
   border: none; background: transparent;
   cursor: pointer;
   display: flex; flex-direction: column;
@@ -91,8 +91,8 @@ body::before {
 }
 .sb-btn:hover { background: rgba(255,255,255,0.06); }
 .sb-btn.active { background: rgba(127,119,221,0.15); border: 0.5px solid rgba(127,119,221,0.3); }
-.sb-icon { font-size: 16px; }
-.sb-label { font-size: 8px; color: var(--text-dim); font-weight: 400; letter-spacing: 0.05em; }
+.sb-icon { font-size: 19px; }
+.sb-label { font-size: 10px; color: var(--text-dim); font-weight: 400; letter-spacing: 0.05em; }
 .sb-btn.active .sb-label { color: var(--purple); }
 
 /* ===== MAIN ===== */
@@ -119,22 +119,22 @@ body::before {
 
 /* ===== DATETIME WIDGET ===== */
 .datetime-widget {
-  position: fixed;
+  position: absolute;
   top: 12px; right: 16px;
-  background: rgba(0,0,0,0.88);
-  border: 0.5px solid rgba(255,255,255,0.14);
-  border-radius: 8px;
-  padding: 6px 14px;
-  z-index: 300;
+  background: rgba(0,0,0,0.72);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 18px;
+  z-index: 10;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.dt-date { font-size: 10px; color: rgba(255,255,255,0.65); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.08em; }
-.dt-sep { font-size: 10px; color: rgba(255,255,255,0.25); }
-.dt-time { font-size: 13px; color: rgba(255,255,255,0.95); font-family: 'JetBrains Mono', monospace; font-weight: 400; letter-spacing: 0.05em; }
+.dt-date { font-size: 14px; color: rgba(255,255,255,0.65); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.08em; }
+.dt-sep { font-size: 14px; color: rgba(255,255,255,0.25); }
+.dt-time { font-size: 19px; color: rgba(255,255,255,0.95); font-family: 'JetBrains Mono', monospace; font-weight: 400; letter-spacing: 0.05em; }
 .banner-content { position: relative; z-index: 2; }
 .banner-orb {
   position: absolute;
@@ -169,7 +169,7 @@ body::before {
   border: 0.5px solid rgba(255,255,255,0.1);
 }
 .mode-btn {
-  font-size: 15px; padding: 9px 28px; border-radius: 10px;
+  font-size: 12px; padding: 7px 20px; border-radius: 8px;
   border: none; background: transparent;
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .25s ease;
@@ -580,8 +580,8 @@ body::before {
 .bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  display: flex; gap: 15px; padding: 15px 36px;
-  background: rgba(0,0,0,0.96);
+  display: flex; gap: 10px; padding: 10px 28px;
+  background: rgba(0,0,0,0.80);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 0.5px solid rgba(255,255,255,0.08);
@@ -591,19 +591,19 @@ body::before {
   flex-wrap: wrap;
 }
 .nav-btn {
-  padding: 12px 24px; border-radius: 12px;
+  padding: 8px 18px; border-radius: 9px;
   border: 0.5px solid var(--border2);
   background: var(--surface);
   cursor: pointer; text-align: center;
-  font-size: 15px; color: var(--text-sub); font-weight: 500;
+  font-size: 12px; color: var(--text-sub); font-weight: 500;
   font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
-  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
   letter-spacing: 0.05em;
 }
 .nav-btn:hover { background: var(--surface2); border-color: var(--purple); color: var(--purple); }
-.nav-divider { width: 0.5px; height: 54px; background: rgba(255,255,255,0.18); flex-shrink: 0; margin: 0 6px; }
+.nav-divider { width: 0.5px; height: 40px; background: rgba(255,255,255,0.18); flex-shrink: 0; margin: 0 4px; }
 .nav-action-btn {
-  font-size: 15px; padding: 9px 24px; border-radius: 12px;
+  font-size: 12px; padding: 7px 18px; border-radius: 9px;
   border: 0.5px solid; background: rgba(26,26,36,0.65);
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .15s; white-space: nowrap;
@@ -686,14 +686,6 @@ body::before {
 </style>
 </head>
 <body>
-
-<!-- 日時ウィジェット -->
-<div class="datetime-widget">
-  <span class="dt-date" id="dt-date"></span>
-  <span class="dt-sep">|</span>
-  <span class="dt-time" id="dt-time"></span>
-</div>
-
 <div class="page-wrapper">
 
 <!-- サイドバー -->
@@ -712,11 +704,17 @@ body::before {
   <div class="banner-area">
     <div class="banner-orb" id="banner-orb"></div>
     <div class="banner-grid"></div>
+    <!-- 日時ウィジェット -->
+    <div class="datetime-widget">
+      <span class="dt-date" id="dt-date"></span>
+      <span class="dt-sep">|</span>
+      <span class="dt-time" id="dt-time"></span>
+    </div>
     <div class="banner-content">
       <div class="banner-jp" id="banner-jp"></div>
       <div class="banner-orig" id="banner-orig"></div>
       <div class="banner-en" id="banner-en"></div>
-      <div class="banner-phil"><div class="phil-line"></div><span id="banner-phil"></span><div class="phil-line"></div></div>
+      <div class="banner-phil"><div class="phil-line"></div><span id="banner-phil"></span><span id="banner-phil-jp" style="font-family:'Noto Sans JP',sans-serif;font-size:8px;color:rgba(127,119,221,0.6);margin-left:6px;letter-spacing:0.05em;"></span><div class="phil-line"></div></div>
     </div>
   </div>
 
@@ -1179,18 +1177,18 @@ const DB = {
 // ===== 哲学バナー =====
 // orig: 原文（ラテン語・フランス語・ドイツ語・ギリシャ語など）。英語原文の場合はnull
 const quotes = [
-  {jp:'我思う、ゆえに我あり。', orig:'Cogito, ergo sum.', en:'"I think, therefore I am."', phil:'René Descartes', color:'#7F77DD'},
-  {jp:'実存は本質に先立つ。', orig:"L'existence précède l'essence.", en:'"Existence precedes essence."', phil:'Jean-Paul Sartre', color:'#1D9E75'},
-  {jp:'神は死んだ。神は死んだままだ。そして我々が神を殺したのだ。', orig:'Gott ist tot. Gott bleibt tot. Und wir haben ihn getötet.', en:'"God is dead. God remains dead. And we have killed him."', phil:'Friedrich Nietzsche', color:'#D85A30'},
-  {jp:'シーシュポスは幸福だと想像しなければならない。', orig:"Il faut imaginer Sisyphe heureux.", en:'"One must imagine Sisyphus happy."', phil:'Albert Camus', color:'#185FA5'},
-  {jp:'他者は地獄だ。', orig:"L'enfer, c'est les autres.", en:'"Hell is other people."', phil:'Jean-Paul Sartre', color:'#A32D2D'},
-  {jp:'我々は自由の刑に処されている。', orig:'Nous sommes condamnés à être libres.', en:'"We are condemned to be free."', phil:'Jean-Paul Sartre', color:'#1D9E75'},
-  {jp:'汝自身を知れ。', orig:'γνῶθι σεαυτόν', en:'"Know thyself."', phil:'Socrates', color:'#EF9F27'},
-  {jp:'人間は考える葦である。', orig:"L'homme est un roseau pensant.", en:'"Man is a thinking reed."', phil:'Blaise Pascal', color:'#7F77DD'},
-  {jp:'私を殺さないものは、私を強くする。', orig:'Was mich nicht umbringt, macht mich stärker.', en:'"That which does not kill me makes me stronger."', phil:'Friedrich Nietzsche', color:'#D85A30'},
-  {jp:'万物は流転する。', orig:'πάντα ῥεῖ', en:'"Everything flows."', phil:'Heraclitus', color:'#185FA5'},
-  {jp:'美はこの世を救う。', orig:'Красота спасёт мир.', en:'"Beauty will save the world."', phil:'Fyodor Dostoevsky', color:'#D4537E'},
-  {jp:'自分自身の理性を使う勇気を持て。', orig:'Sapere aude!', en:'"Dare to know!"', phil:'Immanuel Kant', color:'#378ADD'},
+  {jp:'我思う、ゆえに我あり。', orig:'Cogito, ergo sum.', en:'"I think, therefore I am."', phil:'René Descartes', philJp:'ルネ・デカルト', color:'#7F77DD'},
+  {jp:'実存は本質に先立つ。', orig:"L'existence précède l'essence.", en:'"Existence precedes essence."', phil:'Jean-Paul Sartre', philJp:'ジャン＝ポール・サルトル', color:'#1D9E75'},
+  {jp:'神は死んだ。神は死んだままだ。そして我々が神を殺したのだ。', orig:'Gott ist tot. Gott bleibt tot. Und wir haben ihn getötet.', en:'"God is dead. God remains dead. And we have killed him."', phil:'Friedrich Nietzsche', philJp:'フリードリヒ・ニーチェ', color:'#D85A30'},
+  {jp:'シーシュポスは幸福だと想像しなければならない。', orig:"Il faut imaginer Sisyphe heureux.", en:'"One must imagine Sisyphus happy."', phil:'Albert Camus', philJp:'アルベール・カミュ', color:'#185FA5'},
+  {jp:'他者は地獄だ。', orig:"L'enfer, c'est les autres.", en:'"Hell is other people."', phil:'Jean-Paul Sartre', philJp:'ジャン＝ポール・サルトル', color:'#A32D2D'},
+  {jp:'我々は自由の刑に処されている。', orig:'Nous sommes condamnés à être libres.', en:'"We are condemned to be free."', phil:'Jean-Paul Sartre', philJp:'ジャン＝ポール・サルトル', color:'#1D9E75'},
+  {jp:'汝自身を知れ。', orig:'γνῶθι σεαυτόν', en:'"Know thyself."', phil:'Socrates', philJp:'ソクラテス', color:'#EF9F27'},
+  {jp:'人間は考える葦である。', orig:"L'homme est un roseau pensant.", en:'"Man is a thinking reed."', phil:'Blaise Pascal', philJp:'ブレーズ・パスカル', color:'#7F77DD'},
+  {jp:'私を殺さないものは、私を強くする。', orig:'Was mich nicht umbringt, macht mich stärker.', en:'"That which does not kill me makes me stronger."', phil:'Friedrich Nietzsche', philJp:'フリードリヒ・ニーチェ', color:'#D85A30'},
+  {jp:'万物は流転する。', orig:'πάντα ῥεῖ', en:'"Everything flows."', phil:'Heraclitus', philJp:'ヘラクレイトス', color:'#185FA5'},
+  {jp:'美はこの世を救う。', orig:'Красота спасёт мир.', en:'"Beauty will save the world."', phil:'Fyodor Dostoevsky', philJp:'フョードル・ドストエフスキー', color:'#D4537E'},
+  {jp:'自分自身の理性を使う勇気を持て。', orig:'Sapere aude!', en:'"Dare to know!"', phil:'Immanuel Kant', philJp:'イマヌエル・カント', color:'#378ADD'},
 ];
 
 function setupBanner() {
@@ -1202,6 +1200,7 @@ function setupBanner() {
   document.getElementById('banner-orig').textContent = q.orig || '';
   document.getElementById('banner-en').textContent = q.en || '';
   document.getElementById('banner-phil').textContent = q.phil;
+  document.getElementById('banner-phil-jp').textContent = q.philJp ? `／ ${q.philJp}` : '';
 }
 
 function setupDatetime() {
