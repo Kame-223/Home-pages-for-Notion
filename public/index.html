@@ -102,26 +102,38 @@ body::before {
   min-width: 0;
 }
 
-/* ===== TOPBAR ===== */
-.topbar {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 0.5px solid var(--border);
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-  min-height: 140px;
-}
+/* ===== BANNER ===== */
 .banner-area {
-  flex: 1;
   background: transparent;
   position: relative;
   overflow: hidden;
-  padding: 8px 18px;
+  padding: 12px 20px 10px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  min-height: 120px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
 }
+
+/* ===== DATETIME WIDGET ===== */
+.datetime-widget {
+  position: fixed;
+  top: 12px; right: 16px;
+  background: rgba(0,0,0,0.88);
+  border: 0.5px solid rgba(255,255,255,0.14);
+  border-radius: 8px;
+  padding: 6px 14px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.dt-date { font-size: 10px; color: rgba(255,255,255,0.65); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.08em; }
+.dt-sep { font-size: 10px; color: rgba(255,255,255,0.25); }
+.dt-time { font-size: 13px; color: rgba(255,255,255,0.95); font-family: 'JetBrains Mono', monospace; font-weight: 400; letter-spacing: 0.05em; }
 .banner-content { position: relative; z-index: 2; }
 .banner-orb {
   position: absolute;
@@ -146,41 +158,18 @@ body::before {
 .banner-phil { font-size: 9px; color: var(--purple); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
 .phil-line { flex: 1; height: 0.5px; background: rgba(127,119,221,0.2); }
 
-.topbar-right {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 6px 12px;
-  gap: 4px;
-  border-left: 0.5px solid var(--border);
-  background: rgba(13,13,26,0.72);
-  min-width: 180px;
-}
-.topbar-info { display: flex; flex-direction: column; gap: 1px; }
-.greeting { font-size: 16px; font-weight: 500; color: var(--text); }
-.date-str { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-.topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.quick-btn {
-  font-size: 12px; padding: 7px 14px; border-radius: 8px;
-  border: 0.5px solid var(--border2); background: rgba(26,26,36,0.65);
-  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
-  font-weight: 500; transition: all .15s; white-space: nowrap;
-}
-#btn-inbox { border-color: rgba(239,159,39,0.4); color: var(--amber); }
-#btn-inbox:hover { background: rgba(239,159,39,0.1); }
-#btn-note { border-color: rgba(55,138,221,0.4); color: var(--blue); }
-#btn-note:hover { background: rgba(55,138,221,0.1); }
-.mode-btns { display: flex; gap: 6px; }
 .mode-btn {
-  font-size: 12px; padding: 7px 18px; border-radius: 8px;
-  border: 1px solid var(--border2); background: rgba(26,26,36,0.65);
+  font-size: 10px; padding: 6px 16px; border-radius: 8px;
+  border: 0.5px solid var(--border2); background: rgba(26,26,36,0.65);
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s;
+  opacity: 0.35;
 }
-#btn-select { color: var(--purple); border-color: rgba(127,119,221,0.4); }
-#btn-select.active { background: var(--purple); border-color: var(--purple); color: white; }
-#btn-exec { color: var(--green); border-color: rgba(29,158,117,0.4); }
-#btn-exec.active { background: var(--green); border-color: var(--green); color: white; }
+.mode-btn.active { opacity: 1; }
+#btn-select { color: var(--purple); border-color: rgba(127,119,221,0.5); }
+#btn-select.active { background: rgba(127,119,221,0.18); border-color: rgba(127,119,221,0.7); }
+#btn-exec { color: var(--green); border-color: rgba(29,158,117,0.5); }
+#btn-exec.active { background: rgba(29,158,117,0.18); border-color: rgba(29,158,117,0.7); }
 
 /* ===== PROGRESS ===== */
 .progress-area {
@@ -594,8 +583,8 @@ body::before {
 .nav-divider { width: 0.5px; height: 36px; background: rgba(255,255,255,0.1); flex-shrink: 0; margin: 0 4px; }
 .nav-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
 .nav-action-btn {
-  font-size: 10px; padding: 5px 12px; border-radius: 6px;
-  border: 0.5px solid; background: transparent;
+  font-size: 10px; padding: 6px 16px; border-radius: 8px;
+  border: 0.5px solid; background: rgba(26,26,36,0.65);
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .15s; white-space: nowrap;
 }
@@ -677,6 +666,14 @@ body::before {
 </style>
 </head>
 <body>
+
+<!-- 日時ウィジェット -->
+<div class="datetime-widget">
+  <span class="dt-date" id="dt-date"></span>
+  <span class="dt-sep">|</span>
+  <span class="dt-time" id="dt-time"></span>
+</div>
+
 <div class="page-wrapper">
 
 <!-- サイドバー -->
@@ -691,34 +688,15 @@ body::before {
 <!-- メイン -->
 <div class="main">
 
-  <!-- トップバー -->
-  <div class="topbar">
-    <div class="banner-area">
-      <div class="banner-orb" id="banner-orb"></div>
-      <div class="banner-grid"></div>
-      <div class="banner-content">
-        <div class="banner-date" id="banner-date"></div>
-        <div class="banner-jp" id="banner-jp"></div>
-        <div class="banner-orig" id="banner-orig"></div>
-        <div class="banner-en" id="banner-en"></div>
-        <div class="banner-phil"><div class="phil-line"></div><span id="banner-phil"></span><div class="phil-line"></div></div>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-info">
-        <div class="greeting" id="greeting"></div>
-        <div class="date-str" id="date-str"></div>
-      </div>
-      <div class="topbar-actions">
-        <button class="quick-btn" id="btn-inbox" onclick="openModal('inbox')">＋ INBOX</button>
-        <button class="quick-btn" id="btn-note" onclick="openModal('note')">＋ NOTE</button>
-      </div>
-      <div style="display:flex;gap:4px;align-items:center">
-        <div class="mode-btns">
-          <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
-          <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
-        </div>
-      </div>
+  <!-- バナー -->
+  <div class="banner-area">
+    <div class="banner-orb" id="banner-orb"></div>
+    <div class="banner-grid"></div>
+    <div class="banner-content">
+      <div class="banner-jp" id="banner-jp"></div>
+      <div class="banner-orig" id="banner-orig"></div>
+      <div class="banner-en" id="banner-en"></div>
+      <div class="banner-phil"><div class="phil-line"></div><span id="banner-phil"></span><div class="phil-line"></div></div>
     </div>
   </div>
 
@@ -834,12 +812,10 @@ body::before {
       <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
       <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
       <div class="nav-divider"></div>
-      <div class="nav-actions">
-        <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
-        <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
-        <button class="mode-btn" onclick="setMode('select')">選択</button>
-        <button class="mode-btn" onclick="setMode('exec')">実行</button>
-      </div>
+      <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
+      <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
+      <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
+      <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
     </div>
 
   </div>
@@ -1198,22 +1174,23 @@ function setupBanner() {
   const dy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
   const q = quotes[dy % quotes.length];
   document.getElementById('banner-orb').style.background = q.color;
-  const days = ['日','月','火','水','木','金','土'];
-  document.getElementById('banner-date').textContent =
-    `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${days[now.getDay()]}`;
   document.getElementById('banner-jp').textContent = q.jp;
   document.getElementById('banner-orig').textContent = q.orig || '';
   document.getElementById('banner-en').textContent = q.en || '';
   document.getElementById('banner-phil').textContent = q.phil;
 }
 
-function setupHeader() {
-  const h = new Date().getHours();
-  document.getElementById('greeting').textContent = h<12?'おはよう':h<18?'こんにちは':'こんばんは';
-  const now = new Date();
+function setupDatetime() {
   const days = ['日','月','火','水','木','金','土'];
-  document.getElementById('date-str').textContent =
-    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+  function update() {
+    const now = new Date();
+    document.getElementById('dt-date').textContent =
+      `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${days[now.getDay()]})`;
+    document.getElementById('dt-time').textContent =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
+  update();
+  setInterval(update, 1000);
 }
 
 // ===== カレンダー =====
@@ -1769,11 +1746,21 @@ async function addToInbox() {
   } catch(e) { console.error(e); }
 }
 
+// ===== キーボードショートカット =====
+document.addEventListener('keydown', (e) => {
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
+    if (e.key === 'S' || e.key === 's') { e.preventDefault(); setMode('select'); }
+    if (e.key === 'E' || e.key === 'e') { e.preventDefault(); setMode('exec'); }
+  }
+});
+
 // ===== 起動 =====
 window.onload = () => {
   setupBackground();
   setupBanner();
-  setupHeader();
+  setupDatetime();
   initGoogleCalendar();
   setupFurikaeri();
   loadTasks();
