@@ -290,7 +290,7 @@ body {
 .sched-add-btn:hover { color: var(--text); border-color: var(--border2); }
 
 /* FullCalendar ダークテーマ */
-#fc-container { flex: 1; min-height: 0; overflow: hidden; }
+#fc-container { overflow: hidden; }
 .fc { font-family: 'Noto Sans JP', sans-serif !important; font-size: 11px; }
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
@@ -927,7 +927,8 @@ function renderFullCalendar() {
     initialView: 'timeGridDay',
     locale: 'ja',
     headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-    height: '100%',
+    height: 'auto',
+    expandRows: false,
     nowIndicator: true,
     editable: true,
     selectable: true,
