@@ -733,7 +733,7 @@ body::before {
 
     <!-- スケジュール -->
     <div class="schedule-col">
-      <div class="section-header">📅 スケジュール<a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:auto">GCal →</a></div>
+      <div class="section-header">📅 スケジュール<span id="cal-login-status" style="margin-left:auto;display:flex;gap:4px"></span><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
       <div id="fc-container"></div>
     </div>
 
@@ -906,7 +906,8 @@ function setupBackground() {
 // ===== Google Calendar OAuth =====
 const GCAL_CLIENT_ID = '844288249513-ch0fp313ij9ivaef37js157l1f24kupm.apps.googleusercontent.com';
 const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar';
-let gToken = null;
+let gToken = null;   // 個人アカウント
+let gToken2 = null;  // ICUアカウント
 let fcCalendar = null;
 let gcalEditingId = null;
 
@@ -915,48 +916,71 @@ function initGoogleCalendar() {
   const btn = document.getElementById('cal-edit-btn');
   if (btn) btn.href = `https://calendar.google.com/calendar/r/day/${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
 
-  // URLハッシュにトークンがあれば取得（OAuth リダイレクト後）
+  // URLハッシュにトークンがあれば取得
   const hash = window.location.hash;
   if (hash.includes('access_token=')) {
     const params = new URLSearchParams(hash.substring(1));
     const token = params.get('access_token');
+    const state = params.get('state');
     if (token) {
-      gToken = token;
-      sessionStorage.setItem('gcal_token', token);
+      if (state === 'icu') {
+        gToken2 = token;
+        sessionStorage.setItem('gcal_token2', token);
+      } else {
+        gToken = token;
+        sessionStorage.setItem('gcal_token', token);
+      }
       history.replaceState({}, '', window.location.pathname);
     }
   }
 
-  // セッションに保存済みのトークンを確認
-  if (!gToken) {
-    const saved = sessionStorage.getItem('gcal_token');
-    if (saved) gToken = saved;
-  }
+  // 保存済みトークンを復元
+  if (!gToken) { const s = sessionStorage.getItem('gcal_token'); if (s) gToken = s; }
+  if (!gToken2) { const s = sessionStorage.getItem('gcal_token2'); if (s) gToken2 = s; }
 
-  if (gToken) {
+  if (gToken || gToken2) {
     renderFullCalendar();
   } else {
-    const container = document.getElementById('fc-container');
-    if (container) container.innerHTML = `
-      <div class="gcal-login-wrap">
-        <button class="gcal-login-btn" onclick="requestGCalAuth()">🔑 Googleでログイン</button>
-        <div class="gcal-login-note">カレンダーの表示・編集にはログインが必要です</div>
-      </div>`;
+    showLoginButtons();
   }
 }
 
-function requestGCalAuth() {
+function showLoginButtons() {
+  const container = document.getElementById('fc-container');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="gcal-login-wrap">
+      <button class="gcal-login-btn" onclick="requestGCalAuth('personal')">🔑 個人アカウントでログイン</button>
+      <button class="gcal-login-btn" onclick="requestGCalAuth('icu')" style="margin-top:6px;border-color:rgba(55,138,221,0.4);color:var(--blue)">🏫 ICUアカウントでログイン</button>
+      <div class="gcal-login-note">両方ログインすると全予定が表示されます</div>
+    </div>`;
+}
+
+function requestGCalAuth(account) {
   const redirectUri = window.location.origin + window.location.pathname;
+  const hint = account === 'icu' ? 'c301250n@icu.ac.jp' : 'matsuyamakosei31@gmail.com';
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' +
     'client_id=' + encodeURIComponent(GCAL_CLIENT_ID) +
     '&redirect_uri=' + encodeURIComponent(redirectUri) +
     '&response_type=token' +
     '&scope=' + encodeURIComponent(GCAL_SCOPE) +
-    '&prompt=consent';
+    '&prompt=consent' +
+    '&login_hint=' + encodeURIComponent(hint) +
+    '&state=' + account;
   window.location.href = url;
 }
 
+function updateLoginStatus() {
+  const el = document.getElementById('cal-login-status');
+  if (!el) return;
+  el.innerHTML = [
+    gToken  ? `<span style="font-size:9px;color:var(--green)" title="個人アカウント">✓個人</span>` : `<button class="cal-edit-btn" onclick="requestGCalAuth('personal')" style="font-size:9px">+個人</button>`,
+    gToken2 ? `<span style="font-size:9px;color:var(--green)" title="ICU">✓ICU</span>` : `<button class="cal-edit-btn" onclick="requestGCalAuth('icu')" style="font-size:9px;color:var(--blue)">+ICU</button>`,
+  ].join('');
+}
+
 function renderFullCalendar() {
+  updateLoginStatus();
   const container = document.getElementById('fc-container');
   if (!container) return;
   container.innerHTML = '<div id="fc-el" style="height:100%;padding:0 4px 4px"></div>';
@@ -992,38 +1016,45 @@ async function fetchGCalEvents(info, success, failure) {
     const timeMin = start.toISOString();
     const timeMax = end.toISOString();
 
-    // 全カレンダーリストを取得
-    const listRes = await fetch(
-      'https://www.googleapis.com/calendar/v3/users/me/calendarList',
-      { headers: { Authorization: `Bearer ${gToken}` } }
-    );
-    if (listRes.status === 401) {
-      gToken = null; sessionStorage.removeItem('gcal_token'); initGoogleCalendar(); return;
+    // トークンごとに全カレンダーからイベントを取得
+    async function fetchFromToken(token, prefix) {
+      if (!token) return [];
+      const listRes = await fetch(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (listRes.status === 401) return null; // 期限切れ
+      const listData = await listRes.json();
+      const cals = listData.items || [];
+      const evArrays = await Promise.all(cals.map(async (cal) => {
+        try {
+          const res = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events` +
+            `?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&timeZone=${encodeURIComponent(tz)}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) return [];
+          const data = await res.json();
+          return (data.items || []).map(e => ({
+            id: prefix + cal.id + '_' + e.id,
+            title: e.summary || '(タイトルなし)',
+            start: e.start.dateTime || e.start.date,
+            end: e.end?.dateTime || e.end?.date,
+            backgroundColor: cal.backgroundColor || undefined,
+            borderColor: cal.backgroundColor || undefined,
+          }));
+        } catch { return []; }
+      }));
+      return evArrays.flat();
     }
-    const listData = await listRes.json();
-    const calendars = listData.items || [];
 
-    // 全カレンダーから並列でイベント取得
-    const results = await Promise.all(calendars.map(async (cal) => {
-      try {
-        const res = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events` +
-          `?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&timeZone=${encodeURIComponent(tz)}`,
-          { headers: { Authorization: `Bearer ${gToken}` } }
-        );
-        if (!res.ok) return [];
-        const data = await res.json();
-        return (data.items || []).map(e => ({
-          id: cal.id + '_' + e.id,
-          title: e.summary || '(タイトルなし)',
-          start: e.start.dateTime || e.start.date,
-          end: e.end?.dateTime || e.end?.date,
-          backgroundColor: cal.backgroundColor || undefined,
-          borderColor: cal.backgroundColor || undefined,
-        }));
-      } catch { return []; }
-    }));
-    success(results.flat());
+    const [ev1, ev2] = await Promise.all([
+      fetchFromToken(gToken, 'p_'),
+      fetchFromToken(gToken2, 'i_'),
+    ]);
+    if (ev1 === null) { gToken = null; sessionStorage.removeItem('gcal_token'); }
+    if (ev2 === null) { gToken2 = null; sessionStorage.removeItem('gcal_token2'); }
+    success([...(ev1 || []), ...(ev2 || [])]);
   } catch(e) { console.error('fetchGCalEvents:', e); failure(e); }
 }
 
