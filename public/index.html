@@ -6,7 +6,6 @@
 <title>🏠 ホーム</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Sans+JP:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <style>
 :root {
@@ -874,47 +873,49 @@ let fcCalendar = null;
 let gcalEditingId = null;
 
 function initGoogleCalendar() {
-  // Googleカレンダー編集ボタンのリンクを今日に設定
   const now = new Date();
   const btn = document.getElementById('cal-edit-btn');
   if (btn) btn.href = `https://calendar.google.com/calendar/r/day/${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
 
-  const container = document.getElementById('fc-container');
-  if (!container) return;
-  container.innerHTML = `
-    <div class="gcal-login-wrap">
-      <button class="gcal-login-btn" onclick="requestGCalAuth()">🔑 Googleでログイン</button>
-      <div class="gcal-login-note">カレンダーの表示・編集にはログインが必要です</div>
-    </div>`;
+  // URLハッシュにトークンがあれば取得（OAuth リダイレクト後）
+  const hash = window.location.hash;
+  if (hash.includes('access_token=')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    if (token) {
+      gToken = token;
+      sessionStorage.setItem('gcal_token', token);
+      history.replaceState({}, '', window.location.pathname);
+    }
+  }
 
-  // 保存済みトークンがあれば自動ログイン試行
-  const saved = sessionStorage.getItem('gcal_token');
-  if (saved) { gToken = saved; renderFullCalendar(); }
+  // セッションに保存済みのトークンを確認
+  if (!gToken) {
+    const saved = sessionStorage.getItem('gcal_token');
+    if (saved) gToken = saved;
+  }
+
+  if (gToken) {
+    renderFullCalendar();
+  } else {
+    const container = document.getElementById('fc-container');
+    if (container) container.innerHTML = `
+      <div class="gcal-login-wrap">
+        <button class="gcal-login-btn" onclick="requestGCalAuth()">🔑 Googleでログイン</button>
+        <div class="gcal-login-note">カレンダーの表示・編集にはログインが必要です</div>
+      </div>`;
+  }
 }
 
 function requestGCalAuth() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    alert('Googleライブラリを読み込み中です。数秒後に再試行してください。');
-    return;
-  }
-  try {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: GCAL_CLIENT_ID,
-      scope: GCAL_SCOPE,
-      callback: (res) => {
-        if (res.error) { console.error('OAuth error:', res); return; }
-        if (res.access_token) {
-          gToken = res.access_token;
-          sessionStorage.setItem('gcal_token', gToken);
-          renderFullCalendar();
-        }
-      },
-    });
-    client.requestAccessToken({ prompt: 'consent' });
-  } catch(e) {
-    console.error('Auth error:', e);
-    alert('ログインエラー: ' + e.message);
-  }
+  const redirectUri = 'https://home-pages-for-notion-n5f9.vercel.app';
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+    'client_id=' + encodeURIComponent(GCAL_CLIENT_ID) +
+    '&redirect_uri=' + encodeURIComponent(redirectUri) +
+    '&response_type=token' +
+    '&scope=' + encodeURIComponent(GCAL_SCOPE) +
+    '&prompt=consent';
+  window.location.href = url;
 }
 
 function renderFullCalendar() {
