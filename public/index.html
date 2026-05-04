@@ -59,7 +59,7 @@ body::before {
   min-width: 820px;
   min-height: 100vh;
   align-items: flex-start;
-  padding-bottom: 80px;
+  padding-bottom: 110px;
 }
 
 /* ===== SIDEBAR ===== */
@@ -160,7 +160,7 @@ body::before {
 .phil-line { flex: 1; height: 0.5px; background: rgba(127,119,221,0.2); }
 
 .mode-btn {
-  font-size: 10px; padding: 6px 16px; border-radius: 8px;
+  font-size: 15px; padding: 9px 24px; border-radius: 12px;
   border: 0.5px solid var(--border2); background: rgba(26,26,36,0.65);
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s;
@@ -565,7 +565,7 @@ body::before {
 .bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  display: flex; gap: 10px; padding: 10px 24px;
+  display: flex; gap: 15px; padding: 15px 36px;
   background: rgba(0,0,0,0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -576,20 +576,19 @@ body::before {
   flex-wrap: wrap;
 }
 .nav-btn {
-  padding: 8px 16px; border-radius: 8px;
+  padding: 12px 24px; border-radius: 12px;
   border: 0.5px solid var(--border2);
   background: var(--surface);
   cursor: pointer; text-align: center;
-  font-size: 10px; color: var(--text-sub); font-weight: 500;
+  font-size: 15px; color: var(--text-sub); font-weight: 500;
   font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
-  text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
   letter-spacing: 0.05em;
 }
 .nav-btn:hover { background: var(--surface2); border-color: var(--purple); color: var(--purple); }
-.nav-divider { width: 0.5px; height: 36px; background: rgba(255,255,255,0.1); flex-shrink: 0; margin: 0 4px; }
-.nav-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
+.nav-divider { width: 0.5px; height: 54px; background: rgba(255,255,255,0.18); flex-shrink: 0; margin: 0 6px; }
 .nav-action-btn {
-  font-size: 10px; padding: 6px 16px; border-radius: 8px;
+  font-size: 15px; padding: 9px 24px; border-radius: 12px;
   border: 0.5px solid; background: rgba(26,26,36,0.65);
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .15s; white-space: nowrap;
@@ -824,10 +823,11 @@ body::before {
   <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
   <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
   <div class="nav-divider"></div>
-  <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
-  <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
   <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
   <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
+  <div class="nav-divider"></div>
+  <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
+  <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
 </div>
 
 <!-- 集中モード -->
