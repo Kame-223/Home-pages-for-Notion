@@ -433,7 +433,16 @@ body::before {
 .tag-purple { background: rgba(127,119,221,0.12); color: #AFA9EC; border: 0.5px solid rgba(175,169,236,0.3); }
 .tag-gray { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 0.5px solid var(--border); }
 .tag-red { background: rgba(240,149,149,0.12); color: #F09595; border: 0.5px solid rgba(240,149,149,0.3); }
-.deadline-tag { margin-left: auto; flex-shrink: 0; }
+.deadline-tag { flex-shrink: 0; }
+.tag.clickable { cursor: pointer; transition: opacity .15s; }
+.tag.clickable:hover { opacity: 0.75; }
+.btn-set-prop {
+  font-size: 9px; padding: 2px 8px; border-radius: 4px;
+  background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.12);
+  cursor: pointer; color: var(--text-dim); font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s;
+}
+.btn-set-prop:hover { background: rgba(255,255,255,0.08); color: var(--text); }
 .task-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
 .task-bottom { display: flex; align-items: center; gap: 6px; }
 .time-wrap { display: flex; align-items: center; gap: 4px; }
@@ -458,8 +467,8 @@ body::before {
 .btn-time {
   font-size: 10px; padding: 3px 10px; border-radius: 7px;
   border: 0.5px solid var(--border2); background: var(--surface2);
-  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
-  font-weight: 500; transition: all .2s; position: relative; white-space: nowrap;
+  cursor: pointer; color: var(--text); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; position: relative; white-space: nowrap; width: 100%;
 }
 .btn-start {
   font-size: 10px; padding: 3px 10px; border-radius: 7px;
@@ -500,14 +509,88 @@ body::before {
   transition: all .15s; margin-right: 2px; flex-shrink: 0;
 }
 .card-edit-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); border-color: rgba(255,255,255,0.25); }
-.btn-link {
-  font-size: 9px; padding: 2px 8px; border-radius: 5px;
-  border: 0.5px solid rgba(55,138,221,0.4); background: rgba(55,138,221,0.08);
-  cursor: pointer; color: var(--blue); font-family: 'Noto Sans JP', sans-serif;
-  text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
-  transition: all .15s; white-space: nowrap;
+
+/* カード新レイアウト */
+.card-body {
+  display: flex; gap: 8px; align-items: stretch; margin-bottom: 7px;
 }
-.btn-link:hover { background: rgba(55,138,221,0.16); }
+.task-title-box {
+  flex: 1; font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.5;
+  background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.07);
+  border-radius: 7px; padding: 8px 10px; min-height: 42px;
+}
+.card-side {
+  display: flex; flex-direction: column; gap: 5px;
+  flex-shrink: 0; align-items: stretch; min-width: 86px;
+}
+.card-spacer { flex: 1; min-width: 4px; }
+
+/* リンクボタン（タグ行） */
+.btn-link-tag {
+  font-size: 9px; padding: 2px 8px; border-radius: 5px;
+  border: 0.5px solid rgba(127,119,221,0.5); background: rgba(127,119,221,0.12);
+  cursor: pointer; color: var(--purple); font-family: 'Noto Sans JP', sans-serif;
+  display: inline-flex; align-items: center; gap: 3px;
+  transition: all .15s; white-space: nowrap; flex-shrink: 0;
+}
+.btn-link-tag:hover { background: rgba(127,119,221,0.22); }
+
+/* リンク一覧ポップアップ */
+.link-menu-wrap { position: relative; }
+.link-menu {
+  position: absolute; top: 26px; right: 0;
+  background: #1c1c2e; border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 9px; padding: 5px; z-index: 60; min-width: 220px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.55); display: none;
+}
+.link-menu.open { display: block; }
+.link-item {
+  display: flex; align-items: center; gap: 6px; padding: 7px 10px;
+  border-radius: 5px; font-size: 11px; color: var(--blue);
+  text-decoration: none; transition: background .12s; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.link-item:hover { background: rgba(55,138,221,0.1); }
+.link-empty { font-size: 10px; color: var(--text-dim); padding: 6px 10px; }
+
+/* 今日するボタン（大） */
+.btn-pin-big {
+  flex: 1; min-height: 52px; font-size: 11px; border-radius: 8px;
+  border: 0.5px solid rgba(212,83,126,0.45); background: rgba(212,83,126,0.18);
+  cursor: pointer; color: var(--pink); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; white-space: nowrap;
+}
+.btn-pin-big.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
+.btn-pin-big:hover { background: rgba(212,83,126,0.28); }
+
+/* 完了ボタン（大） */
+.btn-done-big {
+  flex: 1; font-size: 11px; padding: 0; border-radius: 8px;
+  border: none; background: var(--purple);
+  cursor: pointer; color: white; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s; min-height: 36px;
+}
+.btn-done-big.undo { background: rgba(255,255,255,0.1); color: var(--text-sub); }
+.btn-done-big:hover { opacity: 0.85; }
+
+/* 編集モーダル リンク複数 */
+.edit-links-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.edit-link-row { display: flex; gap: 6px; align-items: center; }
+.edit-link-row .edit-input { flex: 1; }
+.edit-link-remove {
+  width: 24px; height: 24px; border-radius: 5px; flex-shrink: 0;
+  background: rgba(240,149,149,0.1); border: 0.5px solid rgba(240,149,149,0.3);
+  cursor: pointer; color: #F09595; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.edit-link-remove:hover { background: rgba(240,149,149,0.2); }
+.edit-add-link-btn {
+  font-size: 10px; padding: 5px 12px; border-radius: 7px;
+  background: rgba(127,119,221,0.1); border: 0.5px solid rgba(127,119,221,0.35);
+  cursor: pointer; color: var(--purple); font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s;
+}
+.edit-add-link-btn:hover { background: rgba(127,119,221,0.2); }
 
 /* ===== タスク編集モーダル ===== */
 .task-edit-overlay {
@@ -1478,56 +1561,72 @@ function renderCard(task, mode='today') {
     done: false, pinned: false,
     timeIdx: timeSteps.indexOf(soyo||'30m') >= 0 ? timeSteps.indexOf(soyo||'30m') : 1,
     focusSeconds: 0, jikantai: jikantai||null, link: link||null,
+    links: link ? [link] : [],
   };
+  if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
 
   const at = areaTag(area, subjects);
   const dt = deadlineTag(deadline);
+  const hasProps = !!(area || subjects?.length || ela || deadline);
 
-  const tagsHtml = [
-    `<span class="tag ${at.cls}">${at.label}</span>`,
-    ela ? `<span class="tag tag-amber">${ela}</span>` : '',
-    dt ? `<span class="tag ${dt.cls} deadline-tag">${dt.label}</span>` : '',
+  // プロパティタグ（クリックで編集モーダル）
+  const editCall = `openEditModal('${id}',event)`;
+  const propTags = [
+    area || subjects?.length ? `<span class="tag ${at.cls} clickable" onclick="${editCall}">${at.label}</span>` : '',
+    ela ? `<span class="tag tag-amber clickable" onclick="${editCall}">${ela}</span>` : '',
   ].filter(Boolean).join('');
 
-  const timeBlockHtml = s.jikantai ?
-    `<span class="tag tag-gray">${s.jikantai==='午前'?'🌞':s.jikantai==='午後'?'🌆':'🌃'} ${s.jikantai}</span>` : '';
+  const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}">${dt.label}</span>` : '';
 
-  const linkBtn = (s.link || link) ? `<a class="btn-link" href="${s.link||link}" target="_blank">🔗 リンク</a>` : '';
+  // リンクボタン
+  const links = s.links;
+  const linkMenuItems = links.length
+    ? links.map((u,i) => {
+        const label = u.replace(/^https?:\/\//, '').substring(0, 40);
+        return `<a class="link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
+      }).join('')
+    : `<div class="link-empty">リンクなし</div>`;
+  const linkBtnHtml = links.length
+    ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItems}</div></div>`
+    : '';
+
+  // 左上ボタン：プロパティがなければ「設定」、あれば「✎」
+  const editBtn = hasProps
+    ? `<button class="card-edit-btn" onclick="${editCall}">✎</button>`
+    : `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`;
 
   if (mode === 'leftover' || mode === 'next') {
     return `
     <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
-      <div class="tag-row"><button class="card-edit-btn" onclick="openEditModal('${id}',event)">✎</button>${tagsHtml}</div>
-      <div class="task-title" id="tt-${id}">${title}</div>
+      <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}</div>
+      <div class="card-body">
+        <div class="task-title-box" id="tt-${id}">${title}</div>
+        <div class="card-side">
+          <button class="btn-pin-big ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'取り消し':'今日する'}</button>
+        </div>
+      </div>
       <div class="task-bottom">
         <div class="time-wrap">
           <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
           <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
-        <div class="card-actions">
-          ${linkBtn}
-          <button class="btn-pin ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'取り消し':'今日する'}</button>
-        </div>
       </div>
     </div>`;
   }
 
   // today / exec mode
+  const jikantaiTag = s.jikantai
+    ? `<span class="tag tag-gray clickable" onclick="toggleTimeDropdown('${id}')">${s.jikantai==='午前'?'🌞':s.jikantai==='午後'?'🌆':'🌃'} ${s.jikantai}</span>` : '';
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
-    <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer;title='TODAYから外す'">📌</div>
-    <div class="tag-row"><button class="card-edit-btn" onclick="openEditModal('${id}',event)">✎</button>${tagsHtml}${timeBlockHtml}</div>
-    <div class="task-title" id="tt-${id}">${title}</div>
-    <div class="task-bottom">
-      <div class="time-wrap">
-        <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-        <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
-        <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-      </div>
-      <div class="card-actions">
+    <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
+    <div class="tag-row">${editBtn}${propTags}${jikantaiTag}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}</div>
+    <div class="card-body">
+      <div class="task-title-box" id="tt-${id}">${title}</div>
+      <div class="card-side">
         <div style="position:relative">
           <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${s.jikantai||'時間帯'}</button>
           <div class="time-dropdown" id="tdd-${id}">
@@ -1536,9 +1635,17 @@ function renderCard(task, mode='today') {
             <div class="time-opt" onclick="setJikantai('${id}','夜')">🌃 夜</div>
           </div>
         </div>
-        ${linkBtn}
-        <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')">${s.focusSeconds>0?'Restart':'Start'}</button>
-        <button class="btn-done ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
+        <div style="display:flex;gap:4px;flex:1">
+          <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')" style="flex:0 0 auto">${s.focusSeconds>0?'Restart':'Start'}</button>
+          <button class="btn-done-big ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
+        </div>
+      </div>
+    </div>
+    <div class="task-bottom">
+      <div class="time-wrap">
+        <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+        <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
+        <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
       </div>
     </div>
   </div>`;
@@ -1729,8 +1836,6 @@ function togglePin(id) {
     // 時間帯をリセット
     taskState[id].jikantai = null;
     notionUpdate(id, {'実行時間帯':{select:null}}).catch(console.error);
-  } else if (!taskState[id].jikantai) {
-    setTimeout(()=>toggleTimeDropdown(id), 200);
   }
   renderAll();
   updateProgress();
@@ -1833,8 +1938,20 @@ function setMode(mode) {
   renderAll();
 }
 
+// ===== リンクメニュー =====
+function openLinkMenu(id, e) {
+  e.stopPropagation();
+  document.querySelectorAll('.link-menu').forEach(m => m.classList.remove('open'));
+  const menu = document.getElementById(`lm-${id}`);
+  if (menu) menu.classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.link-menu').forEach(m => m.classList.remove('open'));
+});
+
 // ===== タスク編集 =====
 let editingTaskId = null;
+let editLinks = [];
 
 function openEditModal(id, e) {
   e.stopPropagation();
@@ -1854,7 +1971,8 @@ function openEditModal(id, e) {
   document.querySelectorAll('#edit-ela .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ela));
 
   document.getElementById('edit-deadline').value = getProp(task,'締切日') || '';
-  document.getElementById('edit-link').value = taskState[id]?.link || getProp(task,'作業リンク') || '';
+  editLinks = [...(taskState[id]?.links || [getProp(task,'作業リンク')].filter(Boolean))];
+  renderEditLinks();
 
   document.getElementById('task-edit-overlay').classList.add('open');
 }
@@ -1863,6 +1981,21 @@ function closeEditModal() {
   editingTaskId = null;
   document.getElementById('task-edit-overlay').classList.remove('open');
 }
+
+function renderEditLinks() {
+  const container = document.getElementById('edit-links-list');
+  if (!container) return;
+  container.innerHTML = editLinks.length
+    ? editLinks.map((url, i) => `
+      <div class="edit-link-row">
+        <input class="edit-input" type="url" value="${url}" placeholder="https://..." oninput="editLinks[${i}]=this.value">
+        <button class="edit-link-remove" onclick="removeEditLink(${i})">✕</button>
+      </div>`).join('')
+    : '<div style="font-size:10px;color:var(--text-dim);padding:2px 0">リンクなし</div>';
+}
+
+function addEditLink() { editLinks.push(''); renderEditLinks(); }
+function removeEditLink(i) { editLinks.splice(i, 1); renderEditLinks(); }
 
 function toggleEditChip(el, groupId, multi) {
   if (!multi) {
@@ -1882,16 +2015,17 @@ async function saveEditModal() {
   const subjects = [...document.querySelectorAll('#edit-subject .edit-chip.active')].map(c => c.dataset.val);
   const ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
   const deadline = document.getElementById('edit-deadline').value || null;
-  const link = document.getElementById('edit-link').value.trim() || null;
+  const links = editLinks.map(l => l.trim()).filter(Boolean);
+  const firstLink = links[0] || null;
 
   if (task) {
     if (area !== null) task.properties['エリア'] = {type:'select', select: area ? {name:area} : null};
     task.properties['科目'] = {type:'multi_select', multi_select: subjects.map(s => ({name:s}))};
     if (ela !== null) task.properties['ELAサブタグ'] = {type:'select', select: ela ? {name:ela} : null};
     task.properties['締切日'] = {type:'date', date: deadline ? {start:deadline} : null};
-    task.properties['作業リンク'] = {type:'url', url: link};
+    task.properties['作業リンク'] = {type:'url', url: firstLink};
   }
-  if (taskState[id]) taskState[id].link = link;
+  if (taskState[id]) { taskState[id].link = firstLink; taskState[id].links = links; }
 
   closeEditModal();
   renderAll();
@@ -1899,7 +2033,7 @@ async function saveEditModal() {
   const props = {
     '科目': {multi_select: subjects.map(s => ({name:s}))},
     '締切日': {date: deadline ? {start:deadline} : null},
-    '作業リンク': {url: link},
+    '作業リンク': {url: firstLink},
   };
   if (area !== null) props['エリア'] = {select: area ? {name:area} : null};
   if (ela !== null) props['ELAサブタグ'] = {select: ela ? {name:ela} : null};
@@ -1992,8 +2126,9 @@ window.onload = () => {
       <input class="edit-input" type="date" id="edit-deadline">
     </div>
     <div class="edit-field">
-      <span class="edit-field-label">WORK LINK</span>
-      <input class="edit-input" type="url" id="edit-link" placeholder="https://...">
+      <span class="edit-field-label">WORK LINKS</span>
+      <div class="edit-links-list" id="edit-links-list"></div>
+      <button class="edit-add-link-btn" onclick="addEditLink()">＋ リンクを追加</button>
     </div>
     <div class="edit-actions">
       <button class="edit-cancel-btn" onclick="closeEditModal()">キャンセル</button>
