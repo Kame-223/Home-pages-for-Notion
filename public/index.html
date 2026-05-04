@@ -159,18 +159,33 @@ body::before {
 .banner-phil { font-size: 9px; color: var(--purple); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
 .phil-line { flex: 1; height: 0.5px; background: rgba(127,119,221,0.2); }
 
-.mode-btn {
-  font-size: 15px; padding: 9px 24px; border-radius: 12px;
-  border: 0.5px solid var(--border2); background: rgba(26,26,36,0.65);
-  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  font-weight: 500; transition: all .2s;
-  opacity: 0.35;
+/* ===== モードスイッチ ===== */
+.mode-switch {
+  display: flex;
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 3px;
+  border: 0.5px solid rgba(255,255,255,0.1);
 }
-.mode-btn.active { opacity: 1; }
-#btn-select { color: var(--purple); border-color: rgba(127,119,221,0.5); }
-#btn-select.active { background: rgba(127,119,221,0.18); border-color: rgba(127,119,221,0.7); }
-#btn-exec { color: var(--green); border-color: rgba(29,158,117,0.5); }
-#btn-exec.active { background: rgba(29,158,117,0.18); border-color: rgba(29,158,117,0.7); }
+.mode-btn {
+  font-size: 15px; padding: 9px 28px; border-radius: 10px;
+  border: none; background: transparent;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .25s ease;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 0.05em;
+}
+#btn-select.active {
+  background: rgba(127,119,221,0.28);
+  color: var(--purple);
+  box-shadow: 0 2px 10px rgba(127,119,221,0.25);
+}
+#btn-exec.active {
+  background: rgba(29,158,117,0.28);
+  color: var(--green);
+  box-shadow: 0 2px 10px rgba(29,158,117,0.25);
+}
 
 /* ===== PROGRESS ===== */
 .progress-area {
@@ -823,8 +838,10 @@ body::before {
   <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
   <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
   <div class="nav-divider"></div>
-  <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
-  <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
+  <div class="mode-switch">
+    <button class="mode-btn active" id="btn-select" onclick="setMode('select')">選択</button>
+    <button class="mode-btn" id="btn-exec" onclick="setMode('exec')">実行</button>
+  </div>
   <div class="nav-divider"></div>
   <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
   <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
