@@ -889,19 +889,23 @@ body::before {
   margin-top: 20px;
   border-top: 1px solid var(--border2);
   padding-top: 16px;
+  position: relative;
 }
-.furikaeri-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
-.furikaeri-dragon-wrap { display: flex; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.furikaeri-header { margin-bottom: 4px; }
+.furikaeri-dragon-wrap {
+  position: absolute; top: 8px; right: 18%;
+  display: flex; align-items: flex-end; gap: 4px; pointer-events: none;
+}
 .furikaeri-bubble {
-  background: rgba(255,255,255,0.92); color: #333; font-size: 20px; font-weight: 500;
-  padding: 12px 20px; border-radius: 18px; line-height: 1.4; max-width: 240px; text-align: center;
-  position: relative; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.92); color: #333; font-size: 15px; font-weight: 500;
+  padding: 9px 15px; border-radius: 14px; line-height: 1.4; max-width: 180px; text-align: center;
+  position: relative; box-shadow: 0 2px 12px rgba(0,0,0,0.15); pointer-events: auto;
 }
 .furikaeri-bubble::after {
-  content: ''; position: absolute; right: -14px; top: 16px;
-  border: 10px solid transparent; border-left-color: rgba(255,255,255,0.92); border-right: none;
+  content: ''; position: absolute; right: -11px; top: 12px;
+  border: 8px solid transparent; border-left-color: rgba(255,255,255,0.92); border-right: none;
 }
-.furikaeri-dragon { width: 108px; height: auto; }
+.furikaeri-dragon { width: 108px; height: auto; pointer-events: auto; }
 .furikaeri-label {
   font-size: 13px; font-weight: 600; color: var(--text);
   letter-spacing: 0.05em; margin-bottom: 0;
