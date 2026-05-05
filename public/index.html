@@ -474,6 +474,7 @@ body::before {
 .tag-brown { background: rgba(45,88,30,0.55); color: #AADAA0; border: 0.5px solid rgba(45,88,30,0.7); }
 .tag-navy { background: rgba(28,58,110,0.65); color: #A8C4F0; border: 0.5px solid rgba(28,58,110,0.8); }
 .tag-teal-olive { background: rgba(139,128,48,0.55); color: #EDE8A0; border: 0.5px solid rgba(139,128,48,0.7); }
+.tag-cyan { background: rgba(0,180,180,0.18); color: #50D8D8; border: 0.5px solid rgba(0,180,180,0.45); }
 .deadline-tag { flex-shrink: 0; }
 .tag.clickable { cursor: pointer; transition: opacity .15s; }
 .tag.clickable:hover { opacity: 0.75; }
@@ -685,6 +686,7 @@ body::before {
 .edit-chip[data-val="カナダ"]  { --chip-bg: rgba(127,119,221,0.2);  --chip-color: #AFA9EC; --chip-border: rgba(175,169,236,0.45); }
 .edit-chip[data-val="憲法"]    { --chip-bg: rgba(139,128,48,0.2);   --chip-color: #EDE8A0; --chip-border: rgba(139,128,48,0.45); }
 .edit-chip[data-val="社会学"]  { --chip-bg: rgba(139,21,21,0.22);   --chip-color: #F0B8B8; --chip-border: rgba(139,21,21,0.5); }
+.edit-chip[data-val="PE"]      { --chip-bg: rgba(0,180,180,0.22);   --chip-color: #50D8D8; --chip-border: rgba(0,180,180,0.5); }
 .edit-chip[data-val="教育原理"]{ --chip-bg: rgba(45,88,30,0.22);    --chip-color: #AADAA0; --chip-border: rgba(45,88,30,0.5); }
 .edit-chip[data-val="ELA"]     { --chip-bg: rgba(28,58,110,0.22);   --chip-color: #A8C4F0; --chip-border: rgba(28,58,110,0.5); }
 .edit-chip[data-val="ER4"],
@@ -1432,8 +1434,9 @@ async function fetchGCalEvents(info, success, failure) {
     function getEventColor(title, calName, isIcu) {
       if (calName === '当日行動') return { bg:'rgba(74,160,56,0.22)',  border:'#4A9038', text:'#2A6820' };
       if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.22)',  border:'#B06A30', text:'#8B4A20' };
-      if (/憲法/.test(title))                  return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
-      if (/社会学/.test(title))                return { bg:'rgba(180,50,50,0.22)',   border:'#B03030', text:'#901818' };
+      if (/Constitutional|憲法/.test(title))   return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
+      if (/Sociology|社会学/.test(title))      return { bg:'rgba(180,50,50,0.22)',   border:'#B03030', text:'#901818' };
+      if (/\bPE\b/.test(title))               return { bg:'rgba(0,180,180,0.22)',   border:'#00A8A8', text:'#006868' };
       if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.22)',  border:'#3C64D2', text:'#2C4AA8' };
       if (isIcu)  return { bg:'rgba(60,110,220,0.20)', border:'#3C6EDC', text:'#2C5AAC' };
       return      { bg:'rgba(180,90,80,0.20)',  border:'#C4655A', text:'#9A4540' };
@@ -1713,7 +1716,7 @@ function getProp(page, name) {
 // ===== 次やる フィルター =====
 let nextFilter = 'prop';
 const AREA_ORDER = ['課題','個人','生活','ICU','カナダ'];
-const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','その他'];
+const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','PE','その他'];
 const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 
 function setNextFilter(f) {
@@ -1845,6 +1848,7 @@ function areaTagCls(area) {
 function subjectTagCls(s) {
   if (s==='憲法') return 'tag-teal-olive';
   if (s==='社会学') return 'tag-mauve';
+  if (s==='PE') return 'tag-cyan';
   if (s==='教育原理') return 'tag-brown';
   if (s==='ELA') return 'tag-navy';
   return 'tag-gray';
@@ -2682,6 +2686,7 @@ window.onload = () => {
         <button class="edit-chip" data-val="社会学" onclick="toggleEditChip(this,'edit-subject',false)">社会学</button>
         <button class="edit-chip" data-val="教育原理" onclick="toggleEditChip(this,'edit-subject',false)">教育原理</button>
         <button class="edit-chip" data-val="ELA" onclick="toggleEditChip(this,'edit-subject',false)">ELA</button>
+        <button class="edit-chip" data-val="PE" onclick="toggleEditChip(this,'edit-subject',false)">PE</button>
         <button class="edit-chip" data-val="その他" onclick="toggleEditChip(this,'edit-subject',false)">その他</button>
       </div>
     </div>
