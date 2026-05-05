@@ -1613,6 +1613,7 @@ function areaTagCls(area) {
   if (area==='ICU') return 'tag-white';
   if (area==='個人') return 'tag-rose';
   if (area==='生活') return 'tag-olive';
+  if (area==='寮') return 'tag-purple';
   return 'tag-gray';
 }
 function subjectTagCls(s) {
@@ -2342,9 +2343,10 @@ window.onload = () => {
       <span class="edit-field-label">AREA</span>
       <div class="edit-chips" id="edit-area">
         <button class="edit-chip" data-val="課題" onclick="toggleEditChip(this,'edit-area',false)">課題</button>
-        <button class="edit-chip" data-val="ICU" onclick="toggleEditChip(this,'edit-area',false)">ICU</button>
         <button class="edit-chip" data-val="個人" onclick="toggleEditChip(this,'edit-area',false)">個人</button>
         <button class="edit-chip" data-val="生活" onclick="toggleEditChip(this,'edit-area',false)">生活</button>
+        <button class="edit-chip" data-val="ICU" onclick="toggleEditChip(this,'edit-area',false)">ICU</button>
+        <button class="edit-chip" data-val="寮" onclick="toggleEditChip(this,'edit-area',false)">寮</button>
       </div>
     </div>
     <div class="edit-field">
