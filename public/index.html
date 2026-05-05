@@ -1672,7 +1672,7 @@ function renderCard(task, mode='today') {
         <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
         <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
       </div>
-      <div style="position:relative">
+      <div style="position:relative;margin-left:auto">
         <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:18px;padding:0 10px;font-size:9px;border-radius:4px">${jikantaiLabel}</button>
         <div class="time-dropdown" id="tdd-${id}">
           <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
