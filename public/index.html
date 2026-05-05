@@ -659,7 +659,15 @@ body::before {
 }
 .edit-deadline-clear:hover { color: var(--red); border-color: rgba(240,149,149,0.4); }
 .edit-input:focus { border-color: rgba(127,119,221,0.5); }
-.edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.edit-actions { display: flex; gap: 8px; align-items: center; margin-top: 20px; }
+.edit-reset-btn {
+  font-size: 11px; padding: 7px 14px; border-radius: 8px;
+  background: rgba(240,149,149,0.08); border: 0.5px solid rgba(240,149,149,0.3);
+  cursor: pointer; color: #F09595; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s;
+}
+.edit-reset-btn:hover { background: rgba(240,149,149,0.16); }
+.edit-actions-right { margin-left: auto; display: flex; gap: 8px; }
 .edit-cancel-btn {
   font-size: 12px; padding: 8px 18px; border-radius: 8px;
   background: var(--surface2); border: 0.5px solid var(--border2);
@@ -1520,21 +1528,19 @@ function deadlineTag(dateStr) {
   return {label:`${diff}日後`, cls:'tag-gray'};
 }
 
-function areaTag(area, subjects) {
-  if (area==='課題') {
-    if (subjects?.length) {
-      const s = subjects[0];
-      if (s==='憲法') return {label:'憲法', cls:'tag-teal'};
-      if (s==='社会学') return {label:'社会学', cls:'tag-blue'};
-      if (s==='教育原理') return {label:'教育原理', cls:'tag-purple'};
-      if (s==='ELA') return {label:'ELA', cls:'tag-amber'};
-    }
-    return {label:'課題', cls:'tag-teal'};
-  }
-  if (area==='ICU') return {label:'ICU', cls:'tag-amber'};
-  if (area==='個人') return {label:'個人', cls:'tag-pink'};
-  if (area==='生活') return {label:'生活', cls:'tag-blue'};
-  return {label:area||'—', cls:'tag-gray'};
+function areaTagCls(area) {
+  if (area==='課題') return 'tag-teal';
+  if (area==='ICU') return 'tag-amber';
+  if (area==='個人') return 'tag-pink';
+  if (area==='生活') return 'tag-blue';
+  return 'tag-gray';
+}
+function subjectTagCls(s) {
+  if (s==='憲法') return 'tag-teal';
+  if (s==='社会学') return 'tag-blue';
+  if (s==='教育原理') return 'tag-purple';
+  if (s==='ELA') return 'tag-amber';
+  return 'tag-gray';
 }
 
 // ===== タスクデータ =====
@@ -1586,15 +1592,18 @@ function renderCard(task, mode='today') {
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
 
-  const at = areaTag(area, subjects);
   const dt = deadlineTag(deadline);
-  const hasProps = !!(area || subjects?.length || ela || deadline);
+  // 階層ルール: AREA > SUBJECT > ELA SUBTAG
+  const subjectToShow = (area === '課題') ? (subjects?.[0] || null) : null;
+  const elaToShow = (area === '課題' && subjectToShow === 'ELA') ? ela : null;
+  const hasProps = !!(area || deadline);
 
   // プロパティタグ（クリックで編集モーダル）
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area || subjects?.length ? `<span class="tag ${at.cls} clickable" onclick="${editCall}">${at.label}</span>` : '',
-    ela ? `<span class="tag tag-amber clickable" onclick="${editCall}">${ela}</span>` : '',
+    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
+    elaToShow ? `<span class="tag tag-amber clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
 
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}">${dt.label}</span>` : '';
@@ -2016,6 +2025,15 @@ function renderEditLinks() {
     : '<div style="font-size:10px;color:var(--text-dim);padding:2px 0">リンクなし</div>';
 }
 
+function resetEditModal() {
+  document.querySelectorAll('#edit-area .edit-chip, #edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('edit-deadline').value = '';
+  updateDeadlineDisplay();
+  editLinks = [];
+  renderEditLinks();
+  updateEditChipCascade();
+}
+
 function updateDeadlineDisplay() {
   const val = document.getElementById('edit-deadline').value;
   const display = document.getElementById('edit-deadline-val');
@@ -2210,8 +2228,11 @@ window.onload = () => {
       <button class="edit-add-link-btn" onclick="addEditLink()">＋ リンクを追加</button>
     </div>
     <div class="edit-actions">
-      <button class="edit-cancel-btn" onclick="closeEditModal()">キャンセル</button>
-      <button class="edit-save-btn" onclick="saveEditModal()">保存</button>
+      <button class="edit-reset-btn" onclick="resetEditModal()">全リセット</button>
+      <div class="edit-actions-right">
+        <button class="edit-cancel-btn" onclick="closeEditModal()">キャンセル</button>
+        <button class="edit-save-btn" onclick="saveEditModal()">保存</button>
+      </div>
     </div>
   </div>
 </div>
