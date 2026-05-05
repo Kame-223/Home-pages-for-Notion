@@ -1266,11 +1266,30 @@ const BACKGROUNDS = [
   '/backgrounds/ww656_by_aaron888_ai_dkhab2e.png',
 ];
 
-function setupBackground() {
+let _bgPeriod = -1;
+
+function getBgPeriod() {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 12) return 1;  // 朝
+  if (h >= 12 && h < 18) return 2; // 昼
+  return 0;                          // 夜（18時〜翌6時）
+}
+
+function applyBackground() {
   const now = new Date();
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-  const bg = BACKGROUNDS[(dayOfYear + 1) % BACKGROUNDS.length];
-  document.body.style.backgroundImage = `url('${bg}')`;
+  const period = getBgPeriod();
+  _bgPeriod = period;
+  const idx = (dayOfYear * 3 + period) % BACKGROUNDS.length;
+  document.body.style.backgroundImage = `url('${BACKGROUNDS[idx]}')`;
+}
+
+function setupBackground() {
+  applyBackground();
+  setInterval(() => {
+    const p = getBgPeriod();
+    if (p !== _bgPeriod) applyBackground();
+  }, 60000);
 }
 
 // ===== Google Calendar OAuth =====
