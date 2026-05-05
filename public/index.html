@@ -1664,14 +1664,6 @@ function renderCard(task, mode='today') {
           <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')" style="flex:0 0 auto">${s.focusSeconds>0?'Restart':'Start'}</button>
           <button class="btn-done-big ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
         </div>
-        <div style="position:relative">
-          <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${jikantaiLabel}</button>
-          <div class="time-dropdown" id="tdd-${id}">
-            <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
-            <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
-            <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="task-bottom">
@@ -1679,6 +1671,14 @@ function renderCard(task, mode='today') {
         <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
         <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
         <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+      </div>
+      <div style="position:relative">
+        <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:18px;padding:0 10px;font-size:9px;border-radius:4px">${jikantaiLabel}</button>
+        <div class="time-dropdown" id="tdd-${id}">
+          <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
+          <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
+          <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
+        </div>
       </div>
     </div>
   </div>`;
