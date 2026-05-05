@@ -705,6 +705,38 @@ body::before {
 }
 .focus-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
 .focus-task { font-size: 20px; font-weight: 400; color: var(--text); text-align: center; line-height: 1.5; }
+/* 🧸 リンク一覧ボタン */
+.bear-btn {
+  display: block; margin: 10px auto 4px; font-size: 22px;
+  background: none; border: none; cursor: pointer;
+  opacity: 0.6; transition: all .2s; line-height: 1;
+}
+.bear-btn:hover { opacity: 1; transform: scale(1.15); }
+.bear-link-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center; z-index: 400;
+}
+.bear-link-overlay.open { display: flex; }
+.bear-link-modal {
+  background: #15151e; border: 0.5px solid rgba(255,255,255,0.14);
+  border-radius: 14px; padding: 20px 24px; width: 380px; max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6); animation: fadeUp .22s ease-out;
+}
+.bear-link-title {
+  font-size: 12px; color: var(--text-dim); letter-spacing: 0.15em;
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.bear-link-item {
+  display: flex; align-items: center; gap: 8px; padding: 9px 10px;
+  border-radius: 7px; text-decoration: none; color: var(--blue);
+  font-size: 12px; transition: background .12s;
+  overflow: hidden;
+}
+.bear-link-item:hover { background: rgba(55,138,221,0.1); }
+.bear-link-task { font-size: 10px; color: var(--text-dim); display: block; margin-top: 1px; }
+.bear-link-empty { font-size: 12px; color: var(--text-dim); text-align: center; padding: 16px; }
+
 .focus-link-wrap { position: relative; display: none; }
 .focus-link-wrap.show { display: inline-block; }
 .focus-link {
@@ -1053,6 +1085,14 @@ body::before {
   <div class="nav-divider"></div>
   <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
   <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
+</div>
+
+<!-- 🧸 リンク一覧モーダル -->
+<div class="bear-link-overlay" id="bear-link-overlay" onclick="closeBearLinks()">
+  <div class="bear-link-modal" onclick="event.stopPropagation()">
+    <div class="bear-link-title">🧸 作業リンク一覧</div>
+    <div id="bear-link-list"></div>
+  </div>
 </div>
 
 <!-- 集中モード -->
@@ -1730,6 +1770,8 @@ function renderAll() {
   } else {
     todayEl.innerHTML = todayTasks.map(t=>renderCard(t,'today')).join('');
   }
+  // 🧸 リンク一覧ボタンを追加
+  todayEl.innerHTML += `<button class="bear-btn" onclick="openBearLinks()" title="リンク一覧">🧸</button>`;
 
   // やり残し
   const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
@@ -1975,6 +2017,27 @@ function startFocus(id) {
     const sec = String(taskState[id].focusSeconds%60).padStart(2,'0');
     document.getElementById('focus-timer').textContent = m+':'+sec;
   }, 1000);
+}
+
+function openBearLinks() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
+  const todayTasks = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
+  let html = '';
+  todayTasks.forEach(t => {
+    const links = taskState[t.id]?.links || [];
+    const title = getProp(t,'タイトル') || '無題';
+    links.forEach(u => {
+      const label = u.replace(/^https?:\/\//, '').substring(0, 40);
+      html += `<a class="bear-link-item" href="${u}" target="_blank">
+        🔗 <span><span style="font-size:12px;color:var(--blue)">${label}</span><span class="bear-link-task">${title}</span></span>
+      </a>`;
+    });
+  });
+  document.getElementById('bear-link-list').innerHTML = html || '<div class="bear-link-empty">リンクがありません</div>';
+  document.getElementById('bear-link-overlay').classList.add('open');
+}
+function closeBearLinks() {
+  document.getElementById('bear-link-overlay').classList.remove('open');
 }
 
 function toggleFocusLinkMenu() {
