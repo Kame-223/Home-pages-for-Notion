@@ -896,7 +896,7 @@ body::before {
 }
 .furikaeri-date { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; }
 .fr-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.fr-label { font-size: 10px; color: var(--text-sub); min-width: 28px; }
+.fr-label { font-size: 10px; color: rgba(255,255,255,0.75); min-width: 28px; font-weight: 500; }
 .fr-options { display: flex; gap: 4px; }
 .fr-opt {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -910,7 +910,7 @@ body::before {
 .fr-emoji { font-size: 22px; line-height: 1; }
 .fr-opt-label { font-size: 8px; color: var(--text-dim); font-family: 'Noto Sans JP'; white-space: nowrap; }
 .fr-section-label {
-  font-size: 10px; font-weight: 500; color: var(--text-sub);
+  font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75);
   margin: 12px 0 5px; display: flex; align-items: center; gap: 6px;
 }
 .fr-required { font-size: 9px; color: var(--red); background: rgba(216,90,48,0.1); padding: 1px 5px; border-radius: 4px; }
@@ -1053,7 +1053,7 @@ body::before {
               <button class="fr-opt" data-val="🌤 良い"><span class="fr-emoji">🌤</span><span class="fr-opt-label">良い</span></button>
               <button class="fr-opt" data-val="⛅ 普通"><span class="fr-emoji">⛅</span><span class="fr-opt-label">普通</span></button>
               <button class="fr-opt" data-val="🌧 しんどい"><span class="fr-emoji">🌧</span><span class="fr-opt-label">しんどい</span></button>
-              <button class="fr-opt" data-val="⛈ 最悪"><span class="fr-emoji">⛈</span><span class="fr-opt-label">最悪</span></button>
+              <button class="fr-opt" data-val="⛈️ 最悪"><span class="fr-emoji">⛈️</span><span class="fr-opt-label">最悪</span></button>
             </div>
           </div>
           <div class="fr-row">
@@ -1069,7 +1069,7 @@ body::before {
 
           <input class="fr-input" id="fr-comment" placeholder="✍ 一言でもいいよ！思ったこと書こ！">
 
-          <div class="fr-section-label">📅 あったこと・感想 <span class="fr-required">必須</span></div>
+          <div class="fr-section-label">📅 あったこと・感想</div>
           <textarea class="fr-textarea" id="fr-event" placeholder="今日あったことを書こう..."></textarea>
 
           <div class="fr-section-label">✨ よかったこと <span class="fr-optional">任意</span></div>
@@ -1957,16 +1957,18 @@ function setupFurikaeri() {
     `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
   // 日曜なら週次レビューを表示
   if (now.getDay() === 0) document.getElementById('weekly-section').classList.remove('hidden');
-  // 気分・体調ボタンのセレクト（選択→強調、他→暗く）
+  // 気分・体調ボタンのセレクト（選択→強調、他→暗く、再クリックでキャンセル）
   document.querySelectorAll('.fr-options').forEach(group => {
     group.querySelectorAll('.fr-opt').forEach(btn => {
       btn.addEventListener('click', () => {
+        const isSelected = btn.classList.contains('selected');
         group.querySelectorAll('.fr-opt').forEach(b => {
-          b.classList.remove('selected');
-          b.classList.add('dimmed');
+          b.classList.remove('selected', 'dimmed');
         });
-        btn.classList.add('selected');
-        btn.classList.remove('dimmed');
+        if (!isSelected) {
+          btn.classList.add('selected');
+          group.querySelectorAll('.fr-opt:not(.selected)').forEach(b => b.classList.add('dimmed'));
+        }
       });
     });
   });
