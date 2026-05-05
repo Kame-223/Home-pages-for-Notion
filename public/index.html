@@ -1692,7 +1692,7 @@ function renderCard(task, mode='today') {
     return `
     <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
-      <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}${rightSetBtn}</div>
+      <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
       <div class="card-body">
         <div class="task-title-box" id="tt-${id}">${title}</div>
         <div class="card-side">
@@ -1715,7 +1715,7 @@ function renderCard(task, mode='today') {
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
-    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}${rightSetBtn}</div>
+    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
