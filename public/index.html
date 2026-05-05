@@ -2125,7 +2125,7 @@ function renderEditLinks() {
   container.innerHTML = editLinks.length
     ? editLinks.map((url, i) => `
       <div class="edit-link-row">
-        <input class="edit-input" type="url" value="${url}" placeholder="https://..." oninput="editLinks[${i}]=this.value">
+        <input class="edit-input" type="url" value="${url}" placeholder="https://..." oninput="editLinks[${i}]=this.value" onkeydown="if(event.key==='Enter')this.blur()">
         <button class="edit-link-remove" onclick="removeEditLink(${i})">✕</button>
       </div>`).join('')
     : '<div style="font-size:10px;color:var(--text-dim);padding:2px 0">リンクなし</div>';
