@@ -252,6 +252,12 @@ body::before {
 .section-header.green { color: var(--green); border-bottom-color: rgba(29,158,117,0.2); background: rgba(29,158,117,0.04); }
 .section-header.red { color: #F09595; border-bottom-color: rgba(240,149,149,0.2); background: rgba(240,149,149,0.04); }
 .section-header.blue { color: #85B7EB; border-bottom-color: rgba(133,183,235,0.2); background: rgba(133,183,235,0.04); }
+.next-filter-btns { display: flex; gap: 3px; margin-left: auto; }
+.next-filter-btn { font-size: 9px; padding: 2px 7px; border-radius: 99px; border: 0.5px solid var(--border2); background: transparent; color: var(--text-dim); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+.next-filter-btn.active { background: rgba(133,183,235,0.15); border-color: #85B7EB; color: #85B7EB; }
+.next-group-area { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 8px 8px 3px; color: var(--text-sub); border-bottom: 0.5px solid var(--border); margin-bottom: 2px; }
+.next-group-area:first-child { padding-top: 4px; }
+.next-group-subject { font-size: 8px; font-weight: 600; letter-spacing: 0.08em; padding: 5px 12px 2px; color: var(--text-dim); }
 .col-title { display: none; }
 .cal-iframe-wrap {
   height: 520px;
@@ -649,7 +655,7 @@ body::before {
 .edit-chip[data-val="個人"]    { --chip-bg: rgba(196,120,110,0.18); --chip-color: #D4A098; --chip-border: rgba(196,120,110,0.4); }
 .edit-chip[data-val="生活"]    { --chip-bg: rgba(140,160,75,0.18);  --chip-color: #B0C870; --chip-border: rgba(140,160,75,0.4); }
 .edit-chip[data-val="ICU"]     { --chip-bg: rgba(255,255,255,0.12); --chip-color: rgba(255,255,255,0.8); --chip-border: rgba(255,255,255,0.3); }
-.edit-chip[data-val="寮"]      { --chip-bg: rgba(127,119,221,0.2);  --chip-color: #AFA9EC; --chip-border: rgba(175,169,236,0.45); }
+.edit-chip[data-val="カナダ"]  { --chip-bg: rgba(127,119,221,0.2);  --chip-color: #AFA9EC; --chip-border: rgba(175,169,236,0.45); }
 .edit-chip[data-val="憲法"]    { --chip-bg: rgba(139,128,48,0.2);   --chip-color: #EDE8A0; --chip-border: rgba(139,128,48,0.45); }
 .edit-chip[data-val="社会学"]  { --chip-bg: rgba(139,21,21,0.22);   --chip-color: #F0B8B8; --chip-border: rgba(139,21,21,0.5); }
 .edit-chip[data-val="教育原理"]{ --chip-bg: rgba(45,88,30,0.22);    --chip-color: #AADAA0; --chip-border: rgba(45,88,30,0.5); }
@@ -1030,7 +1036,7 @@ body::before {
         <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="next-panel" class="bottom-panel">
-        <div class="section-header blue">▶️ 次やること</div>
+        <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
 
@@ -1614,6 +1620,65 @@ function getProp(page, name) {
   return null;
 }
 
+// ===== 次やる フィルター =====
+let nextFilter = 'prop';
+const AREA_ORDER = ['課題','個人','生活','ICU','カナダ'];
+const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','その他'];
+const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
+
+function setNextFilter(f) {
+  nextFilter = f;
+  document.querySelectorAll('.next-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderNextList();
+}
+
+function renderNextList() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
+  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ 次やる';
+  const tasks = allTasks.filter(t => !isDone(t) && gtdNext(t));
+  const el = document.getElementById('next-list');
+  if (!el) return;
+  if (!tasks.length) { el.innerHTML = '<div class="section-empty">次やるタスクがありません</div>'; return; }
+
+  if (nextFilter === 'deadline') {
+    const sorted = [...tasks].sort((a,b) => {
+      const da = getProp(a,'締切日'), db = getProp(b,'締切日');
+      if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    el.innerHTML = sorted.map(t => renderCard(t,'next')).join('');
+    return;
+  }
+
+  // プロパティフィルター
+  let html = '';
+  const byArea = {};
+  tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
+  const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
+
+  areaKeys.forEach(area => {
+    const aTasks = byArea[area];
+    html += `<div class="next-group-area">${area}</div>`;
+    if (area === '課題') {
+      const bySubject = {};
+      aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
+      const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
+      subKeys.forEach(sub => {
+        let subTasks = bySubject[sub];
+        if (sub === 'ELA') subTasks = [...subTasks].sort((a,b) => {
+          const ia = ELA_SUB_ORDER.indexOf(getProp(a,'ELAサブタグ')||''), ib = ELA_SUB_ORDER.indexOf(getProp(b,'ELAサブタグ')||'');
+          return (ia<0?99:ia)-(ib<0?99:ib);
+        });
+        html += `<div class="next-group-subject">${sub}</div>`;
+        html += subTasks.map(t => renderCard(t,'next')).join('');
+      });
+    } else {
+      html += aTasks.map(t => renderCard(t,'next')).join('');
+    }
+  });
+  el.innerHTML = html;
+}
+
 function deadlineTag(dateStr) {
   if (!dateStr) return null;
   const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
@@ -1629,7 +1694,7 @@ function areaTagCls(area) {
   if (area==='ICU') return 'tag-white';
   if (area==='個人') return 'tag-rose';
   if (area==='生活') return 'tag-olive';
-  if (area==='寮') return 'tag-purple';
+  if (area==='カナダ') return 'tag-purple';
   return 'tag-gray';
 }
 function subjectTagCls(s) {
@@ -1825,12 +1890,8 @@ function renderAll() {
     ? leftover.map(t=>renderCard(t,'leftover')).join('')
     : '<div class="section-empty" style="color:var(--green)">やり残しなし 🎉</div>';
 
-  // 次やること（ピン済みも表示して取り消しボタンを出す）
-  const nextTasks = allTasks.filter(t => !isDone(t) && gtdNext(t));
-  const nextEl = document.getElementById('next-list');
-  nextEl.innerHTML = nextTasks.length
-    ? nextTasks.map(t=>renderCard(t,'next')).join('')
-    : '<div class="section-empty">次やるタスクがありません</div>';
+  // 次やること
+  renderNextList();
 
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
@@ -2362,7 +2423,7 @@ window.onload = () => {
         <button class="edit-chip" data-val="個人" onclick="toggleEditChip(this,'edit-area',false)">個人</button>
         <button class="edit-chip" data-val="生活" onclick="toggleEditChip(this,'edit-area',false)">生活</button>
         <button class="edit-chip" data-val="ICU" onclick="toggleEditChip(this,'edit-area',false)">ICU</button>
-        <button class="edit-chip" data-val="寮" onclick="toggleEditChip(this,'edit-area',false)">寮</button>
+        <button class="edit-chip" data-val="カナダ" onclick="toggleEditChip(this,'edit-area',false)">カナダ</button>
       </div>
     </div>
     <div class="edit-field">
