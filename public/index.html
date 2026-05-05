@@ -425,6 +425,18 @@ body::before {
 .task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
 .task-card.pinned { border-color: rgba(127,119,221,0.4); }
 .task-card.confirmed-dim { opacity: 0.4; border-color: var(--border); }
+.card-lower { border-radius: 8px; transition: background .2s; }
+.task-card.imp .card-lower { background: rgba(220,90,0,0.22); padding: 6px 8px; margin: 0 -3px -3px; }
+.task-card.imp { border-color: rgba(255,130,0,0.45); }
+/* Importantトグルスイッチ */
+.imp-switch-wrap { display: flex; align-items: center; gap: 7px; }
+.imp-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.imp-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.imp-slider { position: absolute; cursor: pointer; inset: 0; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 20px; transition: .2s; }
+.imp-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; bottom: 2px; background: var(--text-dim); border-radius: 50%; transition: .2s; }
+.imp-switch input:checked + .imp-slider { background: rgba(220,90,0,0.3); border-color: rgba(255,130,0,0.6); }
+.imp-switch input:checked + .imp-slider::before { transform: translateX(16px); background: #FF7820; }
+.imp-switch-label { font-size: 10px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.1em; }
 .pin-badge {
   position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
   font-size: 18px; display: none; line-height: 1;
@@ -1747,7 +1759,7 @@ function loadTaskState() {
 function saveTaskState() {
   const toSave = {};
   for (const [id, s] of Object.entries(taskState)) {
-    toSave[id] = { done: s.done, pinned: s.pinned, timeIdx: s.timeIdx, jikantai: s.jikantai, link: s.link, links: s.links };
+    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeIdx: s.timeIdx, jikantai: s.jikantai, link: s.link, links: s.links };
   }
   localStorage.setItem('taskState', JSON.stringify(toSave));
 }
@@ -1789,7 +1801,7 @@ function renderCard(task, mode='today') {
   const gtd = getProp(task,'GTD 種別');
 
   if (!taskState[id]) taskState[id] = {
-    done: false, pinned: false,
+    done: false, pinned: false, important: false,
     timeIdx: timeSteps.indexOf(soyo||'30m') >= 0 ? timeSteps.indexOf(soyo||'30m') : 1,
     focusSeconds: 0, jikantai: jikantai||null, link: link||null,
     links: link ? [link] : [],
@@ -1834,9 +1846,10 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
+    <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
+      <div class="card-lower">
       <div class="card-body">
         <div class="task-title-box" id="tt-${id}">${title}</div>
         <div class="card-side">
@@ -1850,6 +1863,7 @@ function renderCard(task, mode='today') {
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
       </div>
+      </div>
     </div>`;
   }
 
@@ -1857,9 +1871,10 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰ 時間帯';
   return `
-  <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
+  <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
+    <div class="card-lower">
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
@@ -1884,6 +1899,7 @@ function renderCard(task, mode='today') {
         </div>
       </div>
       ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='46px';this.querySelector('img').style.filter='none'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='brightness(0.7)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block;filter:brightness(0.7);transition:height .15s,filter .15s"></button>` : ''}
+    </div>
     </div>
   </div>`;
 }
@@ -2307,6 +2323,8 @@ function openEditModal(id, e) {
   editLinks = [...(taskState[id]?.links || [getProp(task,'作業リンク')].filter(Boolean))];
   renderEditLinks();
   updateEditChipCascade();
+  const impEl = document.getElementById('edit-important');
+  if (impEl) impEl.checked = !!(taskState[id]?.important);
 
   document.getElementById('task-edit-overlay').classList.add('open');
 }
@@ -2425,7 +2443,12 @@ async function saveEditModal() {
     task.properties['締切日'] = {type:'date', date: deadline ? {start:deadline} : null};
     task.properties['作業リンク'] = {type:'url', url: firstLink};
   }
-  if (taskState[id]) { taskState[id].link = firstLink; taskState[id].links = links; saveTaskState(); }
+  if (taskState[id]) {
+    taskState[id].link = firstLink;
+    taskState[id].links = links;
+    taskState[id].important = !!(document.getElementById('edit-important')?.checked);
+    saveTaskState();
+  }
 
   closeEditModal();
   renderAll();
@@ -2547,6 +2570,13 @@ window.onload = () => {
       <button class="edit-add-link-btn" onclick="addEditLink()">＋ リンクを追加</button>
     </div>
     <div class="edit-actions">
+      <label class="imp-switch-wrap">
+        <span class="imp-switch">
+          <input type="checkbox" id="edit-important">
+          <span class="imp-slider"></span>
+        </span>
+        <span class="imp-switch-label">IMPORTANT</span>
+      </label>
       <div class="edit-actions-right">
         <button class="edit-cancel-btn" onclick="closeEditModal()">キャンセル</button>
         <button class="edit-save-btn" onclick="saveEditModal()">保存</button>
