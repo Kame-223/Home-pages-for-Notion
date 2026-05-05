@@ -1280,7 +1280,7 @@ function applyBackground() {
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   const period = getBgPeriod();
   _bgPeriod = period;
-  const idx = (dayOfYear * 3 + period) % BACKGROUNDS.length;
+  const idx = (dayOfYear * 3 + period + 1) % BACKGROUNDS.length;
   document.body.style.backgroundImage = `url('${BACKGROUNDS[idx]}')`;
 }
 
