@@ -433,6 +433,13 @@ body::before {
 .tag-purple { background: rgba(127,119,221,0.12); color: #AFA9EC; border: 0.5px solid rgba(175,169,236,0.3); }
 .tag-gray { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 0.5px solid var(--border); }
 .tag-red { background: rgba(240,149,149,0.12); color: #F09595; border: 0.5px solid rgba(240,149,149,0.3); }
+.tag-magenta { background: rgba(255,62,191,0.15); color: #FF7ED4; border: 0.5px solid rgba(255,62,191,0.35); }
+.tag-white { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 0.5px solid rgba(255,255,255,0.25); }
+.tag-rose { background: rgba(196,120,110,0.15); color: #D4A098; border: 0.5px solid rgba(196,120,110,0.35); }
+.tag-olive { background: rgba(140,160,75,0.15); color: #B0C870; border: 0.5px solid rgba(140,160,75,0.35); }
+.tag-mauve { background: rgba(150,115,160,0.15); color: #C8A0D8; border: 0.5px solid rgba(150,115,160,0.35); }
+.tag-brown { background: rgba(160,100,60,0.15); color: #D4906A; border: 0.5px solid rgba(160,100,60,0.35); }
+.tag-navy { background: rgba(40,80,160,0.18); color: #7AA0E0; border: 0.5px solid rgba(40,80,160,0.4); }
 .deadline-tag { flex-shrink: 0; }
 .tag.clickable { cursor: pointer; transition: opacity .15s; }
 .tag.clickable:hover { opacity: 0.75; }
@@ -1601,17 +1608,17 @@ function deadlineTag(dateStr) {
 }
 
 function areaTagCls(area) {
-  if (area==='課題') return 'tag-teal';
-  if (area==='ICU') return 'tag-amber';
-  if (area==='個人') return 'tag-pink';
-  if (area==='生活') return 'tag-blue';
+  if (area==='課題') return 'tag-magenta';
+  if (area==='ICU') return 'tag-white';
+  if (area==='個人') return 'tag-rose';
+  if (area==='生活') return 'tag-olive';
   return 'tag-gray';
 }
 function subjectTagCls(s) {
   if (s==='憲法') return 'tag-teal';
-  if (s==='社会学') return 'tag-blue';
-  if (s==='教育原理') return 'tag-purple';
-  if (s==='ELA') return 'tag-amber';
+  if (s==='社会学') return 'tag-mauve';
+  if (s==='教育原理') return 'tag-brown';
+  if (s==='ELA') return 'tag-navy';
   return 'tag-gray';
 }
 
@@ -1686,7 +1693,7 @@ function renderCard(task, mode='today') {
   const propTags = [
     area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
-    elaToShow ? `<span class="tag tag-amber clickable" onclick="${editCall}">${elaToShow}</span>` : '',
+    elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
 
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}">${dt.label}</span>` : '';
