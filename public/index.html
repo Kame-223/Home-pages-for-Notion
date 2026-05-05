@@ -1776,9 +1776,28 @@ function renderNextList() {
   el.innerHTML = html;
 }
 
-function deadlineTag(dateStr) {
+function deadlineTag(dateStr, isDone) {
   if (!dateStr) return null;
-  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  const hasTime = dateStr.length > 10;
+  const deadline = new Date(dateStr);
+  const now = new Date();
+
+  if (hasTime && !isDone) {
+    const diffMs = deadline - now;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMs < 0) return {label:'期限切れ', cls:'tag-red'};
+    if (diffMins < 5)  return {label:`後${diffMins}分`, cls:'tag-red'};
+    if (diffMins < 60) return {label:`後${Math.ceil(diffMins/5)*5}分`, cls:'tag-red'};
+    if (diffMins < 60*12) return {label:`後${Math.ceil(diffMins/60)}時間`, cls:'tag-red'};
+    if (diffMins < 60*18) {
+      const h = Math.ceil(diffMins/120)*2;
+      return {label:`後${Math.min(18,Math.max(12,h))}時間`, cls:'tag-amber'};
+    }
+  }
+
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const deadlineLocal = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
+  const diff = Math.ceil((deadlineLocal - todayLocal) / 86400000);
   if (diff < 0) return {label:'期限切れ', cls:'tag-red'};
   if (diff === 0) return {label:'今日締切', cls:'tag-red'};
   if (diff <= 3) return {label:`${diff}日後`, cls:'tag-amber'};
@@ -1862,7 +1881,7 @@ function renderCard(task, mode='today') {
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
 
-  const dt = deadlineTag(deadline);
+  const dt = deadlineTag(deadline, s.done);
   // 階層ルール: AREA > SUBJECT > ELA SUBTAG
   const subjectToShow = (area === '課題') ? (subjects?.[0] || null) : null;
   const elaToShow = (area === '課題' && subjectToShow === 'ELA') ? ela : null;
@@ -1876,7 +1895,7 @@ function renderCard(task, mode='today') {
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
 
-  const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}">${dt.label}</span>` : '';
+  const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}">${dt.label}</span>` : '';
 
   // リンクボタン
   const links = s.links;
@@ -2370,7 +2389,8 @@ function openEditModal(id, e) {
   const ela = getProp(task,'ELAサブタグ') || '';
   document.querySelectorAll('#edit-ela .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ela));
 
-  document.getElementById('edit-deadline').value = getProp(task,'締切日') || '';
+  const rawDl = getProp(task,'締切日') || '';
+  document.getElementById('edit-deadline').value = rawDl.length > 16 ? rawDl.substring(0,16) : rawDl;
   updateDeadlineDisplay();
   editLinks = [...(taskState[id]?.links || [getProp(task,'作業リンク')].filter(Boolean))];
   renderEditLinks();
@@ -2430,9 +2450,11 @@ function updateDeadlineDisplay() {
   const display = document.getElementById('edit-deadline-val');
   const clearBtn = document.getElementById('edit-deadline-clear-btn');
   if (val) {
-    const d = new Date(val + 'T00:00:00');
+    const d = new Date(val.length === 10 ? val + 'T00:00:00' : val);
     const days = ['日','月','火','水','木','金','土'];
-    display.textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${days[d.getDay()]}）`;
+    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${days[d.getDay()]}）`;
+    const timeStr = val.length > 10 ? ` ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '';
+    display.textContent = dateStr + timeStr;
     if (clearBtn) clearBtn.style.display = '';
   } else {
     display.textContent = '未設定';
@@ -2502,7 +2524,8 @@ async function saveEditModal() {
   // SUBJECTがELA以外ならELAを強制クリア
   if (subject !== 'ELA') { ela = null; }
   const subjects = subject ? [subject] : [];
-  const deadline = document.getElementById('edit-deadline').value || null;
+  const dlRaw = document.getElementById('edit-deadline').value || null;
+  const deadline = dlRaw && dlRaw.length > 10 ? dlRaw + ':00' : dlRaw;
   const links = editLinks.map(l => l.trim()).filter(Boolean);
   const firstLink = links[0] || null;
 
@@ -2574,6 +2597,18 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===== 起動 =====
+function refreshDeadlineTags() {
+  document.querySelectorAll('.deadline-tag[data-deadline]').forEach(el => {
+    const ds = el.dataset.deadline;
+    if (!ds || ds.length <= 10) return;
+    const dt = deadlineTag(ds, el.dataset.done === 'true');
+    if (dt) {
+      el.textContent = dt.label;
+      el.className = `tag ${dt.cls} deadline-tag clickable`;
+    }
+  });
+}
+
 window.onload = () => {
   setupBackground();
   setupBanner();
@@ -2582,6 +2617,7 @@ window.onload = () => {
   setupFurikaeri();
   loadTasks();
   document.querySelector('.content-grid').classList.add('select-mode');
+  setInterval(refreshDeadlineTags, 30000);
 };
 </script>
 
@@ -2627,7 +2663,7 @@ window.onload = () => {
     </div>
     <div class="edit-field">
       <span class="edit-field-label">DEADLINE</span>
-      <input type="date" id="edit-deadline" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none" oninput="updateDeadlineDisplay()">
+      <input type="datetime-local" id="edit-deadline" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none" oninput="updateDeadlineDisplay()">
       <div class="edit-deadline-wrap">
         <button class="edit-deadline-btn" onclick="document.getElementById('edit-deadline').showPicker()">📅 締切設定</button>
         <span class="edit-deadline-val" id="edit-deadline-val">未設定</span>
