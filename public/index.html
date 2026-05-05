@@ -705,14 +705,32 @@ body::before {
 }
 .focus-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
 .focus-task { font-size: 20px; font-weight: 400; color: var(--text); text-align: center; line-height: 1.5; }
+.focus-link-wrap { position: relative; display: none; }
+.focus-link-wrap.show { display: inline-block; }
 .focus-link {
-  font-size: 11px; color: var(--purple); text-decoration: none;
-  padding: 5px 14px; border-radius: 99px;
+  font-size: 11px; color: var(--purple);
+  padding: 6px 16px; border-radius: 99px;
   border: 0.5px solid rgba(127,119,221,0.3);
   background: rgba(127,119,221,0.08);
-  display: none;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s;
 }
-.focus-link.show { display: block; }
+.focus-link:hover { background: rgba(127,119,221,0.16); }
+.focus-link-menu {
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: #1c1c2e; border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 9px; padding: 5px; z-index: 10;
+  min-width: 220px; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.focus-link-menu.open { display: block; }
+.focus-link-item {
+  display: block; padding: 8px 12px; border-radius: 5px;
+  font-size: 12px; color: var(--blue); text-decoration: none;
+  transition: background .12s; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.focus-link-item:hover { background: rgba(55,138,221,0.1); }
 .focus-expected { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
 .focus-timer {
   font-size: 52px; font-weight: 300; color: var(--text);
@@ -1043,7 +1061,10 @@ body::before {
     <div class="focus-mode-label">集中モード</div>
     <div class="focus-tags" id="focus-tags"></div>
     <div class="focus-task" id="focus-task"></div>
-    <a class="focus-link" id="focus-link" href="#" target="_blank">作業先を開く →</a>
+    <div class="focus-link-wrap" id="focus-link-wrap">
+      <button class="focus-link" onclick="toggleFocusLinkMenu()">作業先を開く →</button>
+      <div class="focus-link-menu" id="focus-link-menu"></div>
+    </div>
     <div class="focus-expected" id="focus-expected"></div>
     <div class="focus-timer" id="focus-timer">00:00</div>
     <div class="focus-btns">
@@ -1930,11 +1951,18 @@ function startFocus(id) {
   document.getElementById('focus-tags').innerHTML = focusTagsHtml;
   document.getElementById('focus-expected').textContent = `想定時間：${expected}`;
 
-  const linkEl = document.getElementById('focus-link');
-  if (link) {
-    linkEl.href = link; linkEl.classList.add('show');
+  const links = s.links?.length ? s.links : (link ? [link] : []);
+  const wrapEl = document.getElementById('focus-link-wrap');
+  const menuEl = document.getElementById('focus-link-menu');
+  if (links.length > 0) {
+    wrapEl.classList.add('show');
+    menuEl.innerHTML = links.map(u => {
+      const label = u.replace(/^https?:\/\//, '').substring(0, 36);
+      return `<a class="focus-link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
+    }).join('');
+    menuEl.classList.remove('open');
   } else {
-    linkEl.classList.remove('show');
+    wrapEl.classList.remove('show');
   }
 
   document.getElementById('focus-overlay').classList.add('open');
@@ -1947,6 +1975,13 @@ function startFocus(id) {
     const sec = String(taskState[id].focusSeconds%60).padStart(2,'0');
     document.getElementById('focus-timer').textContent = m+':'+sec;
   }, 1000);
+}
+
+function toggleFocusLinkMenu() {
+  const links = taskState[currentFocusId]?.links || [];
+  if (links.length === 0) return;
+  if (links.length === 1) { window.open(links[0], '_blank'); return; }
+  document.getElementById('focus-link-menu').classList.toggle('open');
 }
 
 function pauseFocus() {
