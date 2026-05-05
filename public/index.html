@@ -2159,7 +2159,12 @@ function clearDeadline() {
   updateDeadlineDisplay();
 }
 
-function addEditLink() { editLinks.push(''); renderEditLinks(); }
+function addEditLink() {
+  editLinks.push('');
+  renderEditLinks();
+  const inputs = document.querySelectorAll('#edit-links-list input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
 function removeEditLink(i) { editLinks.splice(i, 1); renderEditLinks(); }
 
 function toggleEditChip(el, groupId, multi) {
