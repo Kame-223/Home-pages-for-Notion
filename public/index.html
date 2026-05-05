@@ -1297,6 +1297,13 @@ function renderFullCalendar() {
     slotMinTime: '06:00:00',
     slotMaxTime: '24:00:00',
     slotDuration: '00:30:00',
+    slotLabelDidMount: (arg) => {
+      const h = arg.date.getHours();
+      if (h === 13 || h === 19) {
+        arg.el.style.color = 'var(--red)';
+        arg.el.style.fontWeight = '700';
+      }
+    },
     events: fetchGCalEvents,
     select: (info) => openGCalModal(null, info.startStr, info.endStr),
     eventClick: (info) => openGCalModal(info.event, null, null),
