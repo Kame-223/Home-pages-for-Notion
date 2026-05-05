@@ -437,6 +437,17 @@ body::before {
 .imp-switch input:checked + .imp-slider { background: rgba(220,90,0,0.3); border-color: rgba(255,130,0,0.6); }
 .imp-switch input:checked + .imp-slider::before { transform: translateX(16px); background: #FF7820; }
 .imp-switch-label { font-size: 10px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.1em; }
+.imp-confirm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; }
+.imp-confirm-overlay.open { display:flex; }
+.imp-confirm-box { background:var(--surface2); border:0.5px solid rgba(255,130,0,0.5); border-radius:14px; padding:24px 28px; max-width:300px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.4); }
+.imp-confirm-icon { font-size:32px; margin-bottom:10px; }
+.imp-confirm-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; letter-spacing:0.05em; }
+.imp-confirm-sub { font-size:11px; color:var(--text-sub); margin-bottom:18px; line-height:1.6; }
+.imp-confirm-btns { display:flex; gap:10px; justify-content:center; }
+.imp-confirm-yes { padding:7px 20px; border-radius:8px; border:none; background:rgba(220,90,0,0.8); color:#fff; font-size:12px; font-weight:600; cursor:pointer; }
+.imp-confirm-yes:hover { background:rgba(220,90,0,1); }
+.imp-confirm-no { padding:7px 20px; border-radius:8px; border:0.5px solid var(--border2); background:transparent; color:var(--text-sub); font-size:12px; cursor:pointer; }
+.imp-confirm-no:hover { background:var(--surface); }
 .pin-badge {
   position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
   font-size: 18px; display: none; line-height: 1;
@@ -2329,6 +2340,24 @@ function openEditModal(id, e) {
   document.getElementById('task-edit-overlay').classList.add('open');
 }
 
+function onImpSwitchClick(e) {
+  e.preventDefault();
+  const cb = document.getElementById('edit-important');
+  if (cb.checked) {
+    cb.checked = false;
+    saveTaskState();
+  } else {
+    document.getElementById('imp-confirm-overlay').classList.add('open');
+  }
+}
+function confirmImp() {
+  document.getElementById('edit-important').checked = true;
+  document.getElementById('imp-confirm-overlay').classList.remove('open');
+}
+function cancelImpConfirm() {
+  document.getElementById('imp-confirm-overlay').classList.remove('open');
+}
+
 function closeEditModal() {
   editingTaskId = null;
   document.getElementById('task-edit-overlay').classList.remove('open');
@@ -2570,17 +2599,30 @@ window.onload = () => {
       <button class="edit-add-link-btn" onclick="addEditLink()">＋ リンクを追加</button>
     </div>
     <div class="edit-actions">
-      <label class="imp-switch-wrap">
+      <div class="imp-switch-wrap" onclick="onImpSwitchClick(event)">
         <span class="imp-switch">
-          <input type="checkbox" id="edit-important">
+          <input type="checkbox" id="edit-important" style="pointer-events:none">
           <span class="imp-slider"></span>
         </span>
         <span class="imp-switch-label">IMPORTANT</span>
-      </label>
+      </div>
       <div class="edit-actions-right">
         <button class="edit-cancel-btn" onclick="closeEditModal()">キャンセル</button>
         <button class="edit-save-btn" onclick="saveEditModal()">保存</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Important確認モーダル -->
+<div class="imp-confirm-overlay" id="imp-confirm-overlay">
+  <div class="imp-confirm-box">
+    <div class="imp-confirm-icon">🔥</div>
+    <div class="imp-confirm-title">IMPORTANT MODE</div>
+    <div class="imp-confirm-sub">本当にIMPORTANT MODEに<br>しますか？</div>
+    <div class="imp-confirm-btns">
+      <button class="imp-confirm-no" onclick="cancelImpConfirm()">キャンセル</button>
+      <button class="imp-confirm-yes" onclick="confirmImp()">ON にする</button>
     </div>
   </div>
 </div>
