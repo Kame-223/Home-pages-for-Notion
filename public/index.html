@@ -1657,7 +1657,7 @@ function renderCard(task, mode='today') {
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
-    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}${rightSetBtn}</div>
+    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}${rightSetBtn}<div style="position:relative;margin-left:4px"><button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;padding:0 13px;font-size:12px;border-radius:5px">${jikantaiLabel}</button><div class="time-dropdown" id="tdd-${id}"><div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div><div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div><div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div></div></div></div>
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
@@ -1672,14 +1672,6 @@ function renderCard(task, mode='today') {
         <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
         <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
         <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-      </div>
-      <div style="position:relative;margin-left:auto">
-        <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;padding:0 13px;font-size:12px;border-radius:5px">${jikantaiLabel}</button>
-        <div class="time-dropdown" id="tdd-${id}">
-          <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
-          <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
-          <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
-        </div>
       </div>
     </div>
   </div>`;
