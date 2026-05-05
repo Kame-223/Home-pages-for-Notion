@@ -1660,9 +1660,17 @@ function renderCard(task, mode='today') {
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
-        <div style="display:flex;gap:4px;flex:1">
+        <div style="display:flex;gap:4px">
           <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')" style="flex:0 0 auto">${s.focusSeconds>0?'Restart':'Start'}</button>
           <button class="btn-done-big ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
+        </div>
+        <div style="position:relative">
+          <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${jikantaiLabel}</button>
+          <div class="time-dropdown" id="tdd-${id}">
+            <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
+            <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
+            <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1671,14 +1679,6 @@ function renderCard(task, mode='today') {
         <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
         <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
         <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-      </div>
-      <div style="position:relative">
-        <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')">${jikantaiLabel}</button>
-        <div class="time-dropdown" id="tdd-${id}">
-          <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
-          <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
-          <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
-        </div>
       </div>
     </div>
   </div>`;
@@ -1911,12 +1911,16 @@ function startFocus(id) {
   const title = getProp(task,'タイトル') || '無題';
   const area = getProp(task,'エリア');
   const subjects = getProp(task,'科目')||[];
-  const at = areaTag(area,subjects);
   const link = s.link || getProp(task,'作業リンク');
   const expected = timeSteps[s.timeIdx];
+  const subjectF = (area === '課題') ? (subjects?.[0] || null) : null;
+  const focusTagsHtml = [
+    area ? `<span class="tag ${areaTagCls(area)}">${area}</span>` : '',
+    subjectF ? `<span class="tag ${subjectTagCls(subjectF)}">${subjectF}</span>` : '',
+  ].filter(Boolean).join('');
 
   document.getElementById('focus-task').textContent = title;
-  document.getElementById('focus-tags').innerHTML = `<span class="tag ${at.cls}">${at.label}</span>`;
+  document.getElementById('focus-tags').innerHTML = focusTagsHtml;
   document.getElementById('focus-expected').textContent = `想定時間：${expected}`;
 
   const linkEl = document.getElementById('focus-link');
