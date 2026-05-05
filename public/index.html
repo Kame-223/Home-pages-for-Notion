@@ -334,8 +334,9 @@ body::before {
 .fc .fc-button:hover { background: var(--surface) !important; color: var(--text) !important; }
 .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--purple) !important; border-color: var(--purple) !important; color: white !important; }
 .fc-daygrid-day-number, .fc-daygrid-more-link { color: var(--text-sub) !important; text-decoration: none !important; }
-.fc-event { background: var(--purple) !important; border-color: var(--purple) !important; font-size: 10px !important; }
+.fc-event { font-size: 10px !important; }
 .fc-event-title { color: white !important; }
+.fc-event .fc-event-main { color: white !important; }
 .fc-timegrid-now-indicator-line { border-color: var(--red) !important; }
 .fc-timegrid-now-indicator-arrow { border-top-color: var(--red) !important; border-bottom-color: var(--red) !important; }
 .fc-highlight { background: rgba(127,119,221,0.15) !important; }
@@ -1400,6 +1401,16 @@ async function fetchGCalEvents(info, success, failure) {
     const timeMin = start.toISOString();
     const timeMax = end.toISOString();
 
+    function getEventColor(title, calName, isIcu) {
+      if (calName === '当日行動') return { bg:'#4A7A38', border:'#8BAF58' };
+      if (/教育学|教育原理|教育/.test(title))  return { bg:'#7A4A2A', border:'#D4906A' };
+      if (/憲法/.test(title))                  return { bg:'#7A7A28', border:'#C8B860' };
+      if (/社会学/.test(title))                return { bg:'#8B1515', border:'#E09090' };
+      if (/ELA/.test(title))                   return { bg:'#1C3A6E', border:'#7AA0E0' };
+      if (isIcu)  return { bg:'#1C4080', border:'#85B7EB' };
+      return      { bg:'#7A4A42', border:'#C4857A' };
+    }
+
     // トークンごとに全カレンダーからイベントを取得
     async function fetchFromToken(token, prefix) {
       if (!token) return [];
@@ -1419,14 +1430,19 @@ async function fetchGCalEvents(info, success, failure) {
           );
           if (!res.ok) return [];
           const data = await res.json();
-          return (data.items || []).map(e => ({
-            id: prefix + cal.id + '_' + e.id,
-            title: e.summary || '(タイトルなし)',
-            start: e.start.dateTime || e.start.date,
-            end: e.end?.dateTime || e.end?.date,
-            backgroundColor: cal.backgroundColor || undefined,
-            borderColor: cal.backgroundColor || undefined,
-          }));
+          const isIcu = prefix === 'i_';
+          return (data.items || []).map(e => {
+            const title = e.summary || '(タイトルなし)';
+            const { bg, border } = getEventColor(title, cal.summary, isIcu);
+            return {
+              id: prefix + cal.id + '_' + e.id,
+              title,
+              start: e.start.dateTime || e.start.date,
+              end: e.end?.dateTime || e.end?.date,
+              backgroundColor: bg,
+              borderColor: border,
+            };
+          });
         } catch { return []; }
       }));
       return evArrays.flat();
