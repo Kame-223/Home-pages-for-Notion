@@ -1608,7 +1608,17 @@ function subjectTagCls(s) {
 // ===== タスクデータ =====
 let allTasks = [];
 const timeSteps = ['5m','30m','1h','2h','3h+'];
-const taskState = {};
+function loadTaskState() {
+  try { return JSON.parse(localStorage.getItem('taskState') || '{}'); } catch { return {}; }
+}
+function saveTaskState() {
+  const toSave = {};
+  for (const [id, s] of Object.entries(taskState)) {
+    toSave[id] = { done: s.done, pinned: s.pinned, timeIdx: s.timeIdx, jikantai: s.jikantai, link: s.link, links: s.links };
+  }
+  localStorage.setItem('taskState', JSON.stringify(toSave));
+}
+const taskState = loadTaskState();
 
 async function loadTasks() {
   try {
@@ -1651,6 +1661,7 @@ function renderCard(task, mode='today') {
     focusSeconds: 0, jikantai: jikantai||null, link: link||null,
     links: link ? [link] : [],
   };
+  if (taskState[id].focusSeconds == null) taskState[id].focusSeconds = 0;
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
 
@@ -1899,6 +1910,7 @@ function chTime(id, d) {
   if (!taskState[id]) return;
   taskState[id].timeIdx = Math.max(0, Math.min(4, taskState[id].timeIdx+d));
   document.querySelectorAll(`#tv-${id}`).forEach(el=>el.textContent=timeSteps[taskState[id].timeIdx]);
+  saveTaskState();
 }
 
 function toggleDone(id) {
@@ -1919,6 +1931,7 @@ function toggleDone(id) {
   });
   // Notionに反映
   notionUpdate(id, {'ステータス':{status:{name:isDone?'完了':'ToDo'}}}).catch(console.error);
+  saveTaskState();
   updateProgress();
 }
 
@@ -1939,6 +1952,7 @@ function togglePin(id) {
     // Startボタンをリセット
     taskState[id].focusSeconds = 0;
   }
+  saveTaskState();
   renderAll();
   updateProgress();
 }
@@ -1957,6 +1971,7 @@ function setJikantai(id, val) {
   const el = document.getElementById(`tdd-${id}`);
   if (el) el.classList.remove('open');
   notionUpdate(id, {'実行時間帯':{select:{name:val}}}).catch(console.error);
+  saveTaskState();
   renderAll();
 }
 
@@ -2228,7 +2243,7 @@ async function saveEditModal() {
     task.properties['締切日'] = {type:'date', date: deadline ? {start:deadline} : null};
     task.properties['作業リンク'] = {type:'url', url: firstLink};
   }
-  if (taskState[id]) { taskState[id].link = firstLink; taskState[id].links = links; }
+  if (taskState[id]) { taskState[id].link = firstLink; taskState[id].links = links; saveTaskState(); }
 
   closeEditModal();
   renderAll();
