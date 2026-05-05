@@ -334,7 +334,7 @@ body::before {
 .fc .fc-button:hover { background: var(--surface) !important; color: var(--text) !important; }
 .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--purple) !important; border-color: var(--purple) !important; color: white !important; }
 .fc-daygrid-day-number, .fc-daygrid-more-link { color: var(--text-sub) !important; text-decoration: none !important; }
-.fc-event { font-size: 10px !important; border-top: none !important; border-right: none !important; border-bottom: none !important; border-left-width: 3px !important; box-shadow: none !important; }
+.fc-event { font-size: 10px !important; border-top-color: rgba(255,255,255,0.4) !important; border-right-color: rgba(255,255,255,0.4) !important; border-bottom-color: rgba(255,255,255,0.4) !important; border-left-width: 3px !important; box-shadow: none !important; }
 .fc-event-title { color: inherit !important; }
 .fc-event .fc-event-main { color: inherit !important; }
 .fc-timegrid-event { border-radius: 4px !important; box-shadow: none !important; }
@@ -1430,13 +1430,13 @@ async function fetchGCalEvents(info, success, failure) {
     const timeMax = end.toISOString();
 
     function getEventColor(title, calName, isIcu) {
-      if (calName === '当日行動') return { bg:'rgba(74,160,56,0.30)',  border:'#4A9038', text:'#2A6820' };
-      if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.30)',  border:'#B06A30', text:'#8B4A20' };
-      if (/憲法/.test(title))                  return { bg:'rgba(180,155,40,0.30)',  border:'#A08820', text:'#806800' };
-      if (/社会学/.test(title))                return { bg:'rgba(180,50,50,0.30)',   border:'#B03030', text:'#901818' };
-      if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.30)',  border:'#3C64D2', text:'#2C4AA8' };
-      if (isIcu)  return { bg:'rgba(60,110,220,0.26)', border:'#3C6EDC', text:'#2C5AAC' };
-      return      { bg:'rgba(180,90,80,0.26)',  border:'#C4655A', text:'#9A4540' };
+      if (calName === '当日行動') return { bg:'rgba(74,160,56,0.22)',  border:'#4A9038', text:'#2A6820' };
+      if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.22)',  border:'#B06A30', text:'#8B4A20' };
+      if (/憲法/.test(title))                  return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
+      if (/社会学/.test(title))                return { bg:'rgba(180,50,50,0.22)',   border:'#B03030', text:'#901818' };
+      if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.22)',  border:'#3C64D2', text:'#2C4AA8' };
+      if (isIcu)  return { bg:'rgba(60,110,220,0.20)', border:'#3C6EDC', text:'#2C5AAC' };
+      return      { bg:'rgba(180,90,80,0.20)',  border:'#C4655A', text:'#9A4540' };
     }
 
     // トークンごとに全カレンダーからイベントを取得
