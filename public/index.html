@@ -1620,16 +1620,22 @@ function renderCard(task, mode='today') {
     ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItems}</div></div>`
     : '';
 
-  // 左上ボタン：プロパティがなければ「設定」、あれば「✎」
-  const editBtn = hasProps
+  // ボタン配置ロジック
+  const hasOnlySecondary = !area && (deadline || links.length); // 締切/リンクのみ
+  const leftBtn = area
     ? `<button class="card-edit-btn" onclick="${editCall}">✎</button>`
-    : `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`;
+    : hasOnlySecondary
+      ? ''
+      : `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`;
+  const rightSetBtn = hasOnlySecondary
+    ? `<button class="btn-set-prop" onclick="${editCall}" style="font-size:8px;padding:2px 6px">＋ 設定</button>`
+    : '';
 
   if (mode === 'leftover' || mode === 'next') {
     return `
     <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
-      <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}</div>
+      <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}${rightSetBtn}</div>
       <div class="card-body">
         <div class="task-title-box" id="tt-${id}">${title}</div>
         <div class="card-side">
@@ -1652,7 +1658,7 @@ function renderCard(task, mode='today') {
   return `
   <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
-    <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}</div>
+    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${linkBtnHtml}${deadlineTag2}${rightSetBtn}</div>
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
