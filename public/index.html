@@ -1725,13 +1725,14 @@ function renderCard(task, mode='today') {
         </div>
       </div>
     </div>
-    <div class="task-bottom">
+    <div class="task-bottom" style="position:relative">
       <div class="time-wrap">
         <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
         <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
         <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
       </div>
-      <div style="position:relative">
+      ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;font-size:18px;opacity:0.7;padding:0;line-height:1;transition:all .2s" onmouseover="this.style.opacity=1;this.style.transform='translateX(-50%) scale(1.2)'" onmouseout="this.style.opacity=0.7;this.style.transform='translateX(-50%) scale(1)'">🧸</button>` : ''}
+      <div style="position:relative;margin-left:auto">
         <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;padding:0 13px;font-size:12px;border-radius:5px">${jikantaiLabel}</button>
         <div class="time-dropdown" id="tdd-${id}">
           <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
@@ -1770,8 +1771,6 @@ function renderAll() {
   } else {
     todayEl.innerHTML = todayTasks.map(t=>renderCard(t,'today')).join('');
   }
-  // 🧸 リンク一覧ボタンを追加
-  todayEl.innerHTML += `<button class="bear-btn" onclick="openBearLinks()" title="リンク一覧">🧸</button>`;
 
   // やり残し
   const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
@@ -2019,21 +2018,15 @@ function startFocus(id) {
   }, 1000);
 }
 
-function openBearLinks() {
-  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  const todayTasks = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
-  let html = '';
-  todayTasks.forEach(t => {
-    const links = taskState[t.id]?.links || [];
-    const title = getProp(t,'タイトル') || '無題';
-    links.forEach(u => {
-      const label = u.replace(/^https?:\/\//, '').substring(0, 40);
-      html += `<a class="bear-link-item" href="${u}" target="_blank">
-        🔗 <span><span style="font-size:12px;color:var(--blue)">${label}</span><span class="bear-link-task">${title}</span></span>
-      </a>`;
-    });
-  });
-  document.getElementById('bear-link-list').innerHTML = html || '<div class="bear-link-empty">リンクがありません</div>';
+function openBearLinks(id) {
+  const links = taskState[id]?.links || [];
+  const html = links.length
+    ? links.map(u => {
+        const label = u.replace(/^https?:\/\//, '').substring(0, 44);
+        return `<a class="bear-link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
+      }).join('')
+    : '<div class="bear-link-empty">リンクがありません</div>';
+  document.getElementById('bear-link-list').innerHTML = html;
   document.getElementById('bear-link-overlay').classList.add('open');
 }
 function closeBearLinks() {
