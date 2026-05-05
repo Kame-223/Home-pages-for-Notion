@@ -1850,6 +1850,11 @@ function toggleDone(id) {
     el.classList.toggle('undo',isDone);
   });
   document.querySelectorAll(`#start-${id}`).forEach(el=>el.style.display=isDone?'none':'');
+  // 完了時は画鋲を操作不可に見せる
+  document.querySelectorAll(`#tc-${id} .pin-badge`).forEach(el=>{
+    el.style.cursor = isDone ? 'default' : 'pointer';
+    el.style.opacity = isDone ? '0.4' : '';
+  });
   // Notionに反映
   notionUpdate(id, {'ステータス':{status:{name:isDone?'完了':'ToDo'}}}).catch(console.error);
   updateProgress();
@@ -1857,6 +1862,8 @@ function toggleDone(id) {
 
 function togglePin(id) {
   if (!taskState[id]) return;
+  // 完了状態のタスクは画鋲を外せない
+  if (taskState[id].done) return;
   taskState[id].pinned = !taskState[id].pinned;
   if (!taskState[id].pinned) {
     // TODAYから外す：完了状態を取り消す
