@@ -1739,7 +1739,7 @@ function renderCard(task, mode='today') {
           <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
         </div>
       </div>
-      ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1;transition:transform .2s" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.style.transform='translateX(-50%) scale(1.15)'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.style.transform='translateX(-50%) scale(1)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block"></button>` : ''}
+      ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1;transition:transform .2s" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='none';this.style.transform='translateX(-50%) scale(1.15)'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='34px';this.querySelector('img').style.filter='brightness(0.7)';this.style.transform='translateX(-50%) scale(1)'"><img src="/backgrounds/bear-sit.png" style="height:34px;width:auto;display:block;filter:brightness(0.7);transition:all .2s"></button>` : ''}
     </div>
   </div>`;
 }
