@@ -409,9 +409,9 @@ body::before {
 .task-card {
   background: var(--surface2);
   border: 0.5px solid var(--border2);
-  border-radius: 10px;
-  padding: 7px 10px;
-  margin-bottom: 6px;
+  border-radius: 12px;
+  padding: 11px 14px;
+  margin-bottom: 8px;
   position: relative;
   transition: all .2s;
 }
@@ -424,7 +424,7 @@ body::before {
   font-size: 18px; display: none; line-height: 1;
 }
 .task-card.pinned .pin-badge { display: block; }
-.tag-row { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; flex-wrap: wrap; }
+.tag-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
 .tag { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
 .tag-teal { background: rgba(29,158,117,0.12); color: #5DCAA5; border: 0.5px solid rgba(93,202,165,0.3); }
 .tag-blue { background: rgba(55,138,221,0.12); color: #85B7EB; border: 0.5px solid rgba(133,183,235,0.3); }
@@ -471,7 +471,7 @@ body::before {
   font-weight: 500; transition: all .2s; position: relative; white-space: nowrap; width: 100%;
 }
 .btn-start {
-  font-size: 10px; padding: 3px 10px; border-radius: 7px;
+  font-size: 11px; padding: 6px 12px; border-radius: 8px;
   border: 0.5px solid rgba(29,158,117,0.4); background: rgba(29,158,117,0.1);
   cursor: pointer; color: #5DCAA5; font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s; white-space: nowrap;
@@ -512,16 +512,16 @@ body::before {
 
 /* カード新レイアウト */
 .card-body {
-  display: flex; gap: 8px; align-items: stretch; margin-bottom: 4px;
+  display: flex; gap: 12px; align-items: stretch; margin-bottom: 8px;
 }
 .task-title-box {
-  flex: 1; font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.5;
-  padding: 1px 2px; min-height: 26px;
+  flex: 1; font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.55;
+  padding: 2px 0; min-height: 30px;
   display: flex; align-items: center;
 }
 .card-side {
-  display: flex; flex-direction: column; gap: 4px;
-  flex-shrink: 0; align-items: stretch; min-width: 86px;
+  display: flex; flex-direction: column; gap: 6px;
+  flex-shrink: 0; align-items: stretch; min-width: 96px;
 }
 .card-spacer { flex: 1; min-width: 4px; }
 
@@ -565,10 +565,10 @@ body::before {
 
 /* 完了ボタン（大） */
 .btn-done-big {
-  flex: 1; font-size: 11px; padding: 0; border-radius: 8px;
+  flex: 1; font-size: 12px; padding: 0; border-radius: 8px;
   border: none; background: var(--purple);
   cursor: pointer; color: white; font-family: 'Noto Sans JP', sans-serif;
-  font-weight: 500; transition: all .2s; min-height: 28px;
+  font-weight: 500; transition: all .2s; min-height: 36px;
 }
 .btn-done-big.undo { background: rgba(255,255,255,0.1); color: var(--text-sub); }
 .btn-done-big:hover { opacity: 0.85; }
