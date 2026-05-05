@@ -437,9 +437,10 @@ body::before {
 .tag-white { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 0.5px solid rgba(255,255,255,0.25); }
 .tag-rose { background: rgba(196,120,110,0.15); color: #D4A098; border: 0.5px solid rgba(196,120,110,0.35); }
 .tag-olive { background: rgba(140,160,75,0.15); color: #B0C870; border: 0.5px solid rgba(140,160,75,0.35); }
-.tag-mauve { background: rgba(150,115,160,0.15); color: #C8A0D8; border: 0.5px solid rgba(150,115,160,0.35); }
-.tag-brown { background: rgba(160,100,60,0.15); color: #D4906A; border: 0.5px solid rgba(160,100,60,0.35); }
-.tag-navy { background: rgba(40,80,160,0.18); color: #7AA0E0; border: 0.5px solid rgba(40,80,160,0.4); }
+.tag-mauve { background: rgba(139,21,21,0.55); color: #F0C0C0; border: 0.5px solid rgba(139,21,21,0.7); }
+.tag-brown { background: rgba(45,88,30,0.55); color: #AADAA0; border: 0.5px solid rgba(45,88,30,0.7); }
+.tag-navy { background: rgba(28,58,110,0.65); color: #A8C4F0; border: 0.5px solid rgba(28,58,110,0.8); }
+.tag-teal-olive { background: rgba(139,128,48,0.55); color: #EDE8A0; border: 0.5px solid rgba(139,128,48,0.7); }
 .deadline-tag { flex-shrink: 0; }
 .tag.clickable { cursor: pointer; transition: opacity .15s; }
 .tag.clickable:hover { opacity: 0.75; }
@@ -1615,7 +1616,7 @@ function areaTagCls(area) {
   return 'tag-gray';
 }
 function subjectTagCls(s) {
-  if (s==='憲法') return 'tag-teal';
+  if (s==='憲法') return 'tag-teal-olive';
   if (s==='社会学') return 'tag-mauve';
   if (s==='教育原理') return 'tag-brown';
   if (s==='ELA') return 'tag-navy';
