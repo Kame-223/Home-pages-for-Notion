@@ -1077,13 +1077,13 @@ body::before {
               <button class="fr-opt" data-val="🌤 良い"><span class="fr-emoji">🌤</span><span class="fr-opt-label">良い</span></button>
               <button class="fr-opt" data-val="⛅ 普通"><span class="fr-emoji">⛅</span><span class="fr-opt-label">普通</span></button>
               <button class="fr-opt" data-val="🌧 しんどい"><span class="fr-emoji">🌧</span><span class="fr-opt-label">しんどい</span></button>
-              <button class="fr-opt" data-val="⛈️ 最悪"><span class="fr-emoji">⛈️</span><span class="fr-opt-label">最悪</span></button>
+              <button class="fr-opt" data-val="⛈ 最悪"><span class="fr-emoji">⛈️</span><span class="fr-opt-label">最悪</span></button>
             </div>
           </div>
           <div class="fr-row">
             <span class="fr-label">体調</span>
             <div class="fr-options" id="fr-energy">
-              <button class="fr-opt" data-val="😆 元気"><span class="fr-emoji">😆</span><span class="fr-opt-label">元気</span></button>
+              <button class="fr-opt" data-val="💪 元気"><span class="fr-emoji">😆</span><span class="fr-opt-label">元気</span></button>
               <button class="fr-opt" data-val="🙂 まあまあ"><span class="fr-emoji">🙂</span><span class="fr-opt-label">まあまあ</span></button>
               <button class="fr-opt" data-val="😪 疲れてる"><span class="fr-emoji">😪</span><span class="fr-opt-label">疲れてる</span></button>
               <button class="fr-opt" data-val="🤒 体調悪い"><span class="fr-emoji">🤒</span><span class="fr-opt-label">体調悪い</span></button>
@@ -1971,11 +1971,23 @@ function updateProgress() {
 
 // ===== 振り返り =====
 function setupFurikaeri() {
-  // 日付表示
-  const now = new Date();
+  // 日付表示（3時リセット基準）
+  const dateStr = getFurikaeriDate();
+  const d = new Date(dateStr + 'T12:00:00');
   const days = ['日','月','火','水','木','金','土'];
   document.getElementById('furikaeri-date').textContent =
-    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+
+  // 日付が変わっていたらフォームリセット
+  const savedDate = localStorage.getItem('frDate');
+  if (savedDate !== dateStr) {
+    ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.querySelectorAll('.fr-opt').forEach(b => b.classList.remove('selected','dimmed'));
+    frPageId = null;
+    localStorage.setItem('frDate', dateStr);
+  }
   // 日曜なら週次レビューを表示
   if (now.getDay() === 0) document.getElementById('weekly-section').classList.remove('hidden');
   // 気分・体調ボタンのセレクト（選択→強調、他→暗く、再クリックでキャンセル）
@@ -2000,59 +2012,54 @@ function setupFurikaeri() {
 }
 
 let frSaveTimer = null;
-let frAlreadySaved = false;
+let frPageId = null;
 
-function scheduleFrSave() {
-  frAlreadySaved = false;
-  clearTimeout(frSaveTimer);
-  const hint = document.getElementById('furikaeri-hint');
-  if (hint) hint.textContent = '';
-  frSaveTimer = setTimeout(() => saveFurikaeri(true), 3000);
+function getFurikaeriDate() {
+  const now = new Date();
+  if (now.getHours() < 3) now.setDate(now.getDate() - 1);
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 }
 
-async function saveFurikaeri(auto = false) {
-  const hint = document.getElementById('furikaeri-hint');
-  const mood    = document.querySelector('#fr-mood .fr-opt.selected')?.dataset.val || '未記入';
-  const energy  = document.querySelector('#fr-energy .fr-opt.selected')?.dataset.val || '未記入';
-  const event   = document.getElementById('fr-event')?.value.trim() || '';
-  const good    = document.getElementById('fr-good')?.value.trim() || '';
-  const bad     = document.getElementById('fr-bad')?.value.trim() || '';
-  const weekly  = document.getElementById('fr-weekly')?.value.trim() || '';
-  const nextWeek= document.getElementById('fr-next-week')?.value.trim() || '';
+function scheduleFrSave() {
+  clearTimeout(frSaveTimer);
+  frSaveTimer = setTimeout(() => saveFurikaeri(), 3000);
+}
 
-  // 何も入力されていなければスキップ
-  const hasContent = mood !== '未記入' || energy !== '未記入' || event || good || bad || weekly || nextWeek;
+async function saveFurikaeri() {
+  const hint   = document.getElementById('furikaeri-hint');
+  const mood   = document.querySelector('#fr-mood .fr-opt.selected')?.dataset.val || null;
+  const energy = document.querySelector('#fr-energy .fr-opt.selected')?.dataset.val || null;
+  const event  = document.getElementById('fr-event')?.value.trim() || '';
+  const good   = document.getElementById('fr-good')?.value.trim() || '';
+  const bad    = document.getElementById('fr-bad')?.value.trim() || '';
+  const weekly = document.getElementById('fr-weekly')?.value.trim() || '';
+  const nextWeek = document.getElementById('fr-next-week')?.value.trim() || '';
+
+  const hasContent = mood || energy || event || good || bad || weekly || nextWeek;
   if (!hasContent) { if (hint) hint.textContent = ''; return; }
 
-  // 自動保存で既に保存済みならスキップ
-  if (auto && frAlreadySaved) return;
-
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
-  let content = `【${dateStr}】気分:${mood} 体調:${energy}`;
-  if (event)   content += ` | 📅${event}`;
-  if (good)    content += ` | ✨${good}`;
-  if (bad)     content += ` | 😤${bad}`;
-  if (weekly)  content += ` | 📝今週:${weekly}`;
-  if (nextWeek)content += ` | 🎯来週:${nextWeek}`;
+  const dateStr = getFurikaeriDate();
+  const props = {
+    '名前':     {title: [{text: {content: dateStr}}]},
+    '日付':     {date: {start: dateStr}},
+    '種別 ':    {select: {name: '日次ジャーナリング'}},
+    'あったこと':{rich_text: [{text: {content: event}}]},
+    'よかったこと':{rich_text: [{text: {content: good}}]},
+    '嫌だったこと':{rich_text: [{text: {content: bad}}]},
+    '振り返り': {rich_text: [{text: {content: [weekly, nextWeek].filter(Boolean).join(' / ')}}]},
+  };
+  if (mood)   props['気分']   = {select: {name: mood}};
+  if (energy) props['体調']   = {select: {name: energy}};
 
   if (hint) hint.textContent = '保存中...';
   try {
-    await notionCreate('76f4c1ec140d8375aa5b81c589f9b247', {
-      'タイトル': {title: [{text: {content}}]},
-    });
-    frAlreadySaved = true;
-    if (!auto) {
-      ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
-      });
-      document.querySelectorAll('.fr-opt').forEach(b => b.classList.remove('selected','dimmed'));
-      frAlreadySaved = false;
+    if (frPageId) {
+      await notionUpdate(frPageId, props);
+    } else {
+      const res = await notionCreate('76f4c1ec140d8375aa5b81c589f9b247', props);
+      frPageId = res.id;
     }
-    if (hint) {
-      hint.textContent = auto ? '✓ 自動保存済み' : '✓ 保存しました！おつかれ〜';
-      setTimeout(() => { hint.textContent = ''; }, 3000);
-    }
+    if (hint) { hint.textContent = '✓ 自動保存済み'; setTimeout(() => { hint.textContent = ''; }, 3000); }
   } catch(e) {
     if (hint) hint.textContent = '保存に失敗しました';
     console.error(e);
