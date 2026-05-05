@@ -334,10 +334,11 @@ body::before {
 .fc .fc-button:hover { background: var(--surface) !important; color: var(--text) !important; }
 .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--purple) !important; border-color: var(--purple) !important; color: white !important; }
 .fc-daygrid-day-number, .fc-daygrid-more-link { color: var(--text-sub) !important; text-decoration: none !important; }
-.fc-event { font-size: 10px !important; border-top: none !important; border-right: none !important; border-bottom: none !important; border-left-width: 3px !important; }
+.fc-event { font-size: 10px !important; border-top: none !important; border-right: none !important; border-bottom: none !important; border-left-width: 3px !important; box-shadow: none !important; }
 .fc-event-title { color: inherit !important; }
 .fc-event .fc-event-main { color: inherit !important; }
-.fc-timegrid-event { border-radius: 4px !important; }
+.fc-timegrid-event { border-radius: 4px !important; box-shadow: none !important; }
+.fc-timegrid-event-harness-inset .fc-timegrid-event { box-shadow: none !important; }
 .fc-timegrid-now-indicator-line { border-color: var(--red) !important; }
 .fc-timegrid-now-indicator-arrow { border-top-color: var(--red) !important; border-bottom-color: var(--red) !important; }
 .fc-highlight { background: rgba(127,119,221,0.15) !important; }
@@ -1399,7 +1400,7 @@ function renderFullCalendar() {
       if (h === 13 || h === 19) {
         const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
         if (cushion) {
-          cushion.style.setProperty('color', 'var(--blue)', 'important');
+          cushion.style.setProperty('color', '#1840C0', 'important');
           cushion.style.setProperty('font-weight', '700', 'important');
         }
       }
@@ -1429,13 +1430,13 @@ async function fetchGCalEvents(info, success, failure) {
     const timeMax = end.toISOString();
 
     function getEventColor(title, calName, isIcu) {
-      if (calName === '当日行動') return { bg:'rgba(74,160,56,0.15)',  border:'#4A9038', text:'#2A6820' };
-      if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.15)',  border:'#B06A30', text:'#8B4A20' };
-      if (/憲法/.test(title))                  return { bg:'rgba(180,155,40,0.15)',  border:'#A08820', text:'#806800' };
-      if (/社会学/.test(title))                return { bg:'rgba(180,50,50,0.15)',   border:'#B03030', text:'#901818' };
-      if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.15)',  border:'#3C64D2', text:'#2C4AA8' };
-      if (isIcu)  return { bg:'rgba(60,110,220,0.13)', border:'#3C6EDC', text:'#2C5AAC' };
-      return      { bg:'rgba(180,90,80,0.13)',  border:'#C4655A', text:'#9A4540' };
+      if (calName === '当日行動') return { bg:'rgba(74,160,56,0.30)',  border:'#4A9038', text:'#2A6820' };
+      if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.30)',  border:'#B06A30', text:'#8B4A20' };
+      if (/憲法/.test(title))                  return { bg:'rgba(180,155,40,0.30)',  border:'#A08820', text:'#806800' };
+      if (/社会学/.test(title))                return { bg:'rgba(180,50,50,0.30)',   border:'#B03030', text:'#901818' };
+      if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.30)',  border:'#3C64D2', text:'#2C4AA8' };
+      if (isIcu)  return { bg:'rgba(60,110,220,0.26)', border:'#3C6EDC', text:'#2C5AAC' };
+      return      { bg:'rgba(180,90,80,0.26)',  border:'#C4655A', text:'#9A4540' };
     }
 
     // トークンごとに全カレンダーからイベントを取得
