@@ -893,16 +893,17 @@ body::before {
 }
 .furikaeri-header { margin-bottom: 4px; }
 .furikaeri-dragon-wrap {
-  position: absolute; top: 8px; right: 18%;
-  display: flex; align-items: flex-end; gap: 4px; pointer-events: none;
+  position: absolute; top: 8px; right: 4px;
+  display: flex; align-items: flex-start; gap: 4px; pointer-events: none;
 }
 .furikaeri-bubble {
   background: rgba(255,255,255,0.92); color: #333; font-size: 15px; font-weight: 500;
   padding: 9px 15px; border-radius: 14px; line-height: 1.4; max-width: 180px; text-align: center;
   position: relative; box-shadow: 0 2px 12px rgba(0,0,0,0.15); pointer-events: auto;
+  margin-top: 20px;
 }
 .furikaeri-bubble::after {
-  content: ''; position: absolute; right: -11px; top: 12px;
+  content: ''; position: absolute; right: -11px; top: 18px;
   border: 8px solid transparent; border-left-color: rgba(255,255,255,0.92); border-right: none;
 }
 .furikaeri-dragon { width: 108px; height: auto; pointer-events: auto; }
