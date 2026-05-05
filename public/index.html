@@ -636,13 +636,29 @@ body::before {
 .edit-chips { display: flex; gap: 5px; flex-wrap: wrap; }
 .edit-chip {
   font-size: 11px; padding: 4px 12px; border-radius: 20px;
-  border: 0.5px solid var(--border2); background: var(--surface2);
-  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
+  border: 0.5px solid var(--chip-border, var(--border2)); background: var(--surface2);
+  cursor: pointer; color: var(--chip-color, var(--text-sub)); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 400; transition: all .15s;
 }
-.edit-chip:hover { border-color: var(--purple); color: var(--purple); }
-.edit-chip.active { background: rgba(127,119,221,0.2); border-color: var(--purple); color: var(--purple); font-weight: 500; }
+.edit-chip:hover { background: var(--chip-bg, rgba(127,119,221,0.1)); opacity: 1 !important; }
+.edit-chip.active { background: var(--chip-bg, rgba(127,119,221,0.2)); border-color: var(--chip-border, var(--purple)); font-weight: 600; }
+.edit-chips:has(.edit-chip.active) .edit-chip:not(.active) { opacity: 0.3; }
 .edit-chips.disabled { opacity: 0.25; pointer-events: none; }
+/* チップ個別カラー */
+.edit-chip[data-val="課題"]    { --chip-bg: rgba(255,62,191,0.18);  --chip-color: #FF7ED4; --chip-border: rgba(255,62,191,0.4); }
+.edit-chip[data-val="個人"]    { --chip-bg: rgba(196,120,110,0.18); --chip-color: #D4A098; --chip-border: rgba(196,120,110,0.4); }
+.edit-chip[data-val="生活"]    { --chip-bg: rgba(140,160,75,0.18);  --chip-color: #B0C870; --chip-border: rgba(140,160,75,0.4); }
+.edit-chip[data-val="ICU"]     { --chip-bg: rgba(255,255,255,0.12); --chip-color: rgba(255,255,255,0.8); --chip-border: rgba(255,255,255,0.3); }
+.edit-chip[data-val="寮"]      { --chip-bg: rgba(127,119,221,0.2);  --chip-color: #AFA9EC; --chip-border: rgba(175,169,236,0.45); }
+.edit-chip[data-val="憲法"]    { --chip-bg: rgba(139,128,48,0.2);   --chip-color: #EDE8A0; --chip-border: rgba(139,128,48,0.45); }
+.edit-chip[data-val="社会学"]  { --chip-bg: rgba(139,21,21,0.22);   --chip-color: #F0B8B8; --chip-border: rgba(139,21,21,0.5); }
+.edit-chip[data-val="教育原理"]{ --chip-bg: rgba(45,88,30,0.22);    --chip-color: #AADAA0; --chip-border: rgba(45,88,30,0.5); }
+.edit-chip[data-val="ELA"]     { --chip-bg: rgba(28,58,110,0.22);   --chip-color: #A8C4F0; --chip-border: rgba(28,58,110,0.5); }
+.edit-chip[data-val="ER4"],
+.edit-chip[data-val="S&L4"],
+.edit-chip[data-val="RCA"],
+.edit-chip[data-val="ATS4"],
+.edit-chip[data-val="ARW"]     { --chip-bg: rgba(28,58,110,0.22);   --chip-color: #A8C4F0; --chip-border: rgba(28,58,110,0.5); }
 .edit-input {
   width: 100%; padding: 10px 14px; border-radius: 8px;
   background: var(--surface2); border: 0.5px solid var(--border2);
