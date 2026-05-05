@@ -1651,6 +1651,12 @@ function renderNextList() {
   }
 
   // プロパティフィルター
+  const byDeadline = (a, b) => {
+    const da = getProp(a,'締切日'), db = getProp(b,'締切日');
+    if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
+    return da < db ? -1 : da > db ? 1 : 0;
+  };
+
   let html = '';
   const byArea = {};
   tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
@@ -1665,15 +1671,20 @@ function renderNextList() {
       const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
       subKeys.forEach(sub => {
         let subTasks = bySubject[sub];
-        if (sub === 'ELA') subTasks = [...subTasks].sort((a,b) => {
-          const ia = ELA_SUB_ORDER.indexOf(getProp(a,'ELAサブタグ')||''), ib = ELA_SUB_ORDER.indexOf(getProp(b,'ELAサブタグ')||'');
-          return (ia<0?99:ia)-(ib<0?99:ib);
-        });
+        if (sub === 'ELA') {
+          subTasks = [...subTasks].sort((a,b) => {
+            const ia = ELA_SUB_ORDER.indexOf(getProp(a,'ELAサブタグ')||''), ib = ELA_SUB_ORDER.indexOf(getProp(b,'ELAサブタグ')||'');
+            const subDiff = (ia<0?99:ia)-(ib<0?99:ib);
+            return subDiff !== 0 ? subDiff : byDeadline(a, b);
+          });
+        } else {
+          subTasks = [...subTasks].sort(byDeadline);
+        }
         html += `<div class="next-group-subject">${sub}</div>`;
         html += subTasks.map(t => renderCard(t,'next')).join('');
       });
     } else {
-      html += aTasks.map(t => renderCard(t,'next')).join('');
+      html += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next')).join('');
     }
   });
   el.innerHTML = html;
