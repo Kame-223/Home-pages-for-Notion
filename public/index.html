@@ -2283,6 +2283,13 @@ async function addToInbox() {
 
 // ===== キーボードショートカット =====
 document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    if (document.getElementById('task-edit-overlay')?.classList.contains('open')) {
+      e.preventDefault();
+      saveEditModal();
+      return;
+    }
+  }
   const tag = document.activeElement?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
