@@ -1332,7 +1332,7 @@ function renderFullCalendar() {
       if (h === 13 || h === 19) {
         const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
         if (cushion) {
-          cushion.style.setProperty('color', 'var(--red)', 'important');
+          cushion.style.setProperty('color', 'var(--blue)', 'important');
           cushion.style.setProperty('font-weight', '700', 'important');
         }
       }
@@ -2142,14 +2142,34 @@ function startFocus(id) {
 
 function openBearLinks(id) {
   const links = taskState[id]?.links || [];
-  const html = links.length
-    ? links.map(u => {
-        const label = u.replace(/^https?:\/\//, '').substring(0, 44);
-        return `<a class="bear-link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
-      }).join('')
-    : '<div class="bear-link-empty">リンクがありません</div>';
-  document.getElementById('bear-link-list').innerHTML = html;
+  const listEl = document.getElementById('bear-link-list');
+  if (!links.length) {
+    listEl.innerHTML = '<div class="bear-link-empty">リンクがありません</div>';
+    document.getElementById('bear-link-overlay').classList.add('open');
+    return;
+  }
+  // まずfavicon＋ホスト名で即表示
+  listEl.innerHTML = links.map((u, i) => {
+    let domain = '';
+    try { domain = new URL(u).hostname; } catch { domain = u; }
+    const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    return `<a class="bear-link-item" href="${u}" target="_blank" id="bli-${id}-${i}">
+      <img src="${favicon}" style="width:16px;height:16px;border-radius:3px;flex-shrink:0">
+      <span class="bli-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${domain}</span>
+    </a>`;
+  }).join('');
   document.getElementById('bear-link-overlay').classList.add('open');
+  // バックグラウンドでタイトルを取得して更新
+  links.forEach(async (u, i) => {
+    try {
+      const r = await fetch(`/api/fetch-title?url=${encodeURIComponent(u)}`);
+      const { title } = await r.json();
+      if (title) {
+        const labelEl = document.querySelector(`#bli-${id}-${i} .bli-label`);
+        if (labelEl) labelEl.textContent = title;
+      }
+    } catch {}
+  });
 }
 function closeBearLinks() {
   document.getElementById('bear-link-overlay').classList.remove('open');
