@@ -334,9 +334,10 @@ body::before {
 .fc .fc-button:hover { background: var(--surface) !important; color: var(--text) !important; }
 .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--purple) !important; border-color: var(--purple) !important; color: white !important; }
 .fc-daygrid-day-number, .fc-daygrid-more-link { color: var(--text-sub) !important; text-decoration: none !important; }
-.fc-event { font-size: 10px !important; }
-.fc-event-title { color: white !important; }
-.fc-event .fc-event-main { color: white !important; }
+.fc-event { font-size: 10px !important; border-top: none !important; border-right: none !important; border-bottom: none !important; border-left-width: 3px !important; }
+.fc-event-title { color: inherit !important; }
+.fc-event .fc-event-main { color: inherit !important; }
+.fc-timegrid-event { border-radius: 4px !important; }
 .fc-timegrid-now-indicator-line { border-color: var(--red) !important; }
 .fc-timegrid-now-indicator-arrow { border-top-color: var(--red) !important; border-bottom-color: var(--red) !important; }
 .fc-highlight { background: rgba(127,119,221,0.15) !important; }
@@ -1428,13 +1429,13 @@ async function fetchGCalEvents(info, success, failure) {
     const timeMax = end.toISOString();
 
     function getEventColor(title, calName, isIcu) {
-      if (calName === '当日行動') return { bg:'#4A7A38', border:'#8BAF58' };
-      if (/教育学|教育原理|教育/.test(title))  return { bg:'#7A4A2A', border:'#D4906A' };
-      if (/憲法/.test(title))                  return { bg:'#7A7A28', border:'#C8B860' };
-      if (/社会学/.test(title))                return { bg:'#8B1515', border:'#E09090' };
-      if (/ELA/.test(title))                   return { bg:'#1C3A6E', border:'#7AA0E0' };
-      if (isIcu)  return { bg:'#1C4080', border:'#85B7EB' };
-      return      { bg:'#7A4A42', border:'#C4857A' };
+      if (calName === '当日行動') return { bg:'rgba(74,160,56,0.15)',  border:'#4A9038', text:'#2A6820' };
+      if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.15)',  border:'#B06A30', text:'#8B4A20' };
+      if (/憲法/.test(title))                  return { bg:'rgba(180,155,40,0.15)',  border:'#A08820', text:'#806800' };
+      if (/社会学/.test(title))                return { bg:'rgba(180,50,50,0.15)',   border:'#B03030', text:'#901818' };
+      if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.15)',  border:'#3C64D2', text:'#2C4AA8' };
+      if (isIcu)  return { bg:'rgba(60,110,220,0.13)', border:'#3C6EDC', text:'#2C5AAC' };
+      return      { bg:'rgba(180,90,80,0.13)',  border:'#C4655A', text:'#9A4540' };
     }
 
     // トークンごとに全カレンダーからイベントを取得
@@ -1459,7 +1460,7 @@ async function fetchGCalEvents(info, success, failure) {
           const isIcu = prefix === 'i_';
           return (data.items || []).map(e => {
             const title = e.summary || '(タイトルなし)';
-            const { bg, border } = getEventColor(title, cal.summary, isIcu);
+            const { bg, border, text } = getEventColor(title, cal.summary, isIcu);
             return {
               id: prefix + cal.id + '_' + e.id,
               title,
@@ -1467,6 +1468,7 @@ async function fetchGCalEvents(info, success, failure) {
               end: e.end?.dateTime || e.end?.date,
               backgroundColor: bg,
               borderColor: border,
+              textColor: text,
             };
           });
         } catch { return []; }
