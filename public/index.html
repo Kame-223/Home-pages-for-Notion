@@ -890,9 +890,21 @@ body::before {
   border-top: 1px solid var(--border2);
   padding-top: 16px;
 }
+.furikaeri-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; }
+.furikaeri-dragon-wrap { display: flex; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.furikaeri-bubble {
+  background: rgba(255,255,255,0.92); color: #333; font-size: 10px; font-weight: 500;
+  padding: 6px 10px; border-radius: 10px; line-height: 1.4; max-width: 120px; text-align: center;
+  position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.furikaeri-bubble::after {
+  content: ''; position: absolute; bottom: -7px; right: 14px;
+  border: 7px solid transparent; border-top-color: rgba(255,255,255,0.92); border-bottom: none;
+}
+.furikaeri-dragon { width: 54px; height: auto; }
 .furikaeri-label {
   font-size: 13px; font-weight: 600; color: var(--text);
-  letter-spacing: 0.05em; margin-bottom: 4px;
+  letter-spacing: 0.05em; margin-bottom: 0;
 }
 .furikaeri-date { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; }
 .fr-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -1043,8 +1055,16 @@ body::before {
       <!-- 実行モード：振り返りのみ -->
       <div id="exec-bottom" class="day-schedule hidden">
         <div class="furikaeri-wrap" style="margin-top:0;border-top:none;padding-top:0">
-          <div class="furikaeri-label">📔 今日の振り返り</div>
-          <div class="furikaeri-date" id="furikaeri-date"></div>
+          <div class="furikaeri-header">
+            <div>
+              <div class="furikaeri-label">📔 今日の振り返り</div>
+              <div class="furikaeri-date" id="furikaeri-date"></div>
+            </div>
+            <div class="furikaeri-dragon-wrap">
+              <div class="furikaeri-bubble">一言でもいいよ！<br>思ったこと書こ！</div>
+              <img src="/dragon.png" class="furikaeri-dragon" alt="dragon">
+            </div>
+          </div>
 
           <div class="fr-row">
             <span class="fr-label">気分</span>
@@ -1066,8 +1086,6 @@ body::before {
               <button class="fr-opt" data-val="💀 最悪"><span class="fr-emoji">💀</span><span class="fr-opt-label">最悪</span></button>
             </div>
           </div>
-
-          <input class="fr-input" id="fr-comment" placeholder="✍ 一言でもいいよ！思ったこと書こ！">
 
           <div class="fr-section-label">📅 あったこと・感想</div>
           <textarea class="fr-textarea" id="fr-event" placeholder="今日あったことを書こう..."></textarea>
