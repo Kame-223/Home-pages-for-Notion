@@ -1620,13 +1620,11 @@ function renderCard(task, mode='today') {
     ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItems}</div></div>`
     : '';
 
-  // ボタン配置ロジック
+  // ボタン配置ロジック（✎なし）
   const hasOnlySecondary = !area && (deadline || links.length); // 締切/リンクのみ
-  const leftBtn = area
-    ? `<button class="card-edit-btn" onclick="${editCall}">✎</button>`
-    : hasOnlySecondary
-      ? ''
-      : `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`;
+  const leftBtn = (!area && !hasOnlySecondary)
+    ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
+    : '';
   const rightSetBtn = hasOnlySecondary
     ? `<button class="btn-set-prop" onclick="${editCall}" style="font-size:8px;padding:2px 6px">＋ 設定</button>`
     : '';
@@ -2117,9 +2115,9 @@ async function saveEditModal() {
   const firstLink = links[0] || null;
 
   if (task) {
-    if (area !== null) task.properties['エリア'] = {type:'select', select: area ? {name:area} : null};
+    task.properties['エリア'] = {type:'select', select: area ? {name:area} : null};
     task.properties['科目'] = {type:'multi_select', multi_select: subjects.map(s => ({name:s}))};
-    if (ela !== null) task.properties['ELAサブタグ'] = {type:'select', select: ela ? {name:ela} : null};
+    task.properties['ELAサブタグ'] = {type:'select', select: ela ? {name:ela} : null};
     task.properties['締切日'] = {type:'date', date: deadline ? {start:deadline} : null};
     task.properties['作業リンク'] = {type:'url', url: firstLink};
   }
@@ -2129,12 +2127,12 @@ async function saveEditModal() {
   renderAll();
 
   const props = {
+    'エリア': {select: area ? {name:area} : null},
     '科目': {multi_select: subjects.map(s => ({name:s}))},
+    'ELAサブタグ': {select: ela ? {name:ela} : null},
     '締切日': {date: deadline ? {start:deadline} : null},
     '作業リンク': {url: firstLink},
   };
-  if (area !== null) props['エリア'] = {select: area ? {name:area} : null};
-  if (ela !== null) props['ELAサブタグ'] = {select: ela ? {name:ela} : null};
 
   notionUpdate(id, props).catch(console.error);
 }
