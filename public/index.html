@@ -1621,14 +1621,11 @@ function renderCard(task, mode='today') {
     ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItems}</div></div>`
     : '';
 
-  // ボタン配置ロジック（✎なし）
-  const hasOnlySecondary = !area && (deadline || links.length); // 締切/リンクのみ
-  const leftBtn = (!area && !hasOnlySecondary)
+  // ボタン配置ロジック（AREAなしは常に左上）
+  const leftBtn = !area
     ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
     : '';
-  const rightSetBtn = hasOnlySecondary
-    ? `<button class="btn-set-prop" onclick="${editCall}" style="font-size:8px;padding:2px 6px">＋ 設定</button>`
-    : '';
+  const rightSetBtn = '';
 
   if (mode === 'leftover' || mode === 'next') {
     return `
