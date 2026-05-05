@@ -1874,6 +1874,8 @@ function togglePin(id) {
     // 時間帯をリセット
     taskState[id].jikantai = null;
     notionUpdate(id, {'実行時間帯':{select:null}}).catch(console.error);
+    // Startボタンをリセット
+    taskState[id].focusSeconds = 0;
   }
   renderAll();
   updateProgress();
