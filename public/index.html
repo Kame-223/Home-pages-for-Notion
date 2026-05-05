@@ -641,12 +641,23 @@ body::before {
   outline: none; transition: border-color .15s; box-sizing: border-box;
   min-height: 42px; display: block;
 }
-input[type="date"].edit-input { min-width: 100%; cursor: pointer; padding: 12px 14px; font-size: 14px; min-height: 48px; }
-input[type="date"].edit-input::-webkit-calendar-picker-indicator {
-  width: 64px; height: 32px; margin: 0; padding: 8px;
-  cursor: pointer; opacity: 0.7; filter: invert(1); box-sizing: content-box;
+.edit-deadline-wrap { display: flex; align-items: center; gap: 8px; }
+.edit-deadline-btn {
+  font-size: 12px; padding: 7px 16px; border-radius: 8px;
+  background: var(--surface2); border: 0.5px solid rgba(127,119,221,0.4);
+  cursor: pointer; color: var(--purple); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .15s; white-space: nowrap; flex-shrink: 0;
 }
-input[type="date"].edit-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+.edit-deadline-btn:hover { background: rgba(127,119,221,0.12); }
+.edit-deadline-val {
+  font-size: 13px; color: var(--text); font-family: 'JetBrains Mono', monospace;
+}
+.edit-deadline-clear {
+  font-size: 10px; padding: 3px 8px; border-radius: 5px;
+  background: transparent; border: 0.5px solid var(--border2);
+  cursor: pointer; color: var(--text-dim); transition: all .15s;
+}
+.edit-deadline-clear:hover { color: var(--red); border-color: rgba(240,149,149,0.4); }
 .edit-input:focus { border-color: rgba(127,119,221,0.5); }
 .edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 .edit-cancel-btn {
@@ -1980,6 +1991,7 @@ function openEditModal(id, e) {
   document.querySelectorAll('#edit-ela .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ela));
 
   document.getElementById('edit-deadline').value = getProp(task,'締切日') || '';
+  updateDeadlineDisplay();
   editLinks = [...(taskState[id]?.links || [getProp(task,'作業リンク')].filter(Boolean))];
   renderEditLinks();
   updateEditChipCascade();
@@ -2004,13 +2016,33 @@ function renderEditLinks() {
     : '<div style="font-size:10px;color:var(--text-dim);padding:2px 0">リンクなし</div>';
 }
 
+function updateDeadlineDisplay() {
+  const val = document.getElementById('edit-deadline').value;
+  const display = document.getElementById('edit-deadline-val');
+  const clearBtn = document.getElementById('edit-deadline-clear-btn');
+  if (val) {
+    const d = new Date(val + 'T00:00:00');
+    const days = ['日','月','火','水','木','金','土'];
+    display.textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${days[d.getDay()]}）`;
+    if (clearBtn) clearBtn.style.display = '';
+  } else {
+    display.textContent = '未設定';
+    if (clearBtn) clearBtn.style.display = 'none';
+  }
+}
+function clearDeadline() {
+  document.getElementById('edit-deadline').value = '';
+  updateDeadlineDisplay();
+}
+
 function addEditLink() { editLinks.push(''); renderEditLinks(); }
 function removeEditLink(i) { editLinks.splice(i, 1); renderEditLinks(); }
 
 function toggleEditChip(el, groupId, multi) {
+  const wasActive = el.classList.contains('active');
   if (!multi) {
     document.querySelectorAll(`#${groupId} .edit-chip`).forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
+    if (!wasActive) el.classList.add('active');
   } else {
     el.classList.toggle('active');
   }
@@ -2165,7 +2197,12 @@ window.onload = () => {
     </div>
     <div class="edit-field">
       <span class="edit-field-label">DEADLINE</span>
-      <input class="edit-input" type="date" id="edit-deadline">
+      <input type="date" id="edit-deadline" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none" oninput="updateDeadlineDisplay()">
+      <div class="edit-deadline-wrap">
+        <button class="edit-deadline-btn" onclick="document.getElementById('edit-deadline').showPicker()">📅 締切設定</button>
+        <span class="edit-deadline-val" id="edit-deadline-val">未設定</span>
+        <button class="edit-deadline-clear" id="edit-deadline-clear-btn" onclick="clearDeadline()" style="display:none">✕ クリア</button>
+      </div>
     </div>
     <div class="edit-field">
       <span class="edit-field-label">WORK LINKS</span>
