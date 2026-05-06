@@ -1452,7 +1452,6 @@ async function fetchGCalEvents(info, success, failure) {
       if (listRes.status === 401) return null; // 期限切れ
       const listData = await listRes.json();
       const cals = listData.items || [];
-      console.log(`[${prefix}] カレンダー一覧:`, cals.map(c => c.summary));
       const evArrays = await Promise.all(cals.map(async (cal) => {
         try {
           const res = await fetch(
@@ -2054,6 +2053,7 @@ function renderAll() {
     (blocks[jk]||blocks['未設定']).push(t);
   });
   const dsEl = document.getElementById('day-schedule-content');
+  if (!dsEl) return;
   const blockLabels = {朝:'🌅 朝', 昼:'🌞 昼', 夜:'🌙 夜', 未設定:'⬜ 時間帯未設定'};
   let html = '';
   Object.entries(blocks).forEach(([key, tasks]) => {
