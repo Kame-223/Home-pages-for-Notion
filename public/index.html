@@ -2755,8 +2755,8 @@ document.addEventListener('keydown', (e) => {
 let currentPage = 'home';
 function showPage(page) {
   currentPage = page;
-  document.getElementById('home-content').style.display = page === 'home' ? '' : 'none';
-  document.getElementById('task-content').style.display = page === 'task' ? '' : 'none';
+  document.getElementById('home-content').style.display = page === 'home' ? 'block' : 'none';
+  document.getElementById('task-content').style.display = page === 'task' ? 'block' : 'none';
   document.querySelectorAll('.sb-btn[data-page]').forEach(b => {
     b.classList.toggle('active', b.dataset.page === page);
   });
