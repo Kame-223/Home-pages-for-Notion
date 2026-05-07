@@ -1001,6 +1001,81 @@ body::before {
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ===== TASK PAGE ===== */
+#task-content { display: none; }
+.task-page-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  padding-bottom: 50vh;
+}
+.task-inbox-col {
+  display: flex;
+  flex-direction: column;
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(13,13,26,0.72);
+}
+.task-gtd-col { display: flex; flex-direction: column; gap: 12px; }
+.task-section {
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(13,13,26,0.72);
+  display: flex;
+  flex-direction: column;
+}
+.task-section-body { padding: 6px; }
+.task-toggle-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
+  color: var(--text-sub);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  background: rgba(13,13,26,0.5);
+  text-transform: uppercase;
+  cursor: pointer; user-select: none; flex-shrink: 0;
+}
+.task-toggle-header:hover { background: rgba(255,255,255,0.03); }
+.task-toggle-arrow { font-size: 9px; color: var(--text-dim); transition: transform .2s; display: inline-block; }
+.task-toggle-arrow.open { transform: rotate(90deg); }
+.task-section-body.collapsed { display: none; }
+.task-count { font-size: 9px; color: var(--text-dim); margin-left: 5px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+/* GTDボタン */
+.gtd-btn-wrap { position: relative; }
+.btn-gtd {
+  padding: 6px 10px; border-radius: 8px;
+  border: 0.5px solid rgba(127,119,221,0.4);
+  background: rgba(127,119,221,0.1); color: var(--purple);
+  cursor: pointer; font-size: 11px;
+  font-family: 'Noto Sans JP', sans-serif;
+  white-space: nowrap; transition: all .15s;
+  min-width: 90px; text-align: center; line-height: 1.4;
+}
+.btn-gtd:hover { background: rgba(127,119,221,0.22); }
+.gtd-dropdown {
+  position: absolute; right: 0; top: calc(100% + 4px);
+  background: #1a1a28;
+  border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 10px; padding: 4px;
+  z-index: 200; min-width: 140px; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.gtd-dropdown.open { display: block; }
+.gtd-opt {
+  padding: 8px 12px; border-radius: 6px;
+  font-size: 12px; cursor: pointer;
+  color: var(--text); transition: background .1s; white-space: nowrap;
+}
+.gtd-opt:hover { background: rgba(255,255,255,0.08); }
+.gtd-opt-fire { color: #F87171; }
+.gtd-opt-fire:hover { background: rgba(248,113,113,0.1); }
+.gtd-opt-trash { color: var(--text-dim); }
+.gtd-opt-trash:hover { background: rgba(255,255,255,0.05); }
 </style>
 </head>
 <body>
@@ -1008,8 +1083,8 @@ body::before {
 
 <!-- サイドバー -->
 <div class="sidebar">
-  <a class="sb-btn active" href="#"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></a>
-  <a class="sb-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank"><span class="sb-icon">📋</span><span class="sb-label">Task</span></a>
+  <button class="sb-btn active" data-page="home" onclick="showPage('home')"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></button>
+  <button class="sb-btn" data-page="task" onclick="showPage('task')"><span class="sb-icon">📋</span><span class="sb-label">Task</span></button>
   <a class="sb-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></a>
   <a class="sb-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank"><span class="sb-icon">📝</span><span class="sb-label">Note</span></a>
   <a class="sb-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank"><span class="sb-icon">📚</span><span class="sb-label">資料</span></a>
@@ -1035,6 +1110,9 @@ body::before {
       <div class="banner-phil"><div class="phil-line"></div><span id="banner-phil"></span><span id="banner-phil-jp" style="font-family:'Noto Sans JP',sans-serif;font-size:9px;color:#7F77DD;margin-left:6px;letter-spacing:0.05em;"></span><div class="phil-line"></div></div>
     </div>
   </div>
+
+  <!-- ホームコンテンツ -->
+  <div id="home-content">
 
   <!-- 進捗 -->
   <div class="progress-area">
@@ -1148,13 +1226,55 @@ body::before {
 
 
   </div>
+  </div><!-- /#home-content -->
+
+  <!-- タスクページ -->
+  <div id="task-content">
+    <div class="task-page-grid">
+
+      <!-- 左：INBOX -->
+      <div class="task-inbox-col">
+        <div class="section-header">📥 INBOX</div>
+        <div class="task-section-body" id="task-inbox-list"><div class="loading">読み込み中...</div></div>
+      </div>
+
+      <!-- 右：GTD分類 -->
+      <div class="task-gtd-col">
+
+        <!-- 次やる（常時表示） -->
+        <div class="task-section">
+          <div class="section-header blue">▶️ 次やる</div>
+          <div class="task-section-body" id="task-next-list"><div class="loading">読み込み中...</div></div>
+        </div>
+
+        <!-- 待ち（トグル） -->
+        <div class="task-section">
+          <div class="task-toggle-header" onclick="toggleTaskSection('wait')">
+            <span>📧 待ち<span class="task-count" id="task-wait-count"></span></span>
+            <span class="task-toggle-arrow" id="wait-arrow">▶</span>
+          </div>
+          <div class="task-section-body collapsed" id="task-wait-list"></div>
+        </div>
+
+        <!-- 今じゃない（トグル） -->
+        <div class="task-section">
+          <div class="task-toggle-header" onclick="toggleTaskSection('someday')">
+            <span>💫 今じゃない<span class="task-count" id="task-someday-count"></span></span>
+            <span class="task-toggle-arrow" id="someday-arrow">▶</span>
+          </div>
+          <div class="task-section-body collapsed" id="task-someday-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /#task-content -->
 
 </div>
 </div><!-- /.page-wrapper -->
 
 <!-- 固定下部ナビ -->
 <div class="bottom-nav">
-  <a class="nav-btn" href="https://www.notion.so/3294c1ec140d838499ae0131fc67976d" target="_blank">📋 TASK</a>
+  <button class="nav-btn" onclick="showPage('task')">📋 TASK</button>
   <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">🗂 PROJECT</a>
   <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
   <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
@@ -2192,7 +2312,8 @@ async function saveFurikaeri() {
 function chTime(id, d) {
   if (!taskState[id]) return;
   taskState[id].timeIdx = Math.max(0, Math.min(4, taskState[id].timeIdx+d));
-  document.querySelectorAll(`#tv-${id}`).forEach(el=>el.textContent=timeSteps[taskState[id].timeIdx]);
+  const val = timeSteps[taskState[id].timeIdx];
+  [document.getElementById(`tv-${id}`), document.getElementById(`gtv-${id}`)].forEach(el => { if (el) el.textContent = val; });
   saveTaskState();
 }
 
@@ -2628,6 +2749,162 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'S' || e.key === 's') { e.preventDefault(); setMode('select'); }
     if (e.key === 'E' || e.key === 'e') { e.preventDefault(); setMode('exec'); }
   }
+});
+
+// ===== ページ切替 =====
+let currentPage = 'home';
+function showPage(page) {
+  currentPage = page;
+  document.getElementById('home-content').style.display = page === 'home' ? '' : 'none';
+  document.getElementById('task-content').style.display = page === 'task' ? '' : 'none';
+  document.querySelectorAll('.sb-btn[data-page]').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+  if (page === 'task') renderTaskPage();
+}
+
+// ===== タスクページ トグル =====
+function toggleTaskSection(key) {
+  const body = document.getElementById(`task-${key}-list`);
+  const arrow = document.getElementById(`${key}-arrow`);
+  if (!body) return;
+  body.classList.toggle('collapsed');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+// ===== GTDカード描画 =====
+function renderGtdCard(task) {
+  const id = task.id;
+  const title = getProp(task,'タイトル') || '無題';
+  const area = getProp(task,'エリア');
+  const subjects = getProp(task,'科目') || [];
+  const ela = getProp(task,'ELAサブタグ');
+  const deadline = getProp(task,'締切日');
+  const soyo = getProp(task,'所要時間');
+  const link = getProp(task,'作業リンク');
+  const gtd = getProp(task,'GTD 種別');
+
+  if (!taskState[id]) taskState[id] = {
+    done: false, pinned: false, important: false,
+    timeIdx: timeSteps.indexOf(soyo||'30m') >= 0 ? timeSteps.indexOf(soyo||'30m') : 1,
+    focusSeconds: 0, jikantai: null, link: link||null,
+    links: link ? [link] : [],
+  };
+  if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
+  const s = taskState[id];
+
+  const dt = deadlineTag(deadline, false, false);
+  const subjectToShow = (area === '課題') ? (subjects?.[0] || null) : null;
+  const elaToShow = (area === '課題' && subjectToShow === 'ELA') ? ela : null;
+
+  const editCall = `openEditModal('${id}',event)`;
+  const propTags = [
+    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
+    elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
+  ].filter(Boolean).join('');
+  const leftBtn = !area ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>` : '';
+  const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
+
+  const links = s.links;
+  const bearBtn = links.length
+    ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='46px';this.querySelector('img').style.filter='none'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='brightness(0.7)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block;filter:brightness(0.7);transition:height .15s,filter .15s"></button>`
+    : '';
+
+  const gtdLabel = gtd || '📥 INBOX';
+  const gtdOpts = [
+    ['📥 INBOX', 'gtd-opt'],
+    ['▶️ 次やる', 'gtd-opt'],
+    ['📧 待ち', 'gtd-opt'],
+    ['💫今じゃない', 'gtd-opt'],
+    ['🔥 今やる', 'gtd-opt gtd-opt-fire'],
+    ['🗑ゴミ箱', 'gtd-opt gtd-opt-trash'],
+  ].map(([val, cls]) =>
+    `<div class="${cls}" onclick="setGtdKind('${id}','${val}');event.stopPropagation()">${val}</div>`
+  ).join('');
+
+  return `
+  <div class="task-card" id="gtc-${id}" style="margin-bottom:6px">
+    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
+    <div class="card-lower">
+      <div class="card-body">
+        <div class="task-title-box">${title}</div>
+        <div class="card-side">
+          <div class="gtd-btn-wrap">
+            <button class="btn-gtd" onclick="toggleGtdDropdown('${id}');event.stopPropagation()">${gtdLabel}</button>
+            <div class="gtd-dropdown" id="gtdd-${id}">${gtdOpts}</div>
+          </div>
+        </div>
+      </div>
+      <div class="task-bottom" style="position:relative">
+        <div class="time-wrap">
+          <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+          <span class="time-val" id="gtv-${id}">${timeSteps[s.timeIdx]}</span>
+          <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+        </div>
+        ${bearBtn}
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleGtdDropdown(id) {
+  document.querySelectorAll('.gtd-dropdown').forEach(el => {
+    if (el.id !== `gtdd-${id}`) el.classList.remove('open');
+  });
+  document.getElementById(`gtdd-${id}`)?.classList.toggle('open');
+}
+
+async function setGtdKind(id, gtdVal) {
+  document.getElementById(`gtdd-${id}`)?.classList.remove('open');
+
+  const task = allTasks.find(t => t.id === id);
+
+  if (gtdVal === '🔥 今やる') {
+    if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
+    await Promise.all([
+      notionUpdate(id, {'GTD 種別': {status: {name: '🔥 今やる'}}}),
+      notionUpdate(id, {'ステータス': {status: {name: '完了'}}}),
+    ]).catch(console.error);
+  } else if (gtdVal === '🗑ゴミ箱') {
+    if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
+    notionUpdate(id, {'GTD 種別': {status: {name: '🗑ゴミ箱'}}}).catch(console.error);
+  } else {
+    if (task) task.properties['GTD 種別'] = {type: 'status', status: {name: gtdVal}};
+    notionUpdate(id, {'GTD 種別': {status: {name: gtdVal}}}).catch(console.error);
+  }
+
+  renderTaskPage();
+}
+
+function renderTaskPage() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+  const getGtd = t => getProp(t,'GTD 種別');
+
+  const inboxTasks   = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
+  const nextTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '▶️ 次やる');
+  const waitTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '📧 待ち');
+  const somedayTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '💫今じゃない');
+
+  const render = (el, tasks, emptyMsg) => {
+    if (!el) return;
+    el.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : `<div class="section-empty">${emptyMsg}</div>`;
+  };
+
+  render(document.getElementById('task-inbox-list'), inboxTasks, 'INBOXは空です 🎉');
+  render(document.getElementById('task-next-list'),  nextTasks,  'なし');
+  render(document.getElementById('task-wait-list'),  waitTasks,  'なし');
+  render(document.getElementById('task-someday-list'), somedayTasks, 'なし');
+
+  const wc = document.getElementById('task-wait-count');
+  const sc = document.getElementById('task-someday-count');
+  if (wc) wc.textContent = waitTasks.length ? `(${waitTasks.length})` : '';
+  if (sc) sc.textContent = somedayTasks.length ? `(${somedayTasks.length})` : '';
+}
+
+// GTDドロップダウンをクリック外で閉じる
+document.addEventListener('click', () => {
+  document.querySelectorAll('.gtd-dropdown').forEach(el => el.classList.remove('open'));
 });
 
 // ===== 起動 =====
