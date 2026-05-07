@@ -2008,6 +2008,7 @@ async function loadTasks() {
   }
   try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
   try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
+  if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
 }
 
 // ===== タスクカード描画 =====
@@ -2880,6 +2881,7 @@ async function setGtdKind(id, gtdVal) {
 function renderTaskPage() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
   const getGtd = t => getProp(t,'GTD 種別');
+  console.log('[TaskPage] allTasks:', allTasks.length, allTasks.map(t => `"${getGtd(t)}"`).join(', '));
 
   const inboxTasks   = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
   const nextTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '▶️ 次やる');
