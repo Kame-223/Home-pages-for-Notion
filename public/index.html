@@ -701,7 +701,16 @@ body::before {
   outline: none; transition: border-color .15s; box-sizing: border-box;
   min-height: 42px; display: block;
 }
-.edit-deadline-wrap { display: flex; align-items: center; gap: 8px; }
+.edit-deadline-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.edit-deadline-input {
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 8px; color: var(--text); font-size: 12px;
+  padding: 7px 10px; font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; transition: border-color .15s;
+  color-scheme: dark;
+}
+.edit-deadline-input:focus { outline: none; border-color: rgba(127,119,221,0.5); }
+.edit-deadline-time-label { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
 .edit-deadline-btn {
   font-size: 12px; padding: 7px 16px; border-radius: 8px;
   background: var(--surface2); border: 0.5px solid rgba(127,119,221,0.4);
@@ -1912,55 +1921,54 @@ function renderNextList() {
 function deadlineTag(dateStr, isDone, isImportant) {
   if (!dateStr) return null;
   const hasTime = dateStr.length > 10;
-  const deadline = new Date(dateStr);
+  const deadline = new Date(hasTime ? dateStr : dateStr + 'T00:00:00');
   const now = new Date();
+  const DOW = ['日','月','火','水','木','金','土'];
+  const mm = String(deadline.getMonth()+1).padStart(2,'0');
+  const dd = String(deadline.getDate()).padStart(2,'0');
+  const dow = DOW[deadline.getDay()];
 
-  if (hasTime && !isDone) {
-    const diffMs = deadline - now;
-    const totalSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (isImportant) {
-      if (diffMs < 0) return {label:'⚠ 期限切れ！', cls:'tag-imp-dl'};
-      const mm = String(deadline.getMonth()+1).padStart(2,'0');
-      const dd = String(deadline.getDate()).padStart(2,'0');
-      const hh = String(deadline.getHours()).padStart(2,'0');
-      const mi = String(deadline.getMinutes()).padStart(2,'0');
-      const dlLabel = `${mm}/${dd} ${hh}:${mi}`;
-      let countdown;
-      if (totalSecs < 60) {
-        countdown = `後${totalSecs}秒`;
-      } else if (totalSecs < 7200) { // 2時間未満：秒まで
-        const h = Math.floor(totalSecs/3600);
-        const m = Math.floor((totalSecs%3600)/60);
-        const s = totalSecs%60;
-        countdown = h > 0 ? `後${h}時間${m}分${s}秒` : `後${m}分${s}秒`;
-      } else { // 2時間以上：分まで
-        const h = Math.floor(totalSecs/3600);
-        const m = Math.floor((totalSecs%3600)/60);
-        countdown = h > 0 ? `後${h}時間${m}分` : `後${m}分`;
-      }
-      return {label:`${dlLabel} ${countdown}`, cls:'tag-imp-dl'};
-    }
-
-    if (diffMs < 0) return {label:'期限切れ', cls:'tag-red'};
-    if (diffMins < 5)  return {label:`後${diffMins}分`, cls:'tag-red'};
-    if (diffMins < 60) return {label:`後${Math.ceil(diffMins/5)*5}分`, cls:'tag-red'};
-    if (diffMins < 60*12) return {label:`後${Math.ceil(diffMins/60)}時間`, cls:'tag-red'};
-    if (diffMins < 60*18) {
-      const h = Math.ceil(diffMins/120)*2;
-      return {label:`後${Math.min(18,Math.max(12,h))}時間`, cls:'tag-amber'};
-    }
+  if (!hasTime) {
+    // 時間なし → 日付だけ表示。残り時間は計算しない
+    const dateLabel = `${mm}/${dd}(${dow})`;
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dlLocal = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
+    const diffDays = Math.round((dlLocal - todayLocal) / 86400000);
+    if (diffDays < 0)  return {label: isImportant ? '⚠ 期限切れ' : `期限切れ ${dateLabel}`, cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
+    if (diffDays === 0) return {label: `今日 ${dateLabel}`, cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
+    if (diffDays === 1) return {label: `明日 ${dateLabel}`, cls: 'tag-amber'};
+    if (diffDays <= 3)  return {label: `${diffDays}日後 ${dateLabel}`, cls: 'tag-amber'};
+    if (diffDays <= 7)  return {label: `${diffDays}日後 ${dateLabel}`, cls: 'tag-blue'};
+    return {label: dateLabel, cls: 'tag-gray'};
   }
 
-  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const deadlineLocal = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
-  const diff = Math.ceil((deadlineLocal - todayLocal) / 86400000);
-  if (diff < 0) return {label: isImportant ? '⚠ 期限切れ！' : '期限切れ', cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
-  if (diff === 0) return {label:'今日締切', cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
-  if (diff <= 3) return {label:`${diff}日後`, cls:'tag-amber'};
-  if (diff <= 7) return {label:`${diff}日後`, cls:'tag-blue'};
-  return {label:`${diff}日後`, cls:'tag-gray'};
+  // 時間あり → 正確な残り時間を計算
+  const diffMs = deadline - now;
+  const hh = String(deadline.getHours()).padStart(2,'0');
+  const mi = String(deadline.getMinutes()).padStart(2,'0');
+  const dlLabel = `${mm}/${dd}(${dow}) ${hh}:${mi}`;
+
+  if (diffMs < 0) return {label: isImportant ? `⚠ 期限切れ！ ${dlLabel}` : `期限切れ ${dlLabel}`, cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
+
+  const remSecs = Math.floor(diffMs / 1000);
+  const remDays = Math.floor(remSecs / 86400);
+  const remH    = Math.floor((remSecs % 86400) / 3600);
+  const remM    = Math.floor((remSecs % 3600) / 60);
+  const remS    = remSecs % 60;
+
+  let countdown;
+  if (remDays > 0)     countdown = remH > 0   ? `後${remDays}日${remH}時間` : `後${remDays}日`;
+  else if (remH > 0)   countdown = remM > 0   ? `後${remH}時間${remM}分` : `後${remH}時間`;
+  else if (remM > 0)   countdown = `後${remM}分${remS}秒`;
+  else                 countdown = `後${remS}秒`;
+
+  const cls = isImportant ? 'tag-imp-dl'
+    : remSecs < 3600   ? 'tag-red'
+    : remSecs < 86400  ? 'tag-amber'
+    : remSecs < 259200 ? 'tag-blue'
+    : 'tag-gray';
+
+  return {label: `${dlLabel} ${countdown}`, cls};
 }
 
 function areaTagCls(area) {
@@ -2396,6 +2404,17 @@ document.addEventListener('click', e => {
 // ===== 集中モード =====
 let focusInterval = null;
 let currentFocusId = null;
+let focusStartTs = null; // Date.now() at focus start (adjusted for already-elapsed seconds)
+
+function updateFocusDisplay() {
+  if (!currentFocusId || focusStartTs === null) return;
+  const elapsed = Math.floor((Date.now() - focusStartTs) / 1000);
+  if (taskState[currentFocusId]) taskState[currentFocusId].focusSeconds = elapsed;
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const sec = String(elapsed % 60).padStart(2, '0');
+  const el = document.getElementById('focus-timer');
+  if (el) el.textContent = m + ':' + sec;
+}
 
 function startFocus(id) {
   const task = allTasks.find(t=>t.id===id);
@@ -2434,14 +2453,11 @@ function startFocus(id) {
 
   document.getElementById('focus-overlay').classList.add('open');
   currentFocusId = id;
+  focusStartTs = Date.now() - (s.focusSeconds * 1000);
 
   clearInterval(focusInterval);
-  focusInterval = setInterval(() => {
-    taskState[id].focusSeconds++;
-    const m = String(Math.floor(taskState[id].focusSeconds/60)).padStart(2,'0');
-    const sec = String(taskState[id].focusSeconds%60).padStart(2,'0');
-    document.getElementById('focus-timer').textContent = m+':'+sec;
-  }, 1000);
+  updateFocusDisplay();
+  focusInterval = setInterval(updateFocusDisplay, 1000);
 }
 
 function openBearLinks(id) {
@@ -2487,8 +2503,10 @@ function toggleFocusLinkMenu() {
 }
 
 function pauseFocus() {
+  updateFocusDisplay();
   clearInterval(focusInterval);
   focusInterval = null;
+  focusStartTs = null;
   document.getElementById('focus-overlay').classList.remove('open');
   if (currentFocusId) {
     document.querySelectorAll(`#start-${currentFocusId}`).forEach(el=>{
@@ -2499,7 +2517,9 @@ function pauseFocus() {
 }
 
 function completeFocus() {
+  updateFocusDisplay();
   clearInterval(focusInterval);
+  focusStartTs = null;
   document.getElementById('focus-overlay').classList.remove('open');
   if (currentFocusId) toggleDone(currentFocusId);
   currentFocusId = null;
@@ -2552,7 +2572,8 @@ function openEditModal(id, e) {
   document.querySelectorAll('#edit-ela .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ela));
 
   const rawDl = getProp(task,'締切日') || '';
-  document.getElementById('edit-deadline').value = rawDl.length > 16 ? rawDl.substring(0,16) : rawDl;
+  document.getElementById('edit-deadline-date').value = rawDl ? rawDl.substring(0,10) : '';
+  document.getElementById('edit-deadline-time').value = rawDl.length > 10 ? rawDl.substring(11,16) : '';
   updateDeadlineDisplay();
   editLinks = [...(taskState[id]?.links || [getProp(task,'作業リンク')].filter(Boolean))];
   renderEditLinks();
@@ -2600,7 +2621,8 @@ function renderEditLinks() {
 
 function resetEditModal() {
   document.querySelectorAll('#edit-area .edit-chip, #edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
-  document.getElementById('edit-deadline').value = '';
+  document.getElementById('edit-deadline-date').value = '';
+  document.getElementById('edit-deadline-time').value = '';
   updateDeadlineDisplay();
   editLinks = [];
   renderEditLinks();
@@ -2608,23 +2630,13 @@ function resetEditModal() {
 }
 
 function updateDeadlineDisplay() {
-  const val = document.getElementById('edit-deadline').value;
-  const display = document.getElementById('edit-deadline-val');
+  const dateVal = document.getElementById('edit-deadline-date').value;
   const clearBtn = document.getElementById('edit-deadline-clear-btn');
-  if (val) {
-    const d = new Date(val.length === 10 ? val + 'T00:00:00' : val);
-    const days = ['日','月','火','水','木','金','土'];
-    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${days[d.getDay()]}）`;
-    const timeStr = val.length > 10 ? ` ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '';
-    display.textContent = dateStr + timeStr;
-    if (clearBtn) clearBtn.style.display = '';
-  } else {
-    display.textContent = '未設定';
-    if (clearBtn) clearBtn.style.display = 'none';
-  }
+  if (clearBtn) clearBtn.style.display = dateVal ? '' : 'none';
 }
 function clearDeadline() {
-  document.getElementById('edit-deadline').value = '';
+  document.getElementById('edit-deadline-date').value = '';
+  document.getElementById('edit-deadline-time').value = '';
   updateDeadlineDisplay();
 }
 
@@ -2686,8 +2698,10 @@ async function saveEditModal() {
   // SUBJECTがELA以外ならELAを強制クリア
   if (subject !== 'ELA') { ela = null; }
   const subjects = subject ? [subject] : [];
-  const dlRaw = document.getElementById('edit-deadline').value || null;
-  const deadline = dlRaw && dlRaw.length > 10 ? dlRaw + ':00' : dlRaw;
+  const dlDate = document.getElementById('edit-deadline-date').value;
+  const dlTime = document.getElementById('edit-deadline-time').value;
+  const dlRaw = dlDate ? (dlTime ? `${dlDate}T${dlTime}:00` : dlDate) : null;
+  const deadline = dlRaw;
   const links = editLinks.map(l => l.trim()).filter(Boolean);
   const firstLink = links[0] || null;
 
@@ -2939,6 +2953,10 @@ function refreshDeadlineTags() {
   });
 }
 
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && currentFocusId && focusStartTs !== null) updateFocusDisplay();
+});
+
 window.onload = () => {
   setupBackground();
   setupBanner();
@@ -2994,10 +3012,10 @@ window.onload = () => {
     </div>
     <div class="edit-field">
       <span class="edit-field-label">DEADLINE</span>
-      <input type="datetime-local" id="edit-deadline" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none" oninput="updateDeadlineDisplay()">
       <div class="edit-deadline-wrap">
-        <button class="edit-deadline-btn" onclick="document.getElementById('edit-deadline').showPicker()">📅 締切設定</button>
-        <span class="edit-deadline-val" id="edit-deadline-val">未設定</span>
+        <input type="date" class="edit-deadline-input" id="edit-deadline-date" oninput="updateDeadlineDisplay()">
+        <span class="edit-deadline-time-label">時刻（任意）</span>
+        <input type="time" class="edit-deadline-input" id="edit-deadline-time" oninput="updateDeadlineDisplay()">
         <button class="edit-deadline-clear" id="edit-deadline-clear-btn" onclick="clearDeadline()" style="display:none">✕ クリア</button>
       </div>
     </div>
