@@ -1067,11 +1067,11 @@ body::before {
 }
 .btn-gtd:hover { background: rgba(127,119,221,0.22); }
 .gtd-dropdown {
-  position: absolute; right: 0; top: calc(100% + 4px);
+  position: fixed;
   background: #1a1a28;
   border: 0.5px solid rgba(255,255,255,0.15);
   border-radius: 10px; padding: 4px;
-  z-index: 200; min-width: 140px; display: none;
+  z-index: 500; min-width: 140px; display: none;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 .gtd-dropdown.open { display: block; }
@@ -2873,7 +2873,16 @@ function toggleGtdDropdown(id) {
   document.querySelectorAll('.gtd-dropdown').forEach(el => {
     if (el.id !== `gtdd-${id}`) el.classList.remove('open');
   });
-  document.getElementById(`gtdd-${id}`)?.classList.toggle('open');
+  const dropdown = document.getElementById(`gtdd-${id}`);
+  if (!dropdown) return;
+  if (dropdown.classList.contains('open')) { dropdown.classList.remove('open'); return; }
+  const btn = document.getElementById(`gtdd-${id}`)?.previousElementSibling;
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + 4) + 'px';
+    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+  }
+  dropdown.classList.add('open');
 }
 
 async function setGtdKind(id, gtdVal) {
