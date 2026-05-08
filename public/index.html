@@ -1234,16 +1234,22 @@ body::before {
 
       <!-- 左：INBOX -->
       <div class="task-inbox-col">
-        <div class="section-header">📥 INBOX</div>
+        <div class="task-toggle-header" onclick="toggleTaskSection('inbox')">
+          <span>📥 INBOX<span class="task-count" id="task-inbox-count"></span></span>
+          <span class="task-toggle-arrow open" id="inbox-arrow">▶</span>
+        </div>
         <div class="task-section-body" id="task-inbox-list"><div class="loading">読み込み中...</div></div>
       </div>
 
       <!-- 右：GTD分類 -->
       <div class="task-gtd-col">
 
-        <!-- 次やる（常時表示） -->
+        <!-- 次やる（トグル・デフォルト開） -->
         <div class="task-section">
-          <div class="section-header blue">▶️ 次やる</div>
+          <div class="task-toggle-header" onclick="toggleTaskSection('next')">
+            <span>▶️ 次やる<span class="task-count" id="task-next-count"></span></span>
+            <span class="task-toggle-arrow open" id="next-arrow">▶</span>
+          </div>
           <div class="task-section-body" id="task-next-list"><div class="loading">読み込み中...</div></div>
         </div>
 
@@ -2898,10 +2904,16 @@ function renderTaskPage() {
   render(document.getElementById('task-wait-list'),  waitTasks,  'なし');
   render(document.getElementById('task-someday-list'), somedayTasks, 'なし');
 
-  const wc = document.getElementById('task-wait-count');
-  const sc = document.getElementById('task-someday-count');
-  if (wc) wc.textContent = waitTasks.length ? `(${waitTasks.length})` : '';
-  if (sc) sc.textContent = somedayTasks.length ? `(${somedayTasks.length})` : '';
+  const counts = {
+    'task-inbox-count':   inboxTasks.length,
+    'task-next-count':    nextTasks.length,
+    'task-wait-count':    waitTasks.length,
+    'task-someday-count': somedayTasks.length,
+  };
+  Object.entries(counts).forEach(([id, n]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = n ? `(${n})` : '';
+  });
 }
 
 // GTDドロップダウンをクリック外で閉じる
