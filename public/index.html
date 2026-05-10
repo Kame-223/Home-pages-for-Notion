@@ -484,6 +484,20 @@ body::before {
   transition: all .15s;
 }
 .next-show-more-btn:hover { border-color: #85B7EB; color: #85B7EB; background: rgba(133,183,235,0.06); }
+/* 完了タスク引き出し */
+.done-drawer { margin-top: 4px; }
+.done-drawer-toggle {
+  font-size: 10px; color: var(--text-dim); cursor: pointer;
+  padding: 5px 0; display: flex; align-items: center;
+  justify-content: center; gap: 8px; transition: color .15s;
+  user-select: none;
+}
+.done-drawer-toggle:hover { color: var(--text-sub); }
+.done-drawer-toggle::before, .done-drawer-toggle::after {
+  content: ''; flex: 1; height: 0.5px; background: var(--border);
+}
+.done-drawer-cards { display: none; }
+.done-drawer-cards.open { display: block; }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -1288,7 +1302,7 @@ body::before {
 
       <!-- 選択モード：直接パネル -->
       <div id="leftover-panel" class="bottom-panel">
-        <div class="section-header red">⚠️ やり残し</div>
+        <div class="section-header red">🔄 持ち越し</div>
         <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="next-panel" class="bottom-panel">
@@ -2046,6 +2060,15 @@ function expandNextList() {
   renderNextList();
 }
 
+let todayDoneDrawerOpen = false;
+function toggleDoneDrawer() {
+  todayDoneDrawerOpen = !todayDoneDrawerOpen;
+  const cards = document.getElementById('done-drawer-cards');
+  const toggle = document.getElementById('done-drawer-toggle');
+  if (cards) cards.classList.toggle('open', todayDoneDrawerOpen);
+  if (toggle) toggle.textContent = `✅ 完了 ${toggle.dataset.count}件 ${todayDoneDrawerOpen ? '▲' : '▼'}`;
+}
+
 function updateExecHint() {
   const todayEl = document.getElementById('today-tasks');
   if (!todayEl) return;
@@ -2414,29 +2437,39 @@ function renderAll() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
   // TODAY（明示的に「今日やる」を押したタスクのみ）
-  const todayTasks = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
+  const todayPending = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
+  const todayDone = allTasks.filter(t => taskState[t.id]?.pinned && isDone(t));
   const todayEl = document.getElementById('today-tasks');
-  if (!todayTasks.length) {
-    todayEl.innerHTML = '<div class="section-empty">今日のタスクがありません</div>';
+  const emptyMsg = currentMode === 'select'
+    ? '<div class="section-empty">👆 上から今日するタスクを選ぼう！</div>'
+    : '<div class="section-empty">今日のタスクがありません</div>';
+  let todayHtml = '';
+  if (!todayPending.length) {
+    todayHtml = emptyMsg;
   } else if (currentMode === 'exec') {
-    // 実行モード：時間帯でグルーピング
     const blocks = {朝:[], 昼:[], 夜:[], 未設定:[]};
-    todayTasks.forEach(t => {
+    todayPending.forEach(t => {
       const jk = taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || '未設定';
       (blocks[jk] || blocks['未設定']).push(t);
     });
     const bLabels = {朝:'🌅 朝', 昼:'🌞 昼', 夜:'🌙 夜', 未設定:'⬜ 未設定'};
-    let html = '';
     Object.entries(blocks).forEach(([key, bTasks]) => {
       if (!bTasks.length) return;
-      html += `<div class="time-block"><div class="time-block-label">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
+      todayHtml += `<div class="time-block"><div class="time-block-label">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
     });
-    todayEl.innerHTML = html || '<div class="section-empty">今日のタスクがありません</div>';
+    if (!todayHtml) todayHtml = emptyMsg;
   } else {
-    todayEl.innerHTML = todayTasks.length
-      ? groupByArea(todayTasks, t => renderCard(t,'today'))
-      : '<div class="section-empty">今日のタスクがありません</div>';
+    todayHtml = groupByArea(todayPending, t => renderCard(t,'today'));
   }
+  if (todayDone.length) {
+    todayHtml += `<div class="done-drawer">
+      <div class="done-drawer-toggle" id="done-drawer-toggle" data-count="${todayDone.length}" onclick="toggleDoneDrawer()">✅ 完了 ${todayDone.length}件 ${todayDoneDrawerOpen ? '▲' : '▼'}</div>
+      <div class="done-drawer-cards ${todayDoneDrawerOpen ? 'open' : ''}" id="done-drawer-cards">
+        ${todayDone.map(t => renderCard(t,'today')).join('')}
+      </div>
+    </div>`;
+  }
+  todayEl.innerHTML = todayHtml;
 
   // やり残し
   const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
@@ -2466,6 +2499,7 @@ function renderAll() {
     </div>`;
   });
   dsEl.innerHTML = html || '<div class="section-empty">タスクがありません</div>';
+  updateExecHint();
 }
 
 function updateProgress() {
@@ -2610,7 +2644,7 @@ function toggleDone(id) {
       el.classList.remove('done-flash');
       void el.offsetWidth;
       el.classList.add('done-flash');
-      setTimeout(() => el.classList.remove('done-flash'), 900);
+      setTimeout(() => renderAll(), 1400);
     }
   });
   document.querySelectorAll(`#tt-${id}`).forEach(el=>el.classList.toggle('done',isDone));
