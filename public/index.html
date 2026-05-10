@@ -448,6 +448,15 @@ body::before {
 .card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
 .card-group-header.area-other    { color: var(--text-dim); background: transparent; }
 /* CHANGEボタン */
+.link-pills { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.link-pill {
+  display: inline-block; padding: 2px 10px; border-radius: 99px;
+  background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.1);
+  font-size: 10px; color: var(--text-dim); text-decoration: none;
+  max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: all .15s; font-family: 'JetBrains Mono', monospace;
+}
+.link-pill:hover { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.22); }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -2241,14 +2250,11 @@ function renderCard(task, mode='today') {
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
   const links = s.links;
-  const linkMenuItems = links.length
-    ? links.map((u,i) => {
-        const label = u.replace(/^https?:\/\//, '').substring(0, 40);
-        return `<a class="link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
-      }).join('')
-    : `<div class="link-empty">リンクなし</div>`;
   const linkBtnHtml = links.length
-    ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItems}</div></div>`
+    ? `<div class="link-pills">${links.map(u => {
+        let d = ''; try { d = new URL(u).hostname.replace(/^www\./,''); } catch { d = u.substring(0,20); }
+        return `<a class="link-pill" href="${u}" target="_blank">${d}</a>`;
+      }).join('')}</div>`
     : '';
 
   if (mode === 'leftover' || mode === 'next') {
@@ -3304,12 +3310,11 @@ function renderGtdCard(task) {
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
-  const linkMenuItemsG = links.map(u => {
-    const label = u.replace(/^https?:\/\//, '').substring(0, 40);
-    return `<a class="link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
-  }).join('');
   const bearBtn = links.length
-    ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItemsG}</div></div>`
+    ? `<div class="link-pills">${links.map(u => {
+        let d = ''; try { d = new URL(u).hostname.replace(/^www\./,''); } catch { d = u.substring(0,20); }
+        return `<a class="link-pill" href="${u}" target="_blank">${d}</a>`;
+      }).join('')}</div>`
     : '';
 
   const gtdLabel = gtd || '📥 INBOX';
