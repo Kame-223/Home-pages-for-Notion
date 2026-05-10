@@ -498,6 +498,41 @@ body::before {
 }
 .done-drawer-cards { display: none; }
 .done-drawer-cards.open { display: block; }
+/* 持ち越し折りたたみ */
+.leftover-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: none; border: none; cursor: pointer; padding: 0;
+  color: inherit; font: inherit;
+}
+.leftover-body { display: none; }
+.leftover-body.open { display: block; }
+/* 全完了セレブレーション */
+@keyframes celebFadeIn {
+  from { opacity: 0; transform: translate(-50%,-50%) scale(.8); }
+  to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(80px) rotate(360deg); opacity: 0; }
+}
+.celeb-overlay {
+  position: fixed; inset: 0; z-index: 8000; pointer-events: none;
+}
+.celeb-box {
+  position: absolute; top: 40%; left: 50%;
+  transform: translate(-50%,-50%) scale(.8);
+  background: rgba(20,18,35,0.96); border: 0.5px solid rgba(239,159,39,0.5);
+  border-radius: 20px; padding: 28px 40px; text-align: center;
+  box-shadow: 0 0 40px rgba(239,159,39,0.25);
+  animation: celebFadeIn .35s cubic-bezier(.2,1.4,.4,1) forwards;
+}
+.celeb-emoji { font-size: 36px; margin-bottom: 8px; }
+.celeb-title { font-size: 18px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
+.celeb-sub { font-size: 12px; color: var(--text-sub); }
+.confetti-piece {
+  position: absolute; width: 8px; height: 8px; border-radius: 2px;
+  animation: confettiFall 1.2s ease-in forwards;
+}
 /* 実行モード空状態 */
 .exec-empty-wrap { text-align: center; padding: 24px 12px; }
 .exec-empty-text { font-size: 12px; color: var(--text-dim); margin-bottom: 14px; line-height: 1.7; }
@@ -1330,8 +1365,13 @@ body::before {
 
       <!-- 選択モード：直接パネル -->
       <div id="leftover-panel" class="bottom-panel">
-        <div class="section-header red">🔄 持ち越し</div>
-        <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
+        <div class="section-header red" style="cursor:pointer" onclick="toggleLeftover()">
+          <button class="leftover-toggle">
+            <span id="leftover-header-text">🔄 持ち越し</span>
+            <span id="leftover-arrow">▼</span>
+          </button>
+        </div>
+        <div class="bottom-half leftover-body" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="next-panel" class="bottom-panel">
         <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
@@ -2516,6 +2556,8 @@ function renderAll() {
   // やり残し
   const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
   const leftEl = document.getElementById('leftover-list');
+  const leftHeaderText = document.getElementById('leftover-header-text');
+  if (leftHeaderText) leftHeaderText.textContent = leftover.length ? `🔄 持ち越し（${leftover.length}件）` : '🔄 持ち越し';
   leftEl.innerHTML = leftover.length
     ? groupByArea(leftover, t => renderCard(t,'leftover'))
     : '<div class="section-empty" style="color:var(--green)">持ち越しなし 🎉</div>';
@@ -2553,6 +2595,7 @@ function updateProgress() {
   document.getElementById('prog-total').textContent = pct+'%';
   document.getElementById('prog-total-sub').textContent = `${done}/${todayAll.length}完了`;
   document.getElementById('prog-total-fill').style.width = pct+'%';
+  if (pct === 100 && todayAll.length > 0) celebrate();
 
   const kadai = todayAll.filter(t=>getProp(t,'エリア')==='課題');
   const kdone = kadai.filter(isDoneTask).length;
@@ -2706,6 +2749,38 @@ function toggleDone(id) {
   updateExecHint();
 }
 
+// 持ち越し折りたたみ
+let leftoverOpen = false;
+function toggleLeftover() {
+  leftoverOpen = !leftoverOpen;
+  document.getElementById('leftover-list').classList.toggle('open', leftoverOpen);
+  document.getElementById('leftover-arrow').textContent = leftoverOpen ? '▲' : '▼';
+}
+
+// 全完了セレブレーション
+let celebShown = false;
+function celebrate() {
+  if (celebShown) return;
+  celebShown = true;
+  const overlay = document.createElement('div');
+  overlay.className = 'celeb-overlay';
+  const colors = ['#EF9F27','#7F77DD','#1D9E75','#FF7ED4','#FF5040'];
+  let confetti = '';
+  for (let i = 0; i < 22; i++) {
+    const x = Math.random() * 100;
+    const delay = Math.random() * 0.6;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    confetti += `<div class="confetti-piece" style="left:${x}%;top:10%;background:${color};animation-delay:${delay}s"></div>`;
+  }
+  overlay.innerHTML = `${confetti}<div class="celeb-box">
+    <div class="celeb-emoji">🎉</div>
+    <div class="celeb-title">今日のタスク全部終わった！</div>
+    <div class="celeb-sub">よくやった、本当にお疲れ様！</div>
+  </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.remove(), 3500);
+}
+
 let toastQueue = [];
 let toastRunning = false;
 function showToast(msg, color='rgba(29,158,117,0.92)') {
@@ -2734,6 +2809,7 @@ function togglePin(id) {
   // 完了状態のタスクは画鋲を外せない
   if (taskState[id].done) return;
   taskState[id].pinned = !taskState[id].pinned;
+  celebShown = false;
   if (taskState[id].pinned) {
     showToast('✅ 今日やることに追加！');
   } else {
