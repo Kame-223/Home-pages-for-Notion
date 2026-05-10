@@ -2102,7 +2102,6 @@ function renderCard(task, mode='today') {
   // プロパティタグ（クリックで編集モーダル）
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
@@ -2866,7 +2865,6 @@ function renderGtdCard(task) {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
