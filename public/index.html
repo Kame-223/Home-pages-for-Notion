@@ -418,11 +418,24 @@ body::before {
 .task-card {
   background: var(--surface2);
   border: 0.5px solid var(--border2);
+  border-left: 5px solid var(--border2);
   border-radius: 12px;
   padding: 11px 14px;
   margin-bottom: 8px;
   position: relative;
   transition: all .2s;
+}
+.task-card.area-kadai    { border-left-color: #C45C8A; }
+.task-card.area-personal { border-left-color: #B06070; }
+.task-card.area-seikatsu { border-left-color: #7A8B45; }
+.task-card.area-icu      { border-left-color: rgba(255,255,255,0.55); }
+.task-card.area-canada   { border-left-color: var(--purple); }
+.card-group { margin-bottom: 14px; }
+.card-group-header {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
+  color: var(--text-dim); padding: 6px 4px 4px;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 6px; text-transform: uppercase;
 }
 .task-card.done { opacity: 0.4; }
 .task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
@@ -1978,6 +1991,30 @@ function deadlineTag(dateStr, isDone, isImportant) {
   return { label, cls };
 }
 
+function areaBorderCls(area) {
+  if (area==='課題') return 'area-kadai';
+  if (area==='個人') return 'area-personal';
+  if (area==='生活') return 'area-seikatsu';
+  if (area==='ICU')  return 'area-icu';
+  if (area==='カナダ') return 'area-canada';
+  return '';
+}
+
+function groupByArea(tasks, renderFn) {
+  const order = ['課題','個人','生活','ICU','カナダ','その他'];
+  const groups = {};
+  tasks.forEach(t => {
+    const a = getProp(t,'エリア') || 'その他';
+    (groups[a] = groups[a] || []).push(t);
+  });
+  return order.filter(a => groups[a]?.length).map(a =>
+    `<div class="card-group">
+      <div class="card-group-header">${a}</div>
+      ${groups[a].map(renderFn).join('')}
+    </div>`
+  ).join('');
+}
+
 function areaTagCls(area) {
   if (area==='課題') return 'tag-magenta';
   if (area==='ICU') return 'tag-white';
@@ -2092,7 +2129,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(area)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
       <div class="card-lower">
@@ -2117,7 +2154,7 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰ 時間帯';
   return `
-  <div class="task-card ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
+  <div class="task-card ${areaBorderCls(area)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
     <div class="card-lower">
@@ -2175,14 +2212,16 @@ function renderAll() {
     });
     todayEl.innerHTML = html || '<div class="section-empty">今日のタスクがありません</div>';
   } else {
-    todayEl.innerHTML = todayTasks.map(t=>renderCard(t,'today')).join('');
+    todayEl.innerHTML = todayTasks.length
+      ? groupByArea(todayTasks, t => renderCard(t,'today'))
+      : '<div class="section-empty">今日のタスクがありません</div>';
   }
 
   // やり残し
   const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
   const leftEl = document.getElementById('leftover-list');
   leftEl.innerHTML = leftover.length
-    ? leftover.map(t=>renderCard(t,'leftover')).join('')
+    ? groupByArea(leftover, t => renderCard(t,'leftover'))
     : '<div class="section-empty" style="color:var(--green)">やり残しなし 🎉</div>';
 
   // 次やること
@@ -2852,7 +2891,7 @@ function renderGtdCard(task) {
   ).join('');
 
   return `
-  <div class="task-card" id="gtc-${id}" style="margin-bottom:6px">
+  <div class="task-card ${areaBorderCls(area)}" id="gtc-${id}" style="margin-bottom:6px">
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
       <div class="card-body">
