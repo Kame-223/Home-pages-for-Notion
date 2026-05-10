@@ -519,6 +519,7 @@ body::before {
 .tag-purple { background: rgba(127,119,221,0.12); color: #AFA9EC; border: 0.5px solid rgba(175,169,236,0.3); }
 .tag-gray { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 0.5px solid var(--border); }
 .tag-red { background: rgba(240,149,149,0.12); color: #F09595; border: 0.5px solid rgba(240,149,149,0.3); }
+.tag-red-vivid { background: rgba(216,60,40,0.25); color: #FF5040; border: 0.5px solid rgba(255,80,64,0.6); font-weight: 700; }
 .tag-magenta { background: rgba(255,62,191,0.15); color: #FF7ED4; border: 0.5px solid rgba(255,62,191,0.35); }
 .tag-white { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 0.5px solid rgba(255,255,255,0.25); }
 .tag-rose { background: rgba(196,120,110,0.15); color: #D4A098; border: 0.5px solid rgba(196,120,110,0.35); }
@@ -1061,22 +1062,18 @@ body::before {
 .section-empty { font-size: 10px; color: var(--text-dim); text-align: center; padding: 12px; }
 
 /* ===== 小タスク ===== */
-.subtask-section {
-  border-top: 0.5px solid var(--border);
-  margin-top: 8px; padding-top: 6px;
+.subtask-inline-toggle {
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; margin-left: auto; flex-shrink: 0;
 }
-.subtask-toggle {
-  display: flex; align-items: center; gap: 6px;
-  cursor: pointer; padding: 2px 0;
-}
-.subtask-toggle:hover .subtask-toggle-label { color: var(--text-sub); }
-.subtask-toggle-label { font-size: 9px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
+.subtask-inline-line { width: 80px; height: 0.5px; background: var(--border2); margin-bottom: 3px; }
+.subtask-inline-inner { display: flex; align-items: center; gap: 4px; height: 23px; }
 .subtask-count-text { font-size: 10px; color: var(--text-sub); font-family: 'JetBrains Mono', monospace; }
-.subtask-mini-bar { flex: 1; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; max-width: 60px; display: none; }
+.subtask-mini-bar { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; width: 40px; display: none; }
 .subtask-mini-fill { height: 100%; background: var(--green); border-radius: 1px; transition: width .3s; }
-.subtask-arrow { font-size: 8px; color: var(--text-dim); transition: transform .2s; margin-left: auto; }
+.subtask-arrow { font-size: 8px; color: var(--text-dim); transition: transform .2s; }
 .subtask-arrow.open { transform: rotate(180deg); }
-.subtask-panel { display: none; padding-top: 6px; }
+.subtask-panel { display: none; margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--border); }
 .subtask-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
 .subtask-item:last-child { border-bottom: none; }
 .subtask-checkbox { width: 14px; height: 14px; accent-color: var(--green); flex-shrink: 0; cursor: pointer; margin-top: 2px; }
@@ -2099,9 +2096,11 @@ function deadlineTag(dateStr, isDone, isImportant) {
 
   // 色（日数ベース）
   const cls = isImportant ? 'tag-imp-dl'
-    : (isOverdue || diffDays <= 1) ? 'tag-red'
-    : diffDays <= 3 ? 'tag-amber'
-    : diffDays <= 7 ? 'tag-blue'
+    : isOverdue       ? 'tag-red'
+    : diffDays === 0  ? 'tag-red-vivid'
+    : diffDays <= 1   ? 'tag-red'
+    : diffDays <= 3   ? 'tag-amber'
+    : diffDays <= 7   ? 'tag-blue'
     : 'tag-gray';
 
   return { label, cls };
@@ -2259,6 +2258,7 @@ function renderCard(task, mode='today') {
           <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
+        ${subtaskToggleHtml(id)}
       </div>
       ${subtaskSectionHtml(id)}
       </div>
@@ -2297,6 +2297,7 @@ function renderCard(task, mode='today') {
         </div>
       </div>
       ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='46px';this.querySelector('img').style.filter='none'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='brightness(0.7)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block;filter:brightness(0.7);transition:height .15s,filter .15s"></button>` : ''}
+      ${subtaskToggleHtml(id)}
     </div>
     ${subtaskSectionHtml(id)}
     </div>
@@ -3027,16 +3028,18 @@ document.addEventListener('keydown', (e) => {
 // ===== 小タスク =====
 const subtaskData = {};
 
-function subtaskSectionHtml(id) {
-  return `<div class="subtask-section">
-    <div class="subtask-toggle" onclick="toggleSubtaskPanel('${id}')">
-      <span class="subtask-toggle-label">小タスク</span>
+function subtaskToggleHtml(id) {
+  return `<div class="subtask-inline-toggle" onclick="toggleSubtaskPanel('${id}');event.stopPropagation()">
+    <div class="subtask-inline-line"></div>
+    <div class="subtask-inline-inner">
       <span class="subtask-count-text" id="stc-${id}"></span>
       <div class="subtask-mini-bar" id="stpb-${id}"><div class="subtask-mini-fill" id="stf-${id}" style="width:0%"></div></div>
       <span class="subtask-arrow" id="sta-${id}">▼</span>
     </div>
-    <div class="subtask-panel" id="stp-${id}"></div>
   </div>`;
+}
+function subtaskSectionHtml(id) {
+  return `<div class="subtask-panel" id="stp-${id}"></div>`;
 }
 
 async function toggleSubtaskPanel(id) {
@@ -3255,6 +3258,7 @@ function renderGtdCard(task) {
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
         ${bearBtn}
+        ${subtaskToggleHtml(id)}
       </div>
       ${subtaskSectionHtml(id)}
     </div>
