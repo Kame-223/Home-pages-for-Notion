@@ -498,6 +498,27 @@ body::before {
 }
 .done-drawer-cards { display: none; }
 .done-drawer-cards.open { display: block; }
+/* トースト通知 */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(16px);
+  background: rgba(29,158,117,0.92); color: #fff;
+  font-size: 13px; font-family: 'Noto Sans JP', sans-serif; font-weight: 500;
+  padding: 10px 24px; border-radius: 99px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  opacity: 0; pointer-events: none; z-index: 9000;
+  transition: opacity .25s, transform .25s;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* 今日締切カード強調 */
+.task-card.deadline-today {
+  border-color: rgba(255,80,64,0.5);
+  box-shadow: 0 0 0 1px rgba(255,80,64,0.25);
+}
+@keyframes deadlinePulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,80,64,0.25); }
+  50%       { box-shadow: 0 0 0 3px rgba(255,80,64,0.4); }
+}
+.task-card.deadline-today { animation: deadlinePulse 2.5s ease-in-out infinite; }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -1345,7 +1366,7 @@ body::before {
             </div>
           </div>
 
-          <div class="fr-section-label">📅 あったこと・感想</div>
+          <div class="fr-section-label">📅 あったこと・感想 <span class="fr-optional">任意</span></div>
           <textarea class="fr-textarea" id="fr-event" placeholder="今日あったことを書こう..."></textarea>
 
           <div class="fr-section-label">✨ よかったこと <span class="fr-optional">任意</span></div>
@@ -1439,6 +1460,8 @@ body::before {
   <button class="nav-action-btn amber" onclick="openModal('inbox')">＋ INBOX</button>
   <button class="nav-action-btn blue" onclick="openModal('note')">＋ NOTE</button>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <!-- 🧸 リンク一覧モーダル -->
 <div class="bear-link-overlay" id="bear-link-overlay" onclick="closeBearLinks()">
@@ -2337,6 +2360,8 @@ function renderCard(task, mode='today') {
 
   const effectiveArea = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isDeadlineToday = deadline && deadline.startsWith(todayStr) && !s.done;
   const subjectToShow = (effectiveArea === '課題') ? (subjects?.[0] || null) : null;
   const elaToShow = (effectiveArea === '課題' && subjectToShow === 'ELA') ? ela : null;
 
@@ -2364,7 +2389,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''} ${isDeadlineToday?'deadline-today':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
       <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
@@ -2394,7 +2419,7 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰';
   return `
-  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
+  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''} ${isDeadlineToday?'deadline-today':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')">✕</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
@@ -2664,21 +2689,31 @@ function toggleDone(id) {
   updateExecHint();
 }
 
+let toastTimer = null;
+function showToast(msg, color='rgba(29,158,117,0.92)') {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  if (toastTimer) clearTimeout(toastTimer);
+  el.textContent = msg;
+  el.style.background = color;
+  el.classList.add('show');
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
 function togglePin(id) {
   if (!taskState[id]) return;
   // 完了状態のタスクは画鋲を外せない
   if (taskState[id].done) return;
   taskState[id].pinned = !taskState[id].pinned;
-  if (!taskState[id].pinned) {
-    // TODAYから外す：完了状態を取り消す
+  if (taskState[id].pinned) {
+    showToast('✅ 今日やることに追加！');
+  } else {
     if (taskState[id].done) {
       taskState[id].done = false;
       notionUpdate(id, {'ステータス':{status:{name:'ToDo'}}}).catch(console.error);
     }
-    // 時間帯をリセット
     taskState[id].jikantai = null;
     notionUpdate(id, {'実行時間帯':{select:null}}).catch(console.error);
-    // Startボタンをリセット
     taskState[id].focusSeconds = 0;
   }
   saveTaskState();
