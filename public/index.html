@@ -1918,12 +1918,12 @@ function renderNextList() {
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
     const areaCls = clsMap[area] || 'area-other';
-    html += `<div class="card-group-header ${areaCls}">${area}</div>`;
+    let inner = `<div class="card-group-header ${areaCls}">${area}</div>`;
     if (area === '課題') {
       const bySubject = {};
       aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
       const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
-      subKeys.forEach(sub => {
+      subKeys.forEach((sub, i) => {
         let subTasks = bySubject[sub];
         if (sub === 'ELA') {
           subTasks = [...subTasks].sort((a,b) => {
@@ -1934,12 +1934,13 @@ function renderNextList() {
         } else {
           subTasks = [...subTasks].sort(byDeadline);
         }
-        html += `<div class="next-group-subject">${sub}</div>`;
-        html += subTasks.map(t => renderCard(t,'next')).join('');
+        if (i > 0) inner += `<div style="height:14px"></div>`;
+        inner += subTasks.map(t => renderCard(t,'next')).join('');
       });
     } else {
-      html += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next')).join('');
+      inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next')).join('');
     }
+    html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
 }
