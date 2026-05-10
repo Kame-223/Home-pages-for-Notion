@@ -1614,10 +1614,13 @@ body::before {
         <button class="edit-add-link-btn" onclick="addInboxLink()">＋ リンクを追加</button>
       </div>
       <div class="edit-field">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;letter-spacing:0.08em">
-          <input type="checkbox" id="inbox-important" style="accent-color:var(--red);width:15px;height:15px;cursor:pointer">
-          IMPORTANT
-        </label>
+        <div class="imp-switch-wrap">
+          <label class="imp-switch">
+            <input type="checkbox" id="inbox-important" onclick="onInboxImpSwitchClick(event)">
+            <span class="imp-slider"></span>
+          </label>
+          <span class="imp-switch-label">IMPORTANT</span>
+        </div>
       </div>
     </div>
     <div class="modal-btns">
@@ -3059,6 +3062,8 @@ function openEditModal(id, e) {
   document.getElementById('task-edit-overlay').classList.add('open');
 }
 
+let impConfirmCallback = null;
+
 function onImpSwitchClick(e) {
   e.preventDefault();
   const cb = document.getElementById('edit-important');
@@ -3066,14 +3071,26 @@ function onImpSwitchClick(e) {
     cb.checked = false;
     saveTaskState();
   } else {
+    impConfirmCallback = () => { cb.checked = true; };
+    document.getElementById('imp-confirm-overlay').classList.add('open');
+  }
+}
+function onInboxImpSwitchClick(e) {
+  e.preventDefault();
+  const cb = document.getElementById('inbox-important');
+  if (cb.checked) {
+    cb.checked = false;
+  } else {
+    impConfirmCallback = () => { cb.checked = true; };
     document.getElementById('imp-confirm-overlay').classList.add('open');
   }
 }
 function confirmImp() {
-  document.getElementById('edit-important').checked = true;
+  if (impConfirmCallback) { impConfirmCallback(); impConfirmCallback = null; }
   document.getElementById('imp-confirm-overlay').classList.remove('open');
 }
 function cancelImpConfirm() {
+  impConfirmCallback = null;
   document.getElementById('imp-confirm-overlay').classList.remove('open');
 }
 
