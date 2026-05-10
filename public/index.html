@@ -1084,8 +1084,9 @@ body::before {
 .subtask-move-btn { background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-dim); padding: 2px 7px; line-height: 1.2; transition: all .1s; }
 .subtask-move-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
 .subtask-move-btn:disabled { opacity: 0.2; cursor: default; pointer-events: none; }
-.subtask-del { font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; padding: 0; opacity: 0; transition: opacity .15s; flex-shrink: 0; line-height: 1; }
+.subtask-del { font-size: 12px; color: var(--text-dim); background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; padding: 2px 7px; opacity: 0; transition: all .15s; flex-shrink: 0; line-height: 1.2; }
 .subtask-item:hover .subtask-del { opacity: 1; }
+.subtask-del:hover { color: var(--red); border-color: rgba(240,149,149,0.4); background: rgba(255,255,255,0.04); }
 .subtask-add { display: flex; gap: 6px; margin-top: 8px; }
 .subtask-input { flex: 1; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 6px; padding: 4px 8px; font-size: 11px; color: var(--text); font-family: 'Noto Sans JP', sans-serif; }
 .subtask-input:focus { outline: none; border-color: rgba(127,119,221,0.5); }
