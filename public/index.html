@@ -2823,7 +2823,8 @@ function updateEditChipCascade() {
   subjectEl.classList.remove('disabled');
   elaEl.classList.remove('disabled');
   subjectEl.classList.toggle('dimmed', !!area && area !== '課題');
-  elaEl.classList.toggle('dimmed', !!subject && subject !== 'ELA');
+  // AREAが課題以外、またはSUBJECTがELA以外のときにELAを暗くする
+  elaEl.classList.toggle('dimmed', (!!area && area !== '課題') || (!!subject && subject !== 'ELA'));
 }
 
 async function saveEditModal() {
@@ -2840,17 +2841,7 @@ async function saveEditModal() {
   const subjects = subject ? [subject] : [];
   const dlDate = document.getElementById('edit-deadline-date').value;
   const dlTime = document.getElementById('edit-deadline-time').value;
-  let deadline = null;
-  if (dlDate && dlTime) {
-    const d = new Date(`${dlDate}T${dlTime}`);
-    const tz = -d.getTimezoneOffset();
-    const sign = tz >= 0 ? '+' : '-';
-    const hh = String(Math.floor(Math.abs(tz)/60)).padStart(2,'0');
-    const mm = String(Math.abs(tz)%60).padStart(2,'0');
-    deadline = `${dlDate}T${dlTime}:00${sign}${hh}:${mm}`;
-  } else if (dlDate) {
-    deadline = dlDate;
-  }
+  const deadline = buildDeadlineStr(dlDate, dlTime);
   const links = editLinks.map(l => l.trim()).filter(Boolean);
   const firstLink = links[0] || null;
 
@@ -2884,6 +2875,17 @@ async function saveEditModal() {
   notionUpdate(id, props).catch(console.error);
 }
 
+function buildDeadlineStr(dlDate, dlTime) {
+  if (!dlDate) return null;
+  if (!dlTime) return dlDate;
+  const d = new Date(`${dlDate}T${dlTime}`);
+  const tz = -d.getTimezoneOffset();
+  const sign = tz >= 0 ? '+' : '-';
+  const hh = String(Math.floor(Math.abs(tz) / 60)).padStart(2, '0');
+  const mm = String(Math.abs(tz) % 60).padStart(2, '0');
+  return `${dlDate}T${dlTime}:00${sign}${hh}:${mm}`;
+}
+
 // ===== モーダル =====
 function openModal(type) {
   document.getElementById(`modal-${type}`).classList.add('open');
@@ -2905,7 +2907,7 @@ async function addToInbox() {
   const ela     = document.querySelector('#inbox-ela .edit-chip.active')?.dataset.val || null;
   const dlDate  = document.getElementById('inbox-deadline-date').value;
   const dlTime  = document.getElementById('inbox-deadline-time').value;
-  const deadline = dlDate ? (dlTime ? `${dlDate}T${dlTime}:00` : dlDate) : null;
+  const deadline = buildDeadlineStr(dlDate, dlTime);
 
   const props = {
     'タイトル': {title:[{text:{content:title}}]},
