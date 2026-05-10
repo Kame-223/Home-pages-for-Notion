@@ -2307,7 +2307,7 @@ function renderCard(task, mode='today') {
           <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
         </div>
       </div>
-      ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='46px';this.querySelector('img').style.filter='none'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='brightness(0.7)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block;filter:brightness(0.7);transition:height .15s,filter .15s"></button>` : ''}
+      ${linkBtnHtml}
       ${subtaskToggleHtml(id)}
     </div>
     ${subtaskSectionHtml(id)}
@@ -3304,8 +3304,12 @@ function renderGtdCard(task) {
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
+  const linkMenuItemsG = links.map(u => {
+    const label = u.replace(/^https?:\/\//, '').substring(0, 40);
+    return `<a class="link-item" href="${u}" target="_blank">🔗 ${label}</a>`;
+  }).join('');
   const bearBtn = links.length
-    ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='46px';this.querySelector('img').style.filter='none'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='brightness(0.7)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block;filter:brightness(0.7);transition:height .15s,filter .15s"></button>`
+    ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItemsG}</div></div>`
     : '';
 
   const gtdLabel = gtd || '📥 INBOX';
