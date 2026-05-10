@@ -516,8 +516,9 @@ body::before {
   100% { transform: translateY(80px) rotate(360deg); opacity: 0; }
 }
 .celeb-overlay {
-  position: fixed; inset: 0; z-index: 8000; pointer-events: none;
+  position: fixed; inset: 0; z-index: 8000; pointer-events: all;
 }
+.confetti-piece { pointer-events: none; }
 .celeb-box {
   position: absolute; top: 40%; left: 50%;
   transform: translate(-50%,-50%) scale(.8);
