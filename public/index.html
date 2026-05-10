@@ -458,30 +458,32 @@ body::before {
 .link-pill:hover { border-color: rgba(255,255,255,0.4); }
 /* 完了フラッシュ */
 @keyframes doneFlash {
-  0%   { background: transparent; }
-  30%  { background: rgba(29,158,117,0.22); }
-  100% { background: transparent; }
+  0%   { background: transparent; box-shadow: none; transform: scale(1); }
+  15%  { background: rgba(29,158,117,0.45); box-shadow: 0 0 24px rgba(29,158,117,0.6); transform: scale(1.012); }
+  50%  { background: rgba(29,158,117,0.25); box-shadow: 0 0 12px rgba(29,158,117,0.3); }
+  100% { background: transparent; box-shadow: none; transform: scale(1); }
 }
-.task-card.done-flash { animation: doneFlash 0.65s ease-out forwards; }
+.task-card.done-flash { animation: doneFlash 0.9s ease-out forwards; }
 /* 実行モード誘導ヒント */
+.exec-start-hint-wrap { display: none; text-align: center; padding: 6px 0 2px; }
+.exec-start-hint-wrap.show { display: block; }
 .exec-start-hint {
-  display: none; margin-left: auto;
-  font-size: 10px; color: var(--green);
+  font-size: 11px; color: var(--green);
   background: rgba(29,158,117,0.1); border: 0.5px solid rgba(29,158,117,0.35);
-  border-radius: 99px; padding: 3px 12px;
+  border-radius: 99px; padding: 5px 20px;
   cursor: pointer; transition: all .2s; font-family: 'Noto Sans JP', sans-serif;
+  display: inline-block;
 }
 .exec-start-hint:hover { background: rgba(29,158,117,0.22); }
-.exec-start-hint.show { display: inline-block; }
 /* もっと見るボタン */
-.next-show-more { text-align: center; padding: 8px 0 4px; }
+.next-show-more { text-align: center; padding: 10px 0 6px; }
 .next-show-more-btn {
-  font-size: 11px; padding: 5px 20px; border-radius: 99px;
-  border: 0.5px solid var(--border2); background: transparent;
-  color: var(--text-dim); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px; padding: 9px 32px; border-radius: 99px;
+  border: 0.5px solid var(--border2); background: rgba(255,255,255,0.03);
+  color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   transition: all .15s;
 }
-.next-show-more-btn:hover { border-color: #85B7EB; color: #85B7EB; }
+.next-show-more-btn:hover { border-color: #85B7EB; color: #85B7EB; background: rgba(133,183,235,0.06); }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -601,10 +603,10 @@ body::before {
   font-weight: 500; transition: all .2s; position: relative; white-space: nowrap; width: 100%;
 }
 .btn-start {
-  font-size: 13px; padding: 9px 18px; border-radius: 9px;
+  font-size: 13px; padding: 9px 0; border-radius: 9px; width: 80px;
   border: 0.5px solid rgba(29,158,117,0.4); background: rgba(29,158,117,0.1);
   cursor: pointer; color: #5DCAA5; font-family: 'Noto Sans JP', sans-serif;
-  font-weight: 500; transition: all .2s; white-space: nowrap;
+  font-weight: 500; transition: color .2s, border-color .2s, background .2s; white-space: nowrap; text-align: center;
 }
 .btn-start.restart { border-color: rgba(239,159,39,0.4); background: rgba(239,159,39,0.1); color: #EF9F27; }
 .btn-done {
@@ -1277,7 +1279,7 @@ body::before {
 
     <!-- 今日やること -->
     <div class="today-board">
-      <div class="section-header green">✅ 今日やること<button id="exec-hint" class="exec-start-hint" onclick="setMode('exec')">▶ 実行を始める</button></div>
+      <div class="section-header green">✅ 今日やること</div>
       <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
     </div>
 
@@ -1290,7 +1292,7 @@ body::before {
         <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="next-panel" class="bottom-panel">
-        <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
+        <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn active" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
 
@@ -2024,7 +2026,7 @@ function getProp(page, name) {
 }
 
 // ===== 次やる フィルター =====
-let nextFilter = 'prop';
+let nextFilter = 'deadline';
 const AREA_ORDER = ['課題','個人','生活','ICU','カナダ'];
 const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','PE','その他'];
 const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
@@ -2045,14 +2047,22 @@ function expandNextList() {
 }
 
 function updateExecHint() {
-  const hint = document.getElementById('exec-hint');
-  if (!hint) return;
+  const todayEl = document.getElementById('today-tasks');
+  if (!todayEl) return;
+  let wrap = document.getElementById('exec-hint-wrap');
   const pinned = allTasks.filter(t => taskState[t.id]?.pinned && !taskState[t.id]?.done).length;
   if (pinned > 0 && currentMode === 'select') {
-    hint.textContent = `▶ 実行を始める（${pinned}件）`;
-    hint.classList.add('show');
-  } else {
-    hint.classList.remove('show');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'exec-hint-wrap';
+      wrap.className = 'exec-start-hint-wrap';
+      wrap.innerHTML = `<button class="exec-start-hint" onclick="setMode('exec')"></button>`;
+      todayEl.insertBefore(wrap, todayEl.firstChild);
+    }
+    wrap.querySelector('.exec-start-hint').textContent = `▶ 実行を始める（${pinned}件）`;
+    wrap.classList.add('show');
+  } else if (wrap) {
+    wrap.classList.remove('show');
   }
 }
 
@@ -2116,14 +2126,24 @@ function renderNextList() {
 
 function applyNextListLimit(el, total) {
   if (nextListExpanded || total <= NEXT_DEFAULT_COUNT) return;
-  const cards = el.querySelectorAll('.task-card');
+  const cards = Array.from(el.querySelectorAll('.task-card'));
   if (cards.length <= NEXT_DEFAULT_COUNT) return;
-  for (let i = NEXT_DEFAULT_COUNT; i < cards.length; i++) cards[i].style.display = 'none';
+  const todayStr = new Date().toISOString().split('T')[0];
+  // 当日締切タスクが5件目以降にあれば、その全件まで表示枠を広げる
+  let cutoff = NEXT_DEFAULT_COUNT;
+  while (cutoff < cards.length) {
+    const card = cards[cutoff];
+    const dl = card.dataset.deadline;
+    if (dl && dl.startsWith(todayStr)) cutoff++;
+    else break;
+  }
+  if (cutoff >= cards.length) return;
+  for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
   el.querySelectorAll('.card-group').forEach(g => {
     const visible = g.querySelectorAll('.task-card:not([style*="none"])');
     if (!visible.length) g.style.display = 'none';
   });
-  const remaining = cards.length - NEXT_DEFAULT_COUNT;
+  const remaining = cards.length - cutoff;
   el.insertAdjacentHTML('beforeend',
     `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandNextList()">もっと見る（あと${remaining}件）</button></div>`
   );
@@ -2321,7 +2341,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
       <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
@@ -2583,13 +2603,14 @@ function toggleDone(id) {
   if (!taskState[id]) return;
   taskState[id].done = !taskState[id].done;
   const isDone = taskState[id].done;
+  const todayEl = document.getElementById('today-tasks');
   document.querySelectorAll(`#tc-${id}`).forEach(el=>{
     el.classList.toggle('done',isDone);
-    if (isDone) {
+    if (isDone && todayEl && todayEl.contains(el)) {
       el.classList.remove('done-flash');
       void el.offsetWidth;
       el.classList.add('done-flash');
-      setTimeout(() => el.classList.remove('done-flash'), 650);
+      setTimeout(() => el.classList.remove('done-flash'), 900);
     }
   });
   document.querySelectorAll(`#tt-${id}`).forEach(el=>el.classList.toggle('done',isDone));
