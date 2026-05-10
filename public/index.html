@@ -440,12 +440,18 @@ body::before {
 }
 .day-schedule::-webkit-scrollbar { width: 3px; }
 .day-schedule::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-.time-block { margin-bottom: 12px; }
+.time-block { margin-bottom: 16px; }
 .time-block-label {
-  font-size: 10px; font-weight: 500; color: var(--text-sub);
-  margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  padding: 5px 8px; margin-bottom: 6px; border-radius: 4px;
+  display: flex; align-items: center; gap: 7px;
+  color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.07);
 }
-.time-block-label::after { content:''; flex:1; height:0.5px; background:var(--border); }
+.time-block-label::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
+  background: rgba(255,255,255,0.5);
+}
 
 /* ===== TASK CARD ===== */
 .task-card {
