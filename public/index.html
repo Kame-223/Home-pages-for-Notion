@@ -2476,7 +2476,7 @@ function renderAll() {
   const leftEl = document.getElementById('leftover-list');
   leftEl.innerHTML = leftover.length
     ? groupByArea(leftover, t => renderCard(t,'leftover'))
-    : '<div class="section-empty" style="color:var(--green)">やり残しなし 🎉</div>';
+    : '<div class="section-empty" style="color:var(--green)">持ち越しなし 🎉</div>';
 
   // 次やること
   renderNextList();
