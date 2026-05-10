@@ -1060,6 +1060,36 @@ body::before {
 .hidden { display: none; }
 .section-empty { font-size: 10px; color: var(--text-dim); text-align: center; padding: 12px; }
 
+/* ===== 小タスク ===== */
+.subtask-section {
+  border-top: 0.5px solid var(--border);
+  margin-top: 8px; padding-top: 6px;
+}
+.subtask-toggle {
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; padding: 2px 0;
+}
+.subtask-toggle:hover .subtask-toggle-label { color: var(--text-sub); }
+.subtask-toggle-label { font-size: 9px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
+.subtask-count-text { font-size: 10px; color: var(--text-sub); font-family: 'JetBrains Mono', monospace; }
+.subtask-mini-bar { flex: 1; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; max-width: 60px; display: none; }
+.subtask-mini-fill { height: 100%; background: var(--green); border-radius: 1px; transition: width .3s; }
+.subtask-arrow { font-size: 8px; color: var(--text-dim); transition: transform .2s; margin-left: auto; }
+.subtask-arrow.open { transform: rotate(180deg); }
+.subtask-panel { display: none; padding-top: 6px; }
+.subtask-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
+.subtask-item:last-child { border-bottom: none; }
+.subtask-checkbox { width: 14px; height: 14px; accent-color: var(--green); flex-shrink: 0; cursor: pointer; margin-top: 2px; }
+.subtask-text { font-size: 11px; color: var(--text); line-height: 1.5; flex: 1; }
+.subtask-text.checked { text-decoration: line-through; color: var(--text-dim); }
+.subtask-del { font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; padding: 0; opacity: 0; transition: opacity .15s; flex-shrink: 0; line-height: 1; }
+.subtask-item:hover .subtask-del { opacity: 1; }
+.subtask-add { display: flex; gap: 6px; margin-top: 8px; }
+.subtask-input { flex: 1; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 6px; padding: 4px 8px; font-size: 11px; color: var(--text); font-family: 'Noto Sans JP', sans-serif; }
+.subtask-input:focus { outline: none; border-color: rgba(127,119,221,0.5); }
+.subtask-add-btn { font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 0.5px solid var(--border2); background: var(--surface2); color: var(--text-sub); cursor: pointer; transition: all .15s; flex-shrink: 0; }
+.subtask-add-btn:hover { border-color: var(--purple); color: var(--purple); }
+.subtask-empty { font-size: 10px; color: var(--text-dim); padding: 4px 0; }
 /* スクロールバー全体 */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -2230,6 +2260,7 @@ function renderCard(task, mode='today') {
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
       </div>
+      ${subtaskSectionHtml(id)}
       </div>
     </div>`;
   }
@@ -2267,6 +2298,7 @@ function renderCard(task, mode='today') {
       </div>
       ${links.length ? `<button onclick="openBearLinks('${id}')" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:none;cursor:pointer;padding:0;line-height:1" onmouseover="this.querySelector('img').src='/backgrounds/bear-wave.png';this.querySelector('img').style.height='46px';this.querySelector('img').style.filter='none'" onmouseout="this.querySelector('img').src='/backgrounds/bear-sit.png';this.querySelector('img').style.height='40px';this.querySelector('img').style.filter='brightness(0.7)'"><img src="/backgrounds/bear-sit.png" style="height:40px;width:auto;display:block;filter:brightness(0.7);transition:height .15s,filter .15s"></button>` : ''}
     </div>
+    ${subtaskSectionHtml(id)}
     </div>
   </div>`;
 }
@@ -2992,6 +3024,142 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ===== 小タスク =====
+const subtaskData = {};
+
+function subtaskSectionHtml(id) {
+  return `<div class="subtask-section">
+    <div class="subtask-toggle" onclick="toggleSubtaskPanel('${id}')">
+      <span class="subtask-toggle-label">小タスク</span>
+      <span class="subtask-count-text" id="stc-${id}"></span>
+      <div class="subtask-mini-bar" id="stpb-${id}"><div class="subtask-mini-fill" id="stf-${id}" style="width:0%"></div></div>
+      <span class="subtask-arrow" id="sta-${id}">▼</span>
+    </div>
+    <div class="subtask-panel" id="stp-${id}"></div>
+  </div>`;
+}
+
+async function toggleSubtaskPanel(id) {
+  const panel = document.getElementById(`stp-${id}`);
+  const arrow = document.getElementById(`sta-${id}`);
+  if (!panel) return;
+  const isOpen = panel.style.display === 'block';
+  if (isOpen) {
+    panel.style.display = 'none';
+    if (arrow) arrow.classList.remove('open');
+    return;
+  }
+  if (!subtaskData[id]) {
+    panel.style.display = 'block';
+    panel.innerHTML = '<div class="subtask-empty">読み込み中...</div>';
+    try {
+      const res = await fetch(`/api/notion?path=blocks/${id}/children`);
+      const data = await res.json();
+      subtaskData[id] = (data.results || []).filter(b => b.type === 'to_do');
+    } catch(e) {
+      panel.innerHTML = '<div class="subtask-empty" style="color:var(--red)">取得エラー</div>';
+      return;
+    }
+  }
+  panel.style.display = 'block';
+  if (arrow) arrow.classList.add('open');
+  renderSubtaskPanel(id);
+  updateSubtaskProgress(id);
+}
+
+function renderSubtaskPanel(id) {
+  const panel = document.getElementById(`stp-${id}`);
+  if (!panel) return;
+  const blocks = subtaskData[id] || [];
+  const listHtml = blocks.length
+    ? blocks.map(b => {
+        const text = b.to_do.rich_text.map(r => r.plain_text).join('') || '';
+        const checked = b.to_do.checked;
+        return `<div class="subtask-item">
+          <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
+            onchange="checkSubtask('${b.id}',this.checked,'${id}')">
+          <span class="subtask-text ${checked?'checked':''}">${text}</span>
+          <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
+        </div>`;
+      }).join('')
+    : '<div class="subtask-empty">小タスクなし</div>';
+  panel.innerHTML = `<div>${listHtml}</div>
+    <div class="subtask-add">
+      <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..."
+        onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();addSubtask('${id}')}">
+      <button class="subtask-add-btn" onclick="addSubtask('${id}')">＋</button>
+    </div>`;
+}
+
+function updateSubtaskProgress(id) {
+  const blocks = subtaskData[id];
+  if (!blocks?.length) {
+    const countEl = document.getElementById(`stc-${id}`);
+    const barEl   = document.getElementById(`stpb-${id}`);
+    if (countEl) countEl.textContent = '';
+    if (barEl)   barEl.style.display = 'none';
+    return;
+  }
+  const total = blocks.length;
+  const done  = blocks.filter(b => b.to_do.checked).length;
+  const pct   = Math.round(done / total * 100);
+  const countEl = document.getElementById(`stc-${id}`);
+  const barEl   = document.getElementById(`stpb-${id}`);
+  const fillEl  = document.getElementById(`stf-${id}`);
+  if (countEl) countEl.textContent = `${done}/${total}`;
+  if (barEl)   barEl.style.display = '';
+  if (fillEl)  fillEl.style.width = pct + '%';
+}
+
+async function checkSubtask(blockId, checked, taskId) {
+  if (subtaskData[taskId]) {
+    const b = subtaskData[taskId].find(b => b.id === blockId);
+    if (b) b.to_do.checked = checked;
+  }
+  renderSubtaskPanel(taskId);
+  updateSubtaskProgress(taskId);
+  fetch(`/api/notion?path=blocks/${blockId}`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({to_do:{checked}}),
+  }).catch(console.error);
+}
+
+async function addSubtask(taskId) {
+  const input = document.getElementById(`sti-${taskId}`);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const tempId = 'tmp-' + Date.now();
+  if (!subtaskData[taskId]) subtaskData[taskId] = [];
+  subtaskData[taskId].push({ id: tempId, type:'to_do', to_do:{ rich_text:[{plain_text:text}], checked:false } });
+  renderSubtaskPanel(taskId);
+  updateSubtaskProgress(taskId);
+  try {
+    const res = await fetch(`/api/notion?path=blocks/${taskId}/children`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ children:[{ type:'to_do', to_do:{ rich_text:[{type:'text',text:{content:text}}], checked:false } }] }),
+    });
+    const data = await res.json();
+    const real = data.results?.[0];
+    if (real && subtaskData[taskId]) {
+      const idx = subtaskData[taskId].findIndex(b => b.id === tempId);
+      if (idx >= 0) subtaskData[taskId][idx] = real;
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function deleteSubtask(blockId, taskId) {
+  if (subtaskData[taskId]) {
+    subtaskData[taskId] = subtaskData[taskId].filter(b => b.id !== blockId);
+  }
+  renderSubtaskPanel(taskId);
+  updateSubtaskProgress(taskId);
+  fetch(`/api/notion?path=blocks/${blockId}`, { method:'DELETE' }).catch(console.error);
+}
+
 // ===== ページ切替 =====
 let currentPage = 'home';
 function showPage(page) {
@@ -3088,6 +3256,7 @@ function renderGtdCard(task) {
         </div>
         ${bearBtn}
       </div>
+      ${subtaskSectionHtml(id)}
     </div>
   </div>`;
 }
