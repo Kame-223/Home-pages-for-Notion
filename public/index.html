@@ -448,7 +448,7 @@ body::before {
 .card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
 .card-group-header.area-other    { color: var(--text-dim); background: transparent; }
 /* CHANGEボタン */
-.link-pills-area { position: absolute; bottom: 11px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; pointer-events: none; }
+.link-pills-area { position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; pointer-events: none; }
 .link-pill { pointer-events: all; }
 .link-pill {
   display: inline-block; padding: 6px 74px; border-radius: 99px;
@@ -2267,15 +2267,17 @@ function renderCard(task, mode='today') {
           <button class="btn-pin-big ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'取り消し':'今日する'}</button>
         </div>
       </div>
-      <div class="task-bottom">
-        <div class="time-wrap">
-          <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-          <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
-          <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+      <div style="position:relative">
+        <div class="task-bottom">
+          <div class="time-wrap">
+            <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+            <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
+            <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+          </div>
+          ${subtaskToggleHtml(id)}
         </div>
-        ${subtaskToggleHtml(id)}
+        ${linkPillsHtml}
       </div>
-      ${linkPillsHtml}
       ${subtaskSectionHtml(id)}
       </div>
     </div>`;
@@ -2298,23 +2300,25 @@ function renderCard(task, mode='today') {
         </div>
       </div>
     </div>
-    <div class="task-bottom" style="position:relative">
-      <div class="time-wrap">
-        <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-        <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
-        <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-      </div>
-      <div style="position:relative">
-        <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;width:60px;padding:0;font-size:12px;border-radius:5px;text-align:center">${jikantaiLabel}</button>
-        <div class="time-dropdown" id="tdd-${id}">
-          <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
-          <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
-          <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
+    <div style="position:relative">
+      <div class="task-bottom" style="position:relative">
+        <div class="time-wrap">
+          <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+          <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
+          <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
+        <div style="position:relative">
+          <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;width:60px;padding:0;font-size:12px;border-radius:5px;text-align:center">${jikantaiLabel}</button>
+          <div class="time-dropdown" id="tdd-${id}">
+            <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
+            <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
+            <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
+          </div>
+        </div>
+        ${subtaskToggleHtml(id)}
       </div>
-      ${subtaskToggleHtml(id)}
+      ${linkPillsHtml}
     </div>
-    ${linkPillsHtml}
     ${subtaskSectionHtml(id)}
     </div>
   </div>`;
@@ -3340,15 +3344,17 @@ function renderGtdCard(task) {
           </div>
         </div>
       </div>
-      <div class="task-bottom" style="position:relative">
-        <div class="time-wrap">
-          <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-          <span class="time-val" id="gtv-${id}">${timeSteps[s.timeIdx]}</span>
-          <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+      <div style="position:relative">
+        <div class="task-bottom" style="position:relative">
+          <div class="time-wrap">
+            <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
+            <span class="time-val" id="gtv-${id}">${timeSteps[s.timeIdx]}</span>
+            <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
+          </div>
+          ${subtaskToggleHtml(id)}
         </div>
-        ${subtaskToggleHtml(id)}
+        ${bearBtn}
       </div>
-      ${bearBtn}
       ${subtaskSectionHtml(id)}
     </div>
   </div>`;
