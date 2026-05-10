@@ -2647,6 +2647,7 @@ function toggleDone(id) {
       setTimeout(() => renderAll(), 1400);
     }
   });
+  if (!isDone) setTimeout(() => renderAll(), 0);
   document.querySelectorAll(`#tt-${id}`).forEach(el=>el.classList.toggle('done',isDone));
   document.querySelectorAll(`#done-${id}`).forEach(el=>{
     el.textContent = isDone?'取り消し':'完了';
