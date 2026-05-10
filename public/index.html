@@ -1079,10 +1079,10 @@ body::before {
 .subtask-checkbox { width: 14px; height: 14px; accent-color: var(--green); flex-shrink: 0; cursor: pointer; margin-top: 2px; }
 .subtask-text { font-size: 11px; color: var(--text); line-height: 1.5; flex: 1; }
 .subtask-text.checked { text-decoration: line-through; color: var(--text-dim); }
-.subtask-order-btns { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.subtask-order-btns { display: flex; flex-direction: row; gap: 3px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .subtask-item:hover .subtask-order-btns { opacity: 1; }
-.subtask-move-btn { background: none; border: none; cursor: pointer; font-size: 9px; color: var(--text-dim); padding: 0; line-height: 1.2; transition: color .1s; }
-.subtask-move-btn:hover { color: var(--text); }
+.subtask-move-btn { background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-dim); padding: 2px 7px; line-height: 1.2; transition: all .1s; }
+.subtask-move-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
 .subtask-move-btn:disabled { opacity: 0.2; cursor: default; pointer-events: none; }
 .subtask-del { font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; padding: 0; opacity: 0; transition: opacity .15s; flex-shrink: 0; line-height: 1; }
 .subtask-item:hover .subtask-del { opacity: 1; }
@@ -3117,8 +3117,8 @@ function renderSubtaskPanel(id) {
             onchange="checkSubtask('${b.id}',this.checked,'${id}')">
           <span class="subtask-text ${checked?'checked':''}">${text}</span>
           <div class="subtask-order-btns">
-            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>▲</button>
-            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▼</button>
+            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>◀</button>
+            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▶</button>
           </div>
           <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
         </div>`;
