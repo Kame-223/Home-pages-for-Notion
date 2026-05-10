@@ -2716,33 +2716,50 @@ function toggleEditChip(el, groupId, multi) {
   } else {
     el.classList.toggle('active');
   }
+  const nowActive = el.classList.contains('active');
+
+  if (nowActive) {
+    if (groupId === 'edit-subject') {
+      // SUBJECT選択 → AREAを強制的に課題に
+      document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('#edit-area .edit-chip[data-val="課題"]')?.classList.add('active');
+    }
+    if (groupId === 'edit-ela') {
+      // ELA SUBTAG選択 → AREAを課題・SUBJECTをELAに強制
+      document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('#edit-area .edit-chip[data-val="課題"]')?.classList.add('active');
+      document.querySelectorAll('#edit-subject .edit-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('#edit-subject .edit-chip[data-val="ELA"]')?.classList.add('active');
+    }
+  }
+
+  if (groupId === 'edit-area') {
+    // AREA変更 → 以下をリセット
+    const newArea = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
+    if (newArea !== '課題') {
+      document.querySelectorAll('#edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
+    }
+  }
+
   updateEditChipCascade();
 }
 
 function updateEditChipCascade() {
-  const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
-  const isKadai = area === '課題';
-
+  const area    = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
+  const subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val;
   const subjectEl = document.getElementById('edit-subject');
-  const elaEl = document.getElementById('edit-ela');
+  const elaEl     = document.getElementById('edit-ela');
 
-  if (!isKadai) {
-    subjectEl.classList.add('disabled');
-    elaEl.classList.add('disabled');
+  const subjectEnabled = area === '課題';
+  subjectEl.classList.toggle('disabled', !subjectEnabled);
+  if (!subjectEnabled) {
     subjectEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
     elaEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
-    return;
   }
-  subjectEl.classList.remove('disabled');
 
-  const subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val;
-  const isEla = subject === 'ELA';
-  if (!isEla) {
-    elaEl.classList.add('disabled');
-    elaEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
-  } else {
-    elaEl.classList.remove('disabled');
-  }
+  const elaEnabled = area === '課題' && subject === 'ELA';
+  elaEl.classList.toggle('disabled', !elaEnabled);
+  if (!elaEnabled) elaEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
 }
 
 async function saveEditModal() {
