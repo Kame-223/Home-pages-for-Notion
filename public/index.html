@@ -431,14 +431,31 @@ body::before {
 .task-card.area-icu      { border-left-color: rgba(255,255,255,0.55); }
 .task-card.area-canada   { border-left-color: var(--purple); }
 .card-group { margin-bottom: 36px; }
-/* プロパティ編集ボタン（左上） */
-.btn-prop-edit {
-  background: none; border: 0.5px solid transparent; cursor: pointer;
-  font-size: 11px; opacity: 0.35; transition: all .15s;
-  padding: 2px 5px; border-radius: 5px; color: var(--text-sub);
-  line-height: 1; flex-shrink: 0;
+.card-group-header {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  padding: 5px 8px; margin-bottom: 6px; border-radius: 4px;
+  display: flex; align-items: center; gap: 7px;
 }
-.btn-prop-edit:hover { opacity: 1; border-color: var(--border2); background: rgba(255,255,255,0.05); }
+.card-group-header::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
+  background: currentColor; opacity: 0.85;
+}
+.card-group-header.area-kadai    { color: #C45C8A; background: rgba(196,92,138,0.08); }
+.card-group-header.area-personal { color: #C08080; background: rgba(192,128,128,0.08); }
+.card-group-header.area-seikatsu { color: #8BA855; background: rgba(139,168,85,0.08); }
+.card-group-header.area-icu      { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
+.card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
+.card-group-header.area-other    { color: var(--text-dim); background: transparent; }
+/* CHANGEボタン */
+.btn-change-prop {
+  font-size: 10px; padding: 4px 10px; border-radius: 6px;
+  border: 0.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.07); color: var(--text-dim);
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .15s; flex-shrink: 0;
+}
+.btn-change-prop:hover { background: rgba(255,255,255,0.12); color: var(--text); }
 /* タイトル編集 */
 .edit-task-name[contenteditable] { cursor: text; border-bottom: 0.5px solid transparent; transition: border-color .15s; }
 .edit-task-name[contenteditable]:focus { outline: none; border-bottom-color: rgba(127,119,221,0.4); }
@@ -1964,9 +1981,10 @@ function renderNextList() {
   tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
+  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','ICU':'area-icu','カナダ':'area-canada'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
-    let inner = '';
+    let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
     if (area === '課題') {
       const bySubject = {};
       aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
@@ -2064,13 +2082,17 @@ function areaBorderCls(area) {
 
 function groupByArea(tasks, renderFn) {
   const order = ['課題','個人','生活','ICU','カナダ','その他'];
+  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','ICU':'area-icu','カナダ':'area-canada','その他':'area-other'};
   const groups = {};
   tasks.forEach(t => {
     const a = getProp(t,'エリア') || 'その他';
     (groups[a] = groups[a] || []).push(t);
   });
   return order.filter(a => groups[a]?.length).map(a =>
-    `<div class="card-group">${groups[a].map(renderFn).join('')}</div>`
+    `<div class="card-group">
+      <div class="card-group-header ${clsMap[a]}">${a}</div>
+      ${groups[a].map(renderFn).join('')}
+    </div>`
   ).join('');
 }
 
@@ -2158,11 +2180,17 @@ function renderCard(task, mode='today') {
   const elaToShow = (effectiveArea === '課題' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
-  const editBtn = `<button class="btn-prop-edit" onclick="${editCall}">✏</button>`;
   const propTags = [
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
+
+  const hasSubjectOrEla = !!(subjectToShow || elaToShow);
+  const leftBtn = !area
+    ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
+    : !hasSubjectOrEla
+      ? `<button class="btn-change-prop" onclick="${editCall}">CHANGE</button>`
+      : '';
 
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
@@ -2181,7 +2209,7 @@ function renderCard(task, mode='today') {
     return `
     <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
-      <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
+      <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
       <div class="card-body">
         <div class="task-title-box" id="tt-${id}">${title}</div>
@@ -2206,7 +2234,7 @@ function renderCard(task, mode='today') {
   return `
   <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
-    <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
+    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
@@ -2668,8 +2696,14 @@ function openEditModal(id, e) {
   document.querySelectorAll('#edit-ela .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === ela));
 
   const rawDl = getProp(task,'締切日') || '';
-  document.getElementById('edit-deadline-date').value = rawDl ? rawDl.substring(0,10) : '';
-  document.getElementById('edit-deadline-time').value = rawDl.length > 10 ? rawDl.substring(11,16) : '';
+  if (rawDl.length > 10) {
+    const d = new Date(rawDl);
+    document.getElementById('edit-deadline-date').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    document.getElementById('edit-deadline-time').value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  } else {
+    document.getElementById('edit-deadline-date').value = rawDl;
+    document.getElementById('edit-deadline-time').value = '';
+  }
   updateDeadlineDisplay();
   editLinks = [...(taskState[id]?.links || [getProp(task,'作業リンク')].filter(Boolean))];
   renderEditLinks();
@@ -2806,8 +2840,17 @@ async function saveEditModal() {
   const subjects = subject ? [subject] : [];
   const dlDate = document.getElementById('edit-deadline-date').value;
   const dlTime = document.getElementById('edit-deadline-time').value;
-  const dlRaw = dlDate ? (dlTime ? `${dlDate}T${dlTime}:00` : dlDate) : null;
-  const deadline = dlRaw;
+  let deadline = null;
+  if (dlDate && dlTime) {
+    const d = new Date(`${dlDate}T${dlTime}`);
+    const tz = -d.getTimezoneOffset();
+    const sign = tz >= 0 ? '+' : '-';
+    const hh = String(Math.floor(Math.abs(tz)/60)).padStart(2,'0');
+    const mm = String(Math.abs(tz)%60).padStart(2,'0');
+    deadline = `${dlDate}T${dlTime}:00${sign}${hh}:${mm}`;
+  } else if (dlDate) {
+    deadline = dlDate;
+  }
   const links = editLinks.map(l => l.trim()).filter(Boolean);
   const firstLink = links[0] || null;
 
@@ -2989,11 +3032,14 @@ function renderGtdCard(task) {
   const elaToShow = (effectiveAreaG === '課題' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
-  const editBtn = `<button class="btn-prop-edit" onclick="${editCall}">✏</button>`;
   const propTags = [
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
+  const hasSubjectOrElaG = !!(subjectToShow || elaToShow);
+  const leftBtnG = !area
+    ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
+    : !hasSubjectOrElaG ? `<button class="btn-change-prop" onclick="${editCall}">CHANGE</button>` : '';
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
@@ -3015,7 +3061,7 @@ function renderGtdCard(task) {
 
   return `
   <div class="task-card ${areaBorderCls(effectiveAreaG)}" id="gtc-${id}" style="margin-bottom:6px">
-    <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
+    <div class="tag-row">${leftBtnG}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
       <div class="card-body">
         <div class="task-title-box">${title}</div>
