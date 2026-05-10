@@ -1945,8 +1945,10 @@ function deadlineTag(dateStr, isDone, isImportant) {
   else if (diffDays < 14)  label = '1週間後';
   else if (diffDays < 21)  label = '2週間後';
   else if (diffDays < 28)  label = '3週間後';
-  else if (diffDays < 60)  label = '1ヶ月後';
-  else                     label = '2ヶ月後';
+  else if (diffDays < 45)  label = '1ヶ月後';
+  else if (diffDays < 60)  label = '1.5ヶ月後';
+  else if (diffDays < 90)  label = '2ヶ月後';
+  else                     label = '2ヶ月+';
 
   // 時間指定あり → 時刻も表示
   if (hasTime && !isOverdue) {
