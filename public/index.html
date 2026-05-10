@@ -448,12 +448,11 @@ body::before {
 .card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
 .card-group-header.area-other    { color: var(--text-dim); background: transparent; }
 /* CHANGEボタン */
-.link-pills-area { display: flex; justify-content: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.link-pills-area { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; flex: 1; }
 .link-pill {
-  display: inline-flex; align-items: center; height: 29px; padding: 0 39px; border-radius: 99px;
+  display: inline-block; padding: 3px 28px; border-radius: 99px;
   background: transparent; border: 0.5px solid rgba(255,255,255,0.18);
-  text-decoration: none; transition: border-color .15s;
-  cursor: pointer;
+  text-decoration: none; transition: border-color .15s; cursor: pointer;
 }
 .link-pill:hover { border-color: rgba(255,255,255,0.4); }
 .btn-change-prop {
@@ -2273,9 +2272,9 @@ function renderCard(task, mode='today') {
           <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
+        ${linkPillsHtml}
         ${subtaskToggleHtml(id)}
       </div>
-      ${linkPillsHtml}
       ${subtaskSectionHtml(id)}
       </div>
     </div>`;
@@ -2312,9 +2311,9 @@ function renderCard(task, mode='today') {
           <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
         </div>
       </div>
+      ${linkPillsHtml}
       ${subtaskToggleHtml(id)}
     </div>
-    ${linkPillsHtml}
     ${subtaskSectionHtml(id)}
     </div>
   </div>`;
@@ -3346,9 +3345,9 @@ function renderGtdCard(task) {
           <span class="time-val" id="gtv-${id}">${timeSteps[s.timeIdx]}</span>
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
+        ${bearBtn}
         ${subtaskToggleHtml(id)}
       </div>
-      ${bearBtn}
       ${subtaskSectionHtml(id)}
     </div>
   </div>`;
