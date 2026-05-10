@@ -3278,6 +3278,7 @@ function buildDeadlineStr(dlDate, dlTime) {
 function openModal(type) {
   document.getElementById(`modal-${type}`).classList.add('open');
   setTimeout(()=>document.getElementById(`${type}-input`)?.focus(),50);
+  if (type === 'inbox') updateInboxChipCascade();
 }
 function closeModal(type) {
   document.getElementById(`modal-${type}`).classList.remove('open');
@@ -3390,6 +3391,17 @@ function toggleInboxChip(el, groupId, multi) {
       document.querySelectorAll('#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
     }
   }
+  updateInboxChipCascade();
+}
+
+function updateInboxChipCascade() {
+  const area    = document.querySelector('#inbox-area .edit-chip.active')?.dataset.val;
+  const subject = document.querySelector('#inbox-subject .edit-chip.active')?.dataset.val;
+  const subjectEl = document.getElementById('inbox-subject');
+  const elaEl     = document.getElementById('inbox-ela');
+  if (!subjectEl || !elaEl) return;
+  subjectEl.classList.toggle('dimmed', !!area && area !== '課題');
+  elaEl.classList.toggle('dimmed', (!!area && area !== '課題') || (!!subject && subject !== 'ELA'));
 }
 
 // ===== キーボードショートカット =====
