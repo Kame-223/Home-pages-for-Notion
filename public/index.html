@@ -1950,11 +1950,11 @@ function deadlineTag(dateStr, isDone, isImportant) {
   else if (diffDays < 90)  label = '2ヶ月後';
   else                     label = '2ヶ月+';
 
-  // 時間指定あり → 時刻も表示
-  if (hasTime && !isOverdue) {
+  // 今日かつ時間指定あり → 時刻だけ追加
+  if (diffDays === 0 && hasTime && !isOverdue) {
     const hh = String(deadline.getHours()).padStart(2,'0');
     const mi = String(deadline.getMinutes()).padStart(2,'0');
-    label = `${label} ${mm}/${dd} ${hh}:${mi}`;
+    label = `今日 ${hh}:${mi}`;
   }
 
   // 色（日数ベース）
