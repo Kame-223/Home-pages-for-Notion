@@ -448,15 +448,14 @@ body::before {
 .card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
 .card-group-header.area-other    { color: var(--text-dim); background: transparent; }
 /* CHANGEボタン */
-.link-pills { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.link-pills-area { display: flex; justify-content: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .link-pill {
-  display: inline-block; padding: 2px 10px; border-radius: 99px;
-  background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.1);
-  font-size: 10px; color: var(--text-dim); text-decoration: none;
-  max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  transition: all .15s; font-family: 'JetBrains Mono', monospace;
+  display: inline-block; padding: 3px 28px; border-radius: 99px;
+  background: transparent; border: 0.5px solid rgba(255,255,255,0.18);
+  text-decoration: none; transition: border-color .15s;
+  cursor: pointer;
 }
-.link-pill:hover { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.22); }
+.link-pill:hover { border-color: rgba(255,255,255,0.4); }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -2250,11 +2249,10 @@ function renderCard(task, mode='today') {
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
   const links = s.links;
-  const linkBtnHtml = links.length
-    ? `<div class="link-pills">${links.map(u => {
-        let d = ''; try { d = new URL(u).hostname.replace(/^www\./,''); } catch { d = u.substring(0,20); }
-        return `<a class="link-pill" href="${u}" target="_blank">${d}</a>`;
-      }).join('')}</div>`
+  const linkPillsHtml = links.length
+    ? `<div class="link-pills-area">${links.map(u =>
+        `<a class="link-pill" href="${u}" target="_blank" title="${u}"></a>`
+      ).join('')}</div>`
     : '';
 
   if (mode === 'leftover' || mode === 'next') {
@@ -2277,6 +2275,7 @@ function renderCard(task, mode='today') {
         </div>
         ${subtaskToggleHtml(id)}
       </div>
+      ${linkPillsHtml}
       ${subtaskSectionHtml(id)}
       </div>
     </div>`;
@@ -2313,9 +2312,9 @@ function renderCard(task, mode='today') {
           <div class="time-opt" onclick="setJikantai('${id}','夜')">🌙 夜</div>
         </div>
       </div>
-      ${linkBtnHtml}
       ${subtaskToggleHtml(id)}
     </div>
+    ${linkPillsHtml}
     ${subtaskSectionHtml(id)}
     </div>
   </div>`;
@@ -3311,10 +3310,9 @@ function renderGtdCard(task) {
 
   const links = s.links;
   const bearBtn = links.length
-    ? `<div class="link-pills">${links.map(u => {
-        let d = ''; try { d = new URL(u).hostname.replace(/^www\./,''); } catch { d = u.substring(0,20); }
-        return `<a class="link-pill" href="${u}" target="_blank">${d}</a>`;
-      }).join('')}</div>`
+    ? `<div class="link-pills-area">${links.map(u =>
+        `<a class="link-pill" href="${u}" target="_blank" title="${u}"></a>`
+      ).join('')}</div>`
     : '';
 
   const gtdLabel = gtd || '📥 INBOX';
@@ -3348,9 +3346,9 @@ function renderGtdCard(task) {
           <span class="time-val" id="gtv-${id}">${timeSteps[s.timeIdx]}</span>
           <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
         </div>
-        ${bearBtn}
         ${subtaskToggleHtml(id)}
       </div>
+      ${bearBtn}
       ${subtaskSectionHtml(id)}
     </div>
   </div>`;
