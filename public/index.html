@@ -526,10 +526,10 @@ body::before {
 .tag.clickable { cursor: pointer; transition: opacity .15s; }
 .tag.clickable:hover { opacity: 0.75; }
 .btn-set-prop {
-  font-size: 9px; padding: 2px 8px; border-radius: 4px;
+  font-size: 9px; padding: 1px 8px; border-radius: 4px;
   background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.12);
   cursor: pointer; color: var(--text-dim); font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s;
+  transition: all .15s; letter-spacing: 0.05em;
 }
 .btn-set-prop:hover { background: rgba(255,255,255,0.08); color: var(--text); }
 .task-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
@@ -2187,7 +2187,7 @@ function renderCard(task, mode='today') {
 
   const hasSubjectOrEla = !!(subjectToShow || elaToShow);
   const leftBtn = !area
-    ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
+    ? `<button class="btn-set-prop" onclick="${editCall}">PROPERTY</button>`
     : !hasSubjectOrEla
       ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>`
       : '';
@@ -3040,7 +3040,7 @@ function renderGtdCard(task) {
   ].filter(Boolean).join('');
   const hasSubjectOrElaG = !!(subjectToShow || elaToShow);
   const leftBtnG = !area
-    ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
+    ? `<button class="btn-set-prop" onclick="${editCall}">PROPERTY</button>`
     : !hasSubjectOrElaG ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>` : '';
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
