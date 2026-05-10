@@ -2745,21 +2745,9 @@ function toggleEditChip(el, groupId, multi) {
 }
 
 function updateEditChipCascade() {
-  const area    = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
-  const subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val;
-  const subjectEl = document.getElementById('edit-subject');
-  const elaEl     = document.getElementById('edit-ela');
-
-  const subjectEnabled = area === '課題';
-  subjectEl.classList.toggle('disabled', !subjectEnabled);
-  if (!subjectEnabled) {
-    subjectEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
-    elaEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
-  }
-
-  const elaEnabled = area === '課題' && subject === 'ELA';
-  elaEl.classList.toggle('disabled', !elaEnabled);
-  if (!elaEnabled) elaEl.querySelectorAll('.edit-chip').forEach(c => c.classList.remove('active'));
+  // 全て常時選択可能 - disabled制限なし
+  document.getElementById('edit-subject').classList.remove('disabled');
+  document.getElementById('edit-ela').classList.remove('disabled');
 }
 
 async function saveEditModal() {
