@@ -3088,7 +3088,6 @@ function renderSubtaskPanel(id) {
     <div class="subtask-add">
       <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..."
         onkeydown="if(event.isComposing)return;if(event.key==='Enter'){event.preventDefault();event.shiftKey?addSubtask('${id}',false):addSubtask('${id}',true)}">
-      <button class="subtask-add-btn" onclick="addSubtask('${id}',false)">＋</button>
     </div>`;
 }
 
