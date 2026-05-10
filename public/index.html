@@ -1198,8 +1198,9 @@ body::before {
 .subtask-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
 .subtask-item:last-child { border-bottom: none; }
 .subtask-checkbox { width: 14px; height: 14px; accent-color: var(--green); flex-shrink: 0; cursor: pointer; margin-top: 2px; }
-.subtask-text { font-size: 11px; color: var(--text); line-height: 1.5; flex: 1; }
+.subtask-text { font-size: 11px; color: var(--text); line-height: 1.5; flex: 1; border-radius: 4px; padding: 1px 3px; outline: none; }
 .subtask-text.checked { text-decoration: line-through; color: var(--text-dim); }
+.subtask-text[contenteditable="true"]:focus { background: rgba(255,255,255,0.06); box-shadow: 0 0 0 1px rgba(127,119,221,0.4); }
 .subtask-order-btns { display: flex; flex-direction: row; gap: 3px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .subtask-item:hover .subtask-order-btns { opacity: 1; }
 .subtask-move-btn { background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-dim); padding: 2px 7px; line-height: 1.2; transition: all .1s; }
@@ -3495,7 +3496,11 @@ function renderSubtaskPanel(id) {
         return `<div class="subtask-item">
           <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
             onchange="checkSubtask('${b.id}',this.checked,'${id}')">
-          <span class="subtask-text ${checked?'checked':''}">${text}</span>
+          <span class="subtask-text ${checked?'checked':''}" contenteditable="${checked?'false':'true'}"
+            onblur="editSubtask('${b.id}',this.textContent.trim(),'${id}')"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){this.textContent='${text.replace(/'/g,"\\'")}';this.blur()}"
+            onclick="event.stopPropagation()"
+          >${text}</span>
           <div class="subtask-order-btns">
             <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>▲</button>
             <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▼</button>
@@ -3570,6 +3575,22 @@ async function addSubtask(taskId, keepFocus = false) {
       if (idx >= 0) subtaskData[taskId][idx] = real;
     }
   } catch(e) { console.error(e); }
+}
+
+async function editSubtask(blockId, newText, taskId) {
+  const blocks = subtaskData[taskId];
+  if (!blocks) return;
+  const block = blocks.find(b => b.id === blockId);
+  if (!block) return;
+  const oldText = block.to_do.rich_text.map(r => r.plain_text).join('');
+  if (!newText || newText === oldText) return;
+  block.to_do.rich_text = [{type:'text', text:{content:newText}, plain_text:newText}];
+  updateSubtaskProgress(taskId);
+  fetch(`/api/notion?path=blocks/${blockId}`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({to_do:{rich_text:[{type:'text',text:{content:newText}}]}}),
+  }).catch(console.error);
 }
 
 async function deleteSubtask(blockId, taskId) {
