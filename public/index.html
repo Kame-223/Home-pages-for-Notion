@@ -2791,14 +2791,15 @@ function celebrate() {
     const color = colors[Math.floor(Math.random() * colors.length)];
     confetti += `<div class="confetti-piece" style="left:${x}%;top:10%;background:${color};animation-delay:${delay}s"></div>`;
   }
-  overlay.innerHTML = `${confetti}<div class="celeb-box">
+  overlay.innerHTML = `${confetti}<div class="celeb-box" onclick="event.stopPropagation()">
     <div class="celeb-emoji">🎉</div>
     <div class="celeb-title">今日のタスク全部終わった！</div>
     <div class="celeb-sub">よくやった、本当にお疲れ様！</div>
     <button class="celeb-btn" onclick="goToFurikaeri()">📔 振り返りを書く</button>
   </div>`;
+  overlay.addEventListener('click', () => overlay.remove());
   document.body.appendChild(overlay);
-  setTimeout(() => overlay.remove(), 3500);
+  setTimeout(() => overlay.remove(), 30000);
 }
 
 let toastQueue = [];
