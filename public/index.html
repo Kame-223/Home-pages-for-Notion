@@ -1928,47 +1928,41 @@ function deadlineTag(dateStr, isDone, isImportant) {
   const dd = String(deadline.getDate()).padStart(2,'0');
   const dow = DOW[deadline.getDay()];
 
-  if (!hasTime) {
-    // 時間なし → 日付だけ表示。残り時間は計算しない
-    const dateLabel = `${mm}/${dd}(${dow})`;
-    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dlLocal = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
-    const diffDays = Math.round((dlLocal - todayLocal) / 86400000);
-    if (diffDays < 0)  return {label: isImportant ? '⚠ 期限切れ' : `期限切れ ${dateLabel}`, cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
-    if (diffDays === 0) return {label: `今日 ${dateLabel}`, cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
-    if (diffDays === 1) return {label: `明日 ${dateLabel}`, cls: 'tag-amber'};
-    if (diffDays <= 3)  return {label: `${diffDays}日後 ${dateLabel}`, cls: 'tag-amber'};
-    if (diffDays <= 7)  return {label: `${diffDays}日後 ${dateLabel}`, cls: 'tag-blue'};
-    return {label: dateLabel, cls: 'tag-gray'};
+  // 日数差（日付ベース）
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dlLocal    = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
+  const diffDays   = Math.round((dlLocal - todayLocal) / 86400000);
+
+  // 時間ありの場合は期限切れを正確に判定
+  const isOverdue = hasTime ? (deadline < now) : (diffDays < 0);
+
+  // ラベル（日数に応じた抽象化）
+  let label;
+  if (isOverdue)         label = isImportant ? '⚠ 期限切れ！' : '期限切れ';
+  else if (diffDays === 0) label = '今日';
+  else if (diffDays === 1) label = '明日';
+  else if (diffDays <= 7)  label = `${diffDays}日後`;
+  else if (diffDays < 14)  label = '1週間後';
+  else if (diffDays < 21)  label = '2週間後';
+  else if (diffDays < 28)  label = '3週間後';
+  else if (diffDays < 60)  label = '1ヶ月後';
+  else                     label = '2ヶ月後';
+
+  // 時間指定あり → 時刻も表示
+  if (hasTime && !isOverdue) {
+    const hh = String(deadline.getHours()).padStart(2,'0');
+    const mi = String(deadline.getMinutes()).padStart(2,'0');
+    label = `${label} ${mm}/${dd} ${hh}:${mi}`;
   }
 
-  // 時間あり → 正確な残り時間を計算
-  const diffMs = deadline - now;
-  const hh = String(deadline.getHours()).padStart(2,'0');
-  const mi = String(deadline.getMinutes()).padStart(2,'0');
-  const dlLabel = `${mm}/${dd}(${dow}) ${hh}:${mi}`;
-
-  if (diffMs < 0) return {label: isImportant ? `⚠ 期限切れ！ ${dlLabel}` : `期限切れ ${dlLabel}`, cls: isImportant ? 'tag-imp-dl' : 'tag-red'};
-
-  const remSecs = Math.floor(diffMs / 1000);
-  const remDays = Math.floor(remSecs / 86400);
-  const remH    = Math.floor((remSecs % 86400) / 3600);
-  const remM    = Math.floor((remSecs % 3600) / 60);
-  const remS    = remSecs % 60;
-
-  let countdown;
-  if (remDays > 0)     countdown = remH > 0   ? `後${remDays}日${remH}時間` : `後${remDays}日`;
-  else if (remH > 0)   countdown = remM > 0   ? `後${remH}時間${remM}分` : `後${remH}時間`;
-  else if (remM > 0)   countdown = `後${remM}分${remS}秒`;
-  else                 countdown = `後${remS}秒`;
-
+  // 色（日数ベース）
   const cls = isImportant ? 'tag-imp-dl'
-    : remSecs < 3600   ? 'tag-red'
-    : remSecs < 86400  ? 'tag-amber'
-    : remSecs < 259200 ? 'tag-blue'
+    : (isOverdue || diffDays <= 1) ? 'tag-red'
+    : diffDays <= 3 ? 'tag-amber'
+    : diffDays <= 7 ? 'tag-blue'
     : 'tag-gray';
 
-  return {label: `${dlLabel} ${countdown}`, cls};
+  return { label, cls };
 }
 
 function areaTagCls(area) {
