@@ -1079,6 +1079,11 @@ body::before {
 .subtask-checkbox { width: 14px; height: 14px; accent-color: var(--green); flex-shrink: 0; cursor: pointer; margin-top: 2px; }
 .subtask-text { font-size: 11px; color: var(--text); line-height: 1.5; flex: 1; }
 .subtask-text.checked { text-decoration: line-through; color: var(--text-dim); }
+.subtask-order-btns { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.subtask-item:hover .subtask-order-btns { opacity: 1; }
+.subtask-move-btn { background: none; border: none; cursor: pointer; font-size: 9px; color: var(--text-dim); padding: 0; line-height: 1.2; transition: color .1s; }
+.subtask-move-btn:hover { color: var(--text); }
+.subtask-move-btn:disabled { opacity: 0.2; cursor: default; pointer-events: none; }
 .subtask-del { font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; padding: 0; opacity: 0; transition: opacity .15s; flex-shrink: 0; line-height: 1; }
 .subtask-item:hover .subtask-del { opacity: 1; }
 .subtask-add { display: flex; gap: 6px; margin-top: 8px; }
@@ -3040,6 +3045,36 @@ function subtaskSectionHtml(id) {
   return `<div class="subtask-panel" id="stp-${id}"></div>`;
 }
 
+function getSubtaskOrder(taskId) {
+  try { return JSON.parse(localStorage.getItem('subtaskOrder') || '{}')[taskId] || null; } catch { return null; }
+}
+function saveSubtaskOrder(taskId) {
+  try {
+    const orders = JSON.parse(localStorage.getItem('subtaskOrder') || '{}');
+    orders[taskId] = (subtaskData[taskId] || []).map(b => b.id);
+    localStorage.setItem('subtaskOrder', JSON.stringify(orders));
+  } catch {}
+}
+function applySubtaskOrder(taskId) {
+  const order = getSubtaskOrder(taskId);
+  if (!order || !subtaskData[taskId]) return;
+  const blocks = subtaskData[taskId];
+  const ordered = order.map(id => blocks.find(b => b.id === id)).filter(Boolean);
+  blocks.forEach(b => { if (!ordered.find(o => o.id === b.id)) ordered.push(b); });
+  subtaskData[taskId] = ordered;
+}
+function moveSubtask(taskId, blockId, direction) {
+  const blocks = subtaskData[taskId];
+  if (!blocks) return;
+  const idx = blocks.findIndex(b => b.id === blockId);
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= blocks.length) return;
+  [blocks[idx], blocks[newIdx]] = [blocks[newIdx], blocks[idx]];
+  saveSubtaskOrder(taskId);
+  renderSubtaskPanel(taskId);
+  updateSubtaskProgress(taskId);
+}
+
 async function toggleSubtaskPanel(id) {
   const panel = document.getElementById(`stp-${id}`);
   const arrow = document.getElementById(`sta-${id}`);
@@ -3057,6 +3092,7 @@ async function toggleSubtaskPanel(id) {
       const res = await fetch(`/api/notion?path=blocks/${id}/children`);
       const data = await res.json();
       subtaskData[id] = (data.results || []).filter(b => b.type === 'to_do');
+      applySubtaskOrder(id);
     } catch(e) {
       panel.innerHTML = '<div class="subtask-empty" style="color:var(--red)">取得エラー</div>';
       return;
@@ -3073,13 +3109,17 @@ function renderSubtaskPanel(id) {
   if (!panel) return;
   const blocks = subtaskData[id] || [];
   const listHtml = blocks.length
-    ? blocks.map(b => {
+    ? blocks.map((b, i) => {
         const text = b.to_do.rich_text.map(r => r.plain_text).join('') || '';
         const checked = b.to_do.checked;
         return `<div class="subtask-item">
           <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
             onchange="checkSubtask('${b.id}',this.checked,'${id}')">
           <span class="subtask-text ${checked?'checked':''}">${text}</span>
+          <div class="subtask-order-btns">
+            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>▲</button>
+            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▼</button>
+          </div>
           <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
         </div>`;
       }).join('')
