@@ -432,11 +432,22 @@ body::before {
 .task-card.area-canada   { border-left-color: var(--purple); }
 .card-group { margin-bottom: 14px; }
 .card-group-header {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
-  color: var(--text-dim); padding: 6px 4px 4px;
-  border-bottom: 0.5px solid var(--border);
-  margin-bottom: 6px; text-transform: uppercase;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  padding: 5px 8px; margin-bottom: 6px;
+  border-radius: 4px;
+  display: flex; align-items: center; gap: 7px;
 }
+.card-group-header::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
+  background: currentColor; opacity: 0.85;
+}
+.card-group-header.area-kadai    { color: #C45C8A; background: rgba(196,92,138,0.08); }
+.card-group-header.area-personal { color: #C08080; background: rgba(192,128,128,0.08); }
+.card-group-header.area-seikatsu { color: #8BA855; background: rgba(139,168,85,0.08); }
+.card-group-header.area-icu      { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
+.card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
+.card-group-header.area-other    { color: var(--text-dim); background: transparent; }
 .task-card.done { opacity: 0.4; }
 .task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
 .task-card.pinned { border-color: rgba(127,119,221,0.4); }
@@ -2002,6 +2013,7 @@ function areaBorderCls(area) {
 
 function groupByArea(tasks, renderFn) {
   const order = ['課題','個人','生活','ICU','カナダ','その他'];
+  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','ICU':'area-icu','カナダ':'area-canada','その他':'area-other'};
   const groups = {};
   tasks.forEach(t => {
     const a = getProp(t,'エリア') || 'その他';
@@ -2009,7 +2021,7 @@ function groupByArea(tasks, renderFn) {
   });
   return order.filter(a => groups[a]?.length).map(a =>
     `<div class="card-group">
-      <div class="card-group-header">${a}</div>
+      <div class="card-group-header ${clsMap[a] || 'area-other'}">${a}</div>
       ${groups[a].map(renderFn).join('')}
     </div>`
   ).join('');
