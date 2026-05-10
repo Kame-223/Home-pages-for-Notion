@@ -1936,25 +1936,36 @@ function deadlineTag(dateStr, isDone, isImportant) {
   // 時間ありの場合は期限切れを正確に判定
   const isOverdue = hasTime ? (deadline < now) : (diffDays < 0);
 
-  // ラベル（日数に応じた抽象化）
+  // 期限切れのラベル（何日前かを表示）
   let label;
-  if (isOverdue)         label = isImportant ? '⚠ 期限切れ！' : '期限切れ';
-  else if (diffDays === 0) label = '今日';
-  else if (diffDays === 1) label = '明日';
-  else if (diffDays <= 7)  label = `${diffDays}日後`;
-  else if (diffDays < 14)  label = '1週間後';
-  else if (diffDays < 21)  label = '2週間後';
-  else if (diffDays < 28)  label = '3週間後';
-  else if (diffDays < 45)  label = '1ヶ月後';
-  else if (diffDays < 60)  label = '1.5ヶ月後';
-  else if (diffDays < 90)  label = '2ヶ月後';
-  else                     label = '2ヶ月+';
+  if (isOverdue) {
+    const pastDays = hasTime
+      ? Math.floor((now - deadline) / 86400000)
+      : -diffDays;
+    let pastLabel;
+    if (pastDays === 0)       pastLabel = '今日';
+    else if (pastDays === 1)  pastLabel = '昨日';
+    else if (pastDays <= 7)   pastLabel = `${pastDays}日前`;
+    else if (pastDays < 14)   pastLabel = '1週間前';
+    else if (pastDays < 21)   pastLabel = '2週間前';
+    else                      pastLabel = '2週間+';
+    label = isImportant ? `⚠ 期限切れ (${pastLabel})` : `期限切れ (${pastLabel})`;
+  } else if (diffDays === 0) label = '今日';
+  else if (diffDays === 1)   label = '明日';
+  else if (diffDays <= 7)    label = `${diffDays}日後`;
+  else if (diffDays < 14)    label = '1週間後';
+  else if (diffDays < 21)    label = '2週間後';
+  else if (diffDays < 28)    label = '3週間後';
+  else if (diffDays < 45)    label = '1ヶ月後';
+  else if (diffDays < 60)    label = '1.5ヶ月後';
+  else if (diffDays < 90)    label = '2ヶ月後';
+  else                       label = '2ヶ月+';
 
-  // 今日かつ時間指定あり → 時刻だけ追加
-  if (diffDays === 0 && hasTime && !isOverdue) {
+  // 今日・明日かつ時間指定あり → 時刻を追加
+  if (hasTime && !isOverdue && diffDays <= 1) {
     const hh = String(deadline.getHours()).padStart(2,'0');
     const mi = String(deadline.getMinutes()).padStart(2,'0');
-    label = `今日 ${hh}:${mi}`;
+    label = `${label} ${hh}:${mi}`;
   }
 
   // 色（日数ベース）
