@@ -2270,7 +2270,7 @@ function renderCard(task, mode='today') {
 
   // today / exec mode
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
-  const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰ 時間帯';
+  const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰';
   return `
   <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')">✕</div>
@@ -2292,7 +2292,7 @@ function renderCard(task, mode='today') {
         <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
       </div>
       <div style="position:relative">
-        <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;padding:0 13px;font-size:12px;border-radius:5px">${jikantaiLabel}</button>
+        <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;width:60px;padding:0;font-size:12px;border-radius:5px;text-align:center">${jikantaiLabel}</button>
         <div class="time-dropdown" id="tdd-${id}">
           <div class="time-opt" onclick="setJikantai('${id}','朝')">🌅 朝</div>
           <div class="time-opt" onclick="setJikantai('${id}','昼')">🌞 昼</div>
