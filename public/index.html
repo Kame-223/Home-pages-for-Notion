@@ -1481,6 +1481,17 @@ body::before {
           <input type="time" class="edit-deadline-input" id="inbox-deadline-time">
         </div>
       </div>
+      <div class="edit-field">
+        <span class="edit-field-label">WORK LINKS</span>
+        <div class="edit-links-list" id="inbox-links-list"></div>
+        <button class="edit-add-link-btn" onclick="addInboxLink()">＋ リンクを追加</button>
+      </div>
+      <div class="edit-field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;color:var(--text-sub);font-family:'Noto Sans JP',sans-serif;letter-spacing:0.08em">
+          <input type="checkbox" id="inbox-important" style="accent-color:var(--red);width:15px;height:15px;cursor:pointer">
+          IMPORTANT
+        </label>
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('inbox')">キャンセル</button>
@@ -2947,22 +2958,35 @@ async function addToInbox() {
   const dlDate  = document.getElementById('inbox-deadline-date').value;
   const dlTime  = document.getElementById('inbox-deadline-time').value;
   const deadline = buildDeadlineStr(dlDate, dlTime);
+  const links = inboxLinks.map(l => l.trim()).filter(Boolean);
+  const firstLink = links[0] || null;
+  const isImportant = document.getElementById('inbox-important')?.checked || false;
 
   const props = {
     'タイトル': {title:[{text:{content:title}}]},
     'GTD 種別': {status:{name:'📥 INBOX'}},
   };
-  if (area)     props['エリア']     = {select:{name:area}};
-  if (subject)  props['科目']       = {multi_select:[{name:subject}]};
-  if (ela)      props['ELAサブタグ'] = {select:{name:ela}};
-  if (deadline) props['締切日']      = {date:{start:deadline}};
+  if (area)      props['エリア']     = {select:{name:area}};
+  if (subject)   props['科目']       = {multi_select:[{name:subject}]};
+  if (ela)       props['ELAサブタグ'] = {select:{name:ela}};
+  if (deadline)  props['締切日']      = {date:{start:deadline}};
+  if (firstLink) props['作業リンク']  = {url:firstLink};
 
   try {
-    await notionCreate(DB.tasks, props);
+    const page = await notionCreate(DB.tasks, props);
+    if (page?.id) {
+      taskState[page.id] = { done:false, pinned:false, important:isImportant,
+        timeIdx:1, focusSeconds:0, jikantai:null, link:firstLink, links };
+      saveTaskState();
+    }
     document.getElementById('inbox-input').value = '';
     document.querySelectorAll('#inbox-area .edit-chip,#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
     document.getElementById('inbox-deadline-date').value = '';
     document.getElementById('inbox-deadline-time').value = '';
+    const impEl = document.getElementById('inbox-important');
+    if (impEl) impEl.checked = false;
+    inboxLinks = [];
+    renderInboxLinks();
     document.getElementById('inbox-props').style.display = 'none';
     if (document.getElementById('inbox-prop-toggle-btn')) document.getElementById('inbox-prop-toggle-btn').textContent = '＋ プロパティ';
     closeModal('inbox');
@@ -2970,6 +2994,27 @@ async function addToInbox() {
   } catch(e) { console.error(e); }
   finally { if (btn) btn.disabled = false; }
 }
+
+let inboxLinks = [];
+function renderInboxLinks() {
+  const container = document.getElementById('inbox-links-list');
+  if (!container) return;
+  container.innerHTML = inboxLinks.length
+    ? inboxLinks.map((url, i) => `
+      <div class="edit-link-row">
+        <input class="edit-input" type="url" value="${url}" placeholder="https://..."
+          oninput="inboxLinks[${i}]=this.value">
+        <button class="edit-link-remove" onclick="removeInboxLink(${i})">✕</button>
+      </div>`).join('')
+    : '<div style="font-size:10px;color:var(--text-dim);padding:2px 0">リンクなし</div>';
+}
+function addInboxLink() {
+  inboxLinks.push('');
+  renderInboxLinks();
+  const inputs = document.querySelectorAll('#inbox-links-list input');
+  if (inputs.length) inputs[inputs.length-1].focus();
+}
+function removeInboxLink(i) { inboxLinks.splice(i,1); renderInboxLinks(); }
 
 function toggleInboxProps() {
   const props = document.getElementById('inbox-props');
