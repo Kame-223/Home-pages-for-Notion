@@ -3087,8 +3087,8 @@ function renderSubtaskPanel(id) {
   panel.innerHTML = `<div>${listHtml}</div>
     <div class="subtask-add">
       <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..."
-        onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();addSubtask('${id}')}">
-      <button class="subtask-add-btn" onclick="addSubtask('${id}')">＋</button>
+        onkeydown="if(event.isComposing)return;if(event.key==='Enter'){event.preventDefault();event.shiftKey?addSubtask('${id}',false):addSubtask('${id}',true)}">
+      <button class="subtask-add-btn" onclick="addSubtask('${id}',false)">＋</button>
     </div>`;
 }
 
@@ -3126,7 +3126,7 @@ async function checkSubtask(blockId, checked, taskId) {
   }).catch(console.error);
 }
 
-async function addSubtask(taskId) {
+async function addSubtask(taskId, keepFocus = false) {
   const input = document.getElementById(`sti-${taskId}`);
   if (!input) return;
   const text = input.value.trim();
@@ -3137,6 +3137,7 @@ async function addSubtask(taskId) {
   subtaskData[taskId].push({ id: tempId, type:'to_do', to_do:{ rich_text:[{plain_text:text}], checked:false } });
   renderSubtaskPanel(taskId);
   updateSubtaskProgress(taskId);
+  if (keepFocus) setTimeout(() => document.getElementById(`sti-${taskId}`)?.focus(), 0);
   try {
     const res = await fetch(`/api/notion?path=blocks/${taskId}/children`, {
       method: 'POST',
