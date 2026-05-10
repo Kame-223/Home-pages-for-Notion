@@ -2360,8 +2360,15 @@ function renderCard(task, mode='today') {
 
   const effectiveArea = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
-  const todayStr = new Date().toISOString().split('T')[0];
-  const isDeadlineToday = deadline && deadline.startsWith(todayStr) && !s.done;
+  const isDeadlineToday = (() => {
+    if (!deadline || s.done) return false;
+    const hasTime = deadline.length > 10;
+    const dl = new Date(hasTime ? deadline : deadline + 'T00:00:00');
+    const now = new Date();
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dlLocal = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
+    return Math.round((dlLocal - todayLocal) / 86400000) === 0;
+  })();
   const subjectToShow = (effectiveArea === '課題') ? (subjects?.[0] || null) : null;
   const elaToShow = (effectiveArea === '課題' && subjectToShow === 'ELA') ? ela : null;
 
@@ -2689,15 +2696,27 @@ function toggleDone(id) {
   updateExecHint();
 }
 
-let toastTimer = null;
+let toastQueue = [];
+let toastRunning = false;
 function showToast(msg, color='rgba(29,158,117,0.92)') {
+  toastQueue.push({msg, color});
+  if (!toastRunning) processToastQueue();
+}
+function processToastQueue() {
+  if (!toastQueue.length) { toastRunning = false; return; }
+  toastRunning = true;
+  const {msg, color} = toastQueue.shift();
   const el = document.getElementById('toast');
-  if (!el) return;
-  if (toastTimer) clearTimeout(toastTimer);
+  if (!el) { processToastQueue(); return; }
   el.textContent = msg;
   el.style.background = color;
+  el.classList.remove('show');
+  void el.offsetWidth;
   el.classList.add('show');
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(processToastQueue, 280);
+  }, 1800);
 }
 
 function togglePin(id) {
