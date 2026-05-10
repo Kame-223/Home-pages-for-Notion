@@ -2031,11 +2031,7 @@ function renderNextList() {
       subKeys.forEach((sub, i) => {
         let subTasks = bySubject[sub];
         if (sub === 'ELA') {
-          subTasks = [...subTasks].sort((a,b) => {
-            const ia = ELA_SUB_ORDER.indexOf(getProp(a,'ELAサブタグ')||''), ib = ELA_SUB_ORDER.indexOf(getProp(b,'ELAサブタグ')||'');
-            const subDiff = (ia<0?99:ia)-(ib<0?99:ib);
-            return subDiff !== 0 ? subDiff : byDeadline(a, b);
-          });
+          subTasks = [...subTasks].sort(byDeadline);
         } else {
           subTasks = [...subTasks].sort(byDeadline);
         }
