@@ -3140,7 +3140,9 @@ function renderTaskPage() {
   };
 
   render(document.getElementById('task-inbox-list'), inboxTasks, 'INBOXは空です 🎉');
-  render(document.getElementById('task-next-list'),  nextTasks,  'なし');
+
+  const nextEl = document.getElementById('task-next-list');
+  if (nextEl) nextEl.innerHTML = nextTasks.length ? groupByArea(nextTasks, renderGtdCard) : '<div class="section-empty">なし</div>';
   render(document.getElementById('task-wait-list'),  waitTasks,  'なし');
   render(document.getElementById('task-someday-list'), somedayTasks, 'なし');
 
