@@ -345,6 +345,10 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
+/* 整時スロットに下線 */
+.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-bottom: 1px solid rgba(255,255,255,0.22) !important; }
+/* 24:00スロットは最小高さに */
+.fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
 /* Googleログインボタン */
 /* GCalモーダル拡張 */
@@ -1590,7 +1594,7 @@ body::before {
 <div class="modal-bg modal-bg-center" id="modal-gcal" onclick="closeModal('gcal')">
   <div class="modal gcal-modal" onclick="event.stopPropagation()">
     <div class="modal-title" id="gcal-modal-title">📅 予定を追加</div>
-    <input class="modal-input" id="gcal-ev-title" placeholder="タイトル"
+    <input class="modal-input" id="gcal-ev-title" placeholder="タイトル" autocomplete="off"
       onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();submitGCalEvent()}"/>
     <div class="gcal-time-row">
       <input class="modal-input" id="gcal-ev-start" type="datetime-local" style="flex:1" onchange="gcalSyncEndTime()"/>
@@ -1886,7 +1890,7 @@ function renderFullCalendar() {
     selectable: true,
     allDaySlot: false,
     slotMinTime: '06:00:00',
-    slotMaxTime: '24:00:00',
+    slotMaxTime: '24:15:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     slotDuration: '00:15:00',
     snapDuration: '00:05:00',
