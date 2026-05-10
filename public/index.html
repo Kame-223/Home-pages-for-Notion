@@ -459,18 +459,18 @@ body::before {
 /* 完了フラッシュ */
 @keyframes doneFlash {
   0%   { background: transparent; box-shadow: none; transform: scale(1); }
-  15%  { background: rgba(29,158,117,0.45); box-shadow: 0 0 24px rgba(29,158,117,0.6); transform: scale(1.012); }
-  50%  { background: rgba(29,158,117,0.25); box-shadow: 0 0 12px rgba(29,158,117,0.3); }
+  15%  { background: rgba(239,159,39,0.45); box-shadow: 0 0 28px rgba(239,159,39,0.65); transform: scale(1.012); }
+  50%  { background: rgba(239,159,39,0.22); box-shadow: 0 0 14px rgba(239,159,39,0.3); }
   100% { background: transparent; box-shadow: none; transform: scale(1); }
 }
 .task-card.done-flash { animation: doneFlash 0.9s ease-out forwards; }
 /* 実行モード誘導ヒント */
-.exec-start-hint-wrap { display: none; text-align: center; padding: 6px 0 2px; }
+.exec-start-hint-wrap { display: none; text-align: center; padding: 8px 0 16px; }
 .exec-start-hint-wrap.show { display: block; }
 .exec-start-hint {
-  font-size: 11px; color: var(--green);
+  font-size: 16px; color: var(--green);
   background: rgba(29,158,117,0.1); border: 0.5px solid rgba(29,158,117,0.35);
-  border-radius: 99px; padding: 5px 20px;
+  border-radius: 99px; padding: 8px 30px;
   cursor: pointer; transition: all .2s; font-family: 'Noto Sans JP', sans-serif;
   display: inline-block;
 }
@@ -1292,7 +1292,7 @@ body::before {
         <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="next-panel" class="bottom-panel">
-        <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn active" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
+        <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
 
@@ -2026,7 +2026,7 @@ function getProp(page, name) {
 }
 
 // ===== 次やる フィルター =====
-let nextFilter = 'deadline';
+let nextFilter = 'prop';
 const AREA_ORDER = ['課題','個人','生活','ICU','カナダ'];
 const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','PE','その他'];
 const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
