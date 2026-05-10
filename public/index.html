@@ -2096,11 +2096,9 @@ function deadlineTag(dateStr, isDone, isImportant) {
 
   // 色（日数ベース）
   const cls = isImportant ? 'tag-imp-dl'
-    : isOverdue       ? 'tag-red'
-    : diffDays === 0  ? 'tag-red-vivid'
-    : diffDays <= 1   ? 'tag-red'
-    : diffDays <= 3   ? 'tag-amber'
-    : diffDays <= 7   ? 'tag-blue'
+    : (isOverdue || diffDays <= 1) ? 'tag-red'
+    : diffDays <= 3 ? 'tag-amber'
+    : diffDays <= 7 ? 'tag-blue'
     : 'tag-gray';
 
   return { label, cls };
