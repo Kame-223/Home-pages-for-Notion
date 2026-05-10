@@ -1914,9 +1914,11 @@ function renderNextList() {
   tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
+  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','ICU':'area-icu','カナダ':'area-canada'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
-    html += `<div class="next-group-area">${area}</div>`;
+    const areaCls = clsMap[area] || 'area-other';
+    html += `<div class="card-group-header ${areaCls}">${area}</div>`;
     if (area === '課題') {
       const bySubject = {};
       aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
