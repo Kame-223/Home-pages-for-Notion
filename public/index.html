@@ -702,6 +702,7 @@ body::before {
 .edit-chip.active { background: var(--chip-bg, rgba(127,119,221,0.2)); border-color: var(--chip-border, var(--purple)); font-weight: 600; }
 .edit-chips:has(.edit-chip.active) .edit-chip:not(.active) { opacity: 0.3; }
 .edit-chips.disabled { opacity: 0.25; pointer-events: none; }
+.edit-chips.dimmed { opacity: 0.35; }
 /* チップ個別カラー */
 .edit-chip[data-val="課題"]    { --chip-bg: rgba(255,62,191,0.18);  --chip-color: #FF7ED4; --chip-border: rgba(255,62,191,0.4); }
 .edit-chip[data-val="個人"]    { --chip-bg: rgba(196,120,110,0.18); --chip-color: #D4A098; --chip-border: rgba(196,120,110,0.4); }
@@ -2745,9 +2746,15 @@ function toggleEditChip(el, groupId, multi) {
 }
 
 function updateEditChipCascade() {
-  // 全て常時選択可能 - disabled制限なし
-  document.getElementById('edit-subject').classList.remove('disabled');
-  document.getElementById('edit-ela').classList.remove('disabled');
+  const area    = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
+  const subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val;
+  const subjectEl = document.getElementById('edit-subject');
+  const elaEl     = document.getElementById('edit-ela');
+
+  subjectEl.classList.remove('disabled');
+  elaEl.classList.remove('disabled');
+  subjectEl.classList.toggle('dimmed', !!area && area !== '課題');
+  elaEl.classList.toggle('dimmed', !!subject && subject !== 'ELA');
 }
 
 async function saveEditModal() {
