@@ -500,9 +500,15 @@ body::before {
 .imp-confirm-no { padding:7px 20px; border-radius:8px; border:0.5px solid var(--border2); background:transparent; color:var(--text-sub); font-size:12px; cursor:pointer; }
 .imp-confirm-no:hover { background:var(--surface); }
 .pin-badge {
-  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-  font-size: 18px; display: none; line-height: 1;
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  display: none; line-height: 1;
+  font-size: 11px; font-weight: 600; color: var(--text-dim);
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 99px; padding: 1px 7px;
+  letter-spacing: 0.05em; cursor: pointer;
+  transition: all .15s;
 }
+.pin-badge:hover { color: var(--text); border-color: var(--red); }
 .task-card.pinned .pin-badge { display: block; }
 .tag-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
 .tag { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
@@ -2208,7 +2214,7 @@ function renderCard(task, mode='today') {
   if (mode === 'leftover' || mode === 'next') {
     return `
     <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
-      <div class="pin-badge">📌</div>
+      <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
       <div class="card-body">
@@ -2233,7 +2239,7 @@ function renderCard(task, mode='today') {
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰ 時間帯';
   return `
   <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
-    <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
+    <div class="pin-badge" onclick="togglePin('${id}')">✕</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
     <div class="card-body">
