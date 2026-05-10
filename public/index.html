@@ -431,23 +431,29 @@ body::before {
 .task-card.area-icu      { border-left-color: rgba(255,255,255,0.55); }
 .task-card.area-canada   { border-left-color: var(--purple); }
 .card-group { margin-bottom: 36px; }
-.card-group-header {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
-  padding: 5px 8px; margin-bottom: 6px;
-  border-radius: 4px;
-  display: flex; align-items: center; gap: 7px;
+/* プロパティ編集ボタン（左上） */
+.btn-prop-edit {
+  background: none; border: 0.5px solid transparent; cursor: pointer;
+  font-size: 11px; opacity: 0.35; transition: all .15s;
+  padding: 2px 5px; border-radius: 5px; color: var(--text-sub);
+  line-height: 1; flex-shrink: 0;
 }
-.card-group-header::before {
-  content: ''; display: inline-block;
-  width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
-  background: currentColor; opacity: 0.85;
+.btn-prop-edit:hover { opacity: 1; border-color: var(--border2); background: rgba(255,255,255,0.05); }
+/* タイトル編集 */
+.edit-task-name[contenteditable] { cursor: text; border-bottom: 0.5px solid transparent; transition: border-color .15s; }
+.edit-task-name[contenteditable]:focus { outline: none; border-bottom-color: rgba(127,119,221,0.4); }
+/* INBOXモーダル中央配置 */
+.modal-bg-center { align-items: center !important; }
+.modal-bg-center .modal { border-radius: 16px; max-width: 520px; }
+.inbox-prop-toggle {
+  font-size: 11px; padding: 5px 10px; border-radius: 6px;
+  border: 0.5px solid var(--border2); background: transparent;
+  cursor: pointer; color: var(--text-sub);
+  font-family: 'Noto Sans JP', sans-serif;
+  text-align: left; transition: all .15s; width: 100%;
 }
-.card-group-header.area-kadai    { color: #C45C8A; background: rgba(196,92,138,0.08); }
-.card-group-header.area-personal { color: #C08080; background: rgba(192,128,128,0.08); }
-.card-group-header.area-seikatsu { color: #8BA855; background: rgba(139,168,85,0.08); }
-.card-group-header.area-icu      { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
-.card-group-header.area-canada   { color: var(--purple); background: rgba(127,119,221,0.08); }
-.card-group-header.area-other    { color: var(--text-dim); background: transparent; }
+.inbox-prop-toggle:hover { border-color: var(--purple); color: var(--purple); }
+.inbox-props { display: none; flex-direction: column; gap: 10px; padding-top: 8px; border-top: 0.5px solid var(--border); }
 .task-card.done { opacity: 0.4; }
 .task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
 .task-card.pinned { border-color: rgba(127,119,221,0.4); }
@@ -1373,13 +1379,56 @@ body::before {
 </div>
 
 <!-- Inboxモーダル -->
-<div class="modal-bg" id="modal-inbox">
-  <div class="modal">
-    <div class="modal-title">📥 Inboxに追加</div>
-    <input class="modal-input" id="inbox-input" placeholder="やること・気になったこと..."/>
+<div class="modal-bg modal-bg-center" id="modal-inbox" onclick="closeModal('inbox')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">📥 タスクを追加</div>
+    <input class="modal-input" id="inbox-input" placeholder="タスク名..."
+      onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();addToInbox()}"/>
+    <button class="inbox-prop-toggle" id="inbox-prop-toggle-btn" onclick="toggleInboxProps()">＋ プロパティ</button>
+    <div class="inbox-props" id="inbox-props">
+      <div class="edit-field">
+        <span class="edit-field-label">AREA</span>
+        <div class="edit-chips" id="inbox-area">
+          <button class="edit-chip" data-val="課題" onclick="toggleInboxChip(this,'inbox-area',false)">課題</button>
+          <button class="edit-chip" data-val="個人" onclick="toggleInboxChip(this,'inbox-area',false)">個人</button>
+          <button class="edit-chip" data-val="生活" onclick="toggleInboxChip(this,'inbox-area',false)">生活</button>
+          <button class="edit-chip" data-val="ICU" onclick="toggleInboxChip(this,'inbox-area',false)">ICU</button>
+          <button class="edit-chip" data-val="カナダ" onclick="toggleInboxChip(this,'inbox-area',false)">カナダ</button>
+        </div>
+      </div>
+      <div class="edit-field">
+        <span class="edit-field-label">SUBJECT</span>
+        <div class="edit-chips" id="inbox-subject">
+          <button class="edit-chip" data-val="憲法" onclick="toggleInboxChip(this,'inbox-subject',false)">憲法</button>
+          <button class="edit-chip" data-val="社会学" onclick="toggleInboxChip(this,'inbox-subject',false)">社会学</button>
+          <button class="edit-chip" data-val="教育原理" onclick="toggleInboxChip(this,'inbox-subject',false)">教育原理</button>
+          <button class="edit-chip" data-val="ELA" onclick="toggleInboxChip(this,'inbox-subject',false)">ELA</button>
+          <button class="edit-chip" data-val="PE" onclick="toggleInboxChip(this,'inbox-subject',false)">PE</button>
+          <button class="edit-chip" data-val="その他" onclick="toggleInboxChip(this,'inbox-subject',false)">その他</button>
+        </div>
+      </div>
+      <div class="edit-field">
+        <span class="edit-field-label">ELA SUBTAG</span>
+        <div class="edit-chips" id="inbox-ela">
+          <button class="edit-chip" data-val="ER4" onclick="toggleInboxChip(this,'inbox-ela',false)">ER4</button>
+          <button class="edit-chip" data-val="S&L4" onclick="toggleInboxChip(this,'inbox-ela',false)">S&L4</button>
+          <button class="edit-chip" data-val="RCA" onclick="toggleInboxChip(this,'inbox-ela',false)">RCA</button>
+          <button class="edit-chip" data-val="ATS4" onclick="toggleInboxChip(this,'inbox-ela',false)">ATS4</button>
+          <button class="edit-chip" data-val="ARW" onclick="toggleInboxChip(this,'inbox-ela',false)">ARW</button>
+        </div>
+      </div>
+      <div class="edit-field">
+        <span class="edit-field-label">DEADLINE</span>
+        <div class="edit-deadline-wrap">
+          <input type="date" class="edit-deadline-input" id="inbox-deadline-date">
+          <span class="edit-deadline-time-label">時刻（任意）</span>
+          <input type="time" class="edit-deadline-input" id="inbox-deadline-time">
+        </div>
+      </div>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('inbox')">キャンセル</button>
-      <button class="btn-save" onclick="addToInbox()">追加</button>
+      <button class="btn-save" id="inbox-save-btn" onclick="addToInbox()">追加</button>
     </div>
   </div>
 </div>
@@ -1915,11 +1964,9 @@ function renderNextList() {
   tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
-  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','ICU':'area-icu','カナダ':'area-canada'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
-    const areaCls = clsMap[area] || 'area-other';
-    let inner = `<div class="card-group-header ${areaCls}">${area}</div>`;
+    let inner = '';
     if (area === '課題') {
       const bySubject = {};
       aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
@@ -2017,17 +2064,13 @@ function areaBorderCls(area) {
 
 function groupByArea(tasks, renderFn) {
   const order = ['課題','個人','生活','ICU','カナダ','その他'];
-  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','ICU':'area-icu','カナダ':'area-canada','その他':'area-other'};
   const groups = {};
   tasks.forEach(t => {
     const a = getProp(t,'エリア') || 'その他';
     (groups[a] = groups[a] || []).push(t);
   });
   return order.filter(a => groups[a]?.length).map(a =>
-    `<div class="card-group">
-      <div class="card-group-header ${clsMap[a] || 'area-other'}">${a}</div>
-      ${groups[a].map(renderFn).join('')}
-    </div>`
+    `<div class="card-group">${groups[a].map(renderFn).join('')}</div>`
   ).join('');
 }
 
@@ -2109,14 +2152,13 @@ function renderCard(task, mode='today') {
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
 
+  const effectiveArea = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
-  // 階層ルール: AREA > SUBJECT > ELA SUBTAG
-  const subjectToShow = (area === '課題') ? (subjects?.[0] || null) : null;
-  const elaToShow = (area === '課題' && subjectToShow === 'ELA') ? ela : null;
-  const hasProps = !!(area || deadline);
+  const subjectToShow = (effectiveArea === '課題') ? (subjects?.[0] || null) : null;
+  const elaToShow = (effectiveArea === '課題' && subjectToShow === 'ELA') ? ela : null;
 
-  // プロパティタグ（クリックで編集モーダル）
   const editCall = `openEditModal('${id}',event)`;
+  const editBtn = `<button class="btn-prop-edit" onclick="${editCall}">✏</button>`;
   const propTags = [
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
@@ -2124,7 +2166,6 @@ function renderCard(task, mode='today') {
 
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
-  // リンクボタン
   const links = s.links;
   const linkMenuItems = links.length
     ? links.map((u,i) => {
@@ -2136,17 +2177,11 @@ function renderCard(task, mode='today') {
     ? `<div class="link-menu-wrap"><button class="btn-link-tag" onclick="openLinkMenu('${id}',event)">🔗${links.length>1?' ×'+links.length:''}</button><div class="link-menu" id="lm-${id}">${linkMenuItems}</div></div>`
     : '';
 
-  // ボタン配置ロジック（AREAなしは常に左上）
-  const leftBtn = !area
-    ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
-    : '';
-  const rightSetBtn = '';
-
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${areaBorderCls(area)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="margin-bottom:6px">
       <div class="pin-badge">📌</div>
-      <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
+      <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
       <div class="card-body">
         <div class="task-title-box" id="tt-${id}">${title}</div>
@@ -2169,9 +2204,9 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰ 時間帯';
   return `
-  <div class="task-card ${areaBorderCls(area)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
+  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')" style="cursor:pointer">📌</div>
-    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}${rightSetBtn}</div>
+    <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
     <div class="card-body">
       <div class="task-title-box" id="tt-${id}">${title}</div>
@@ -2762,12 +2797,11 @@ async function saveEditModal() {
   const id = editingTaskId;
   const task = allTasks.find(t => t.id === id);
 
+  const newTitle = document.getElementById('edit-task-name').textContent.trim();
   const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
   let subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val || null;
   let ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
-  // カスケードリセット：AREAが課題以外ならSUBJECT・ELAを強制クリア
   if (area !== '課題') { subject = null; ela = null; }
-  // SUBJECTがELA以外ならELAを強制クリア
   if (subject !== 'ELA') { ela = null; }
   const subjects = subject ? [subject] : [];
   const dlDate = document.getElementById('edit-deadline-date').value;
@@ -2778,6 +2812,7 @@ async function saveEditModal() {
   const firstLink = links[0] || null;
 
   if (task) {
+    if (newTitle) task.properties['タイトル'] = {type:'title', title:[{text:{content:newTitle},plain_text:newTitle}]};
     task.properties['エリア'] = {type:'select', select: area ? {name:area} : null};
     task.properties['科目'] = {type:'multi_select', multi_select: subjects.map(s => ({name:s}))};
     task.properties['ELAサブタグ'] = {type:'select', select: ela ? {name:ela} : null};
@@ -2801,6 +2836,7 @@ async function saveEditModal() {
     '締切日': {date: deadline ? {start:deadline} : null},
     '作業リンク': {url: firstLink},
   };
+  if (newTitle) props['タイトル'] = {title: [{text: {content: newTitle}}]};
 
   notionUpdate(id, props).catch(console.error);
 }
@@ -2814,17 +2850,78 @@ function closeModal(type) {
   document.getElementById(`modal-${type}`).classList.remove('open');
 }
 async function addToInbox() {
+  const btn = document.getElementById('inbox-save-btn');
+  if (btn?.disabled) return;
+  if (btn) btn.disabled = true;
+
   const title = document.getElementById('inbox-input').value.trim();
-  if (!title) return;
+  if (!title) { if (btn) btn.disabled = false; return; }
+
+  const area    = document.querySelector('#inbox-area .edit-chip.active')?.dataset.val || null;
+  const subject = document.querySelector('#inbox-subject .edit-chip.active')?.dataset.val || null;
+  const ela     = document.querySelector('#inbox-ela .edit-chip.active')?.dataset.val || null;
+  const dlDate  = document.getElementById('inbox-deadline-date').value;
+  const dlTime  = document.getElementById('inbox-deadline-time').value;
+  const deadline = dlDate ? (dlTime ? `${dlDate}T${dlTime}:00` : dlDate) : null;
+
+  const props = {
+    'タイトル': {title:[{text:{content:title}}]},
+    'GTD 種別': {status:{name:'📥 INBOX'}},
+  };
+  if (area)     props['エリア']     = {select:{name:area}};
+  if (subject)  props['科目']       = {multi_select:[{name:subject}]};
+  if (ela)      props['ELAサブタグ'] = {select:{name:ela}};
+  if (deadline) props['締切日']      = {date:{start:deadline}};
+
   try {
-    await notionCreate(DB.tasks, {
-      'タイトル':{title:[{text:{content:title}}]},
-      'GTD 種別':{status:{name:'📥 INBOX'}},
-    });
+    await notionCreate(DB.tasks, props);
     document.getElementById('inbox-input').value = '';
+    document.querySelectorAll('#inbox-area .edit-chip,#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
+    document.getElementById('inbox-deadline-date').value = '';
+    document.getElementById('inbox-deadline-time').value = '';
+    document.getElementById('inbox-props').style.display = 'none';
+    if (document.getElementById('inbox-prop-toggle-btn')) document.getElementById('inbox-prop-toggle-btn').textContent = '＋ プロパティ';
     closeModal('inbox');
     await loadTasks();
   } catch(e) { console.error(e); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+function toggleInboxProps() {
+  const props = document.getElementById('inbox-props');
+  const btn   = document.getElementById('inbox-prop-toggle-btn');
+  const isOpen = props.style.display !== 'none';
+  props.style.display = isOpen ? 'none' : 'flex';
+  btn.textContent = isOpen ? '＋ プロパティ' : '− プロパティ';
+}
+
+function toggleInboxChip(el, groupId, multi) {
+  const wasActive = el.classList.contains('active');
+  if (!multi) {
+    document.querySelectorAll(`#${groupId} .edit-chip`).forEach(c=>c.classList.remove('active'));
+    if (!wasActive) el.classList.add('active');
+  } else {
+    el.classList.toggle('active');
+  }
+  const nowActive = el.classList.contains('active');
+  if (nowActive) {
+    if (groupId === 'inbox-subject') {
+      document.querySelectorAll('#inbox-area .edit-chip').forEach(c=>c.classList.remove('active'));
+      document.querySelector('#inbox-area .edit-chip[data-val="課題"]')?.classList.add('active');
+    }
+    if (groupId === 'inbox-ela') {
+      document.querySelectorAll('#inbox-area .edit-chip').forEach(c=>c.classList.remove('active'));
+      document.querySelector('#inbox-area .edit-chip[data-val="課題"]')?.classList.add('active');
+      document.querySelectorAll('#inbox-subject .edit-chip').forEach(c=>c.classList.remove('active'));
+      document.querySelector('#inbox-subject .edit-chip[data-val="ELA"]')?.classList.add('active');
+    }
+  }
+  if (groupId === 'inbox-area') {
+    const newArea = document.querySelector('#inbox-area .edit-chip.active')?.dataset.val;
+    if (newArea !== '課題') {
+      document.querySelectorAll('#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
+    }
+  }
 }
 
 // ===== キーボードショートカット =====
@@ -2886,16 +2983,17 @@ function renderGtdCard(task) {
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
 
+  const effectiveAreaG = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, false, false);
-  const subjectToShow = (area === '課題') ? (subjects?.[0] || null) : null;
-  const elaToShow = (area === '課題' && subjectToShow === 'ELA') ? ela : null;
+  const subjectToShow = (effectiveAreaG === '課題') ? (subjects?.[0] || null) : null;
+  const elaToShow = (effectiveAreaG === '課題' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
+  const editBtn = `<button class="btn-prop-edit" onclick="${editCall}">✏</button>`;
   const propTags = [
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
-  const leftBtn = !area ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>` : '';
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
@@ -2916,8 +3014,8 @@ function renderGtdCard(task) {
   ).join('');
 
   return `
-  <div class="task-card ${areaBorderCls(area)}" id="gtc-${id}" style="margin-bottom:6px">
-    <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
+  <div class="task-card ${areaBorderCls(effectiveAreaG)}" id="gtc-${id}" style="margin-bottom:6px">
+    <div class="tag-row">${editBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
       <div class="card-body">
         <div class="task-title-box">${title}</div>
@@ -3055,7 +3153,7 @@ window.onload = () => {
     <div class="edit-header">
       <div class="edit-header-left">
         <button class="edit-reset-btn" onclick="resetEditModal()">全リセット</button>
-        <div class="edit-task-name" id="edit-task-name"></div>
+        <div class="edit-task-name" id="edit-task-name" contenteditable="true" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault()}"></div>
       </div>
       <button class="edit-close-btn" onclick="closeEditModal()">✕</button>
     </div>
