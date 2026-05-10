@@ -1792,22 +1792,36 @@ function initGoogleCalendar() {
   if (hash.includes('access_token=')) {
     const params = new URLSearchParams(hash.substring(1));
     const token = params.get('access_token');
+    const expiresIn = parseInt(params.get('expires_in') || '3600');
     const state = params.get('state');
     if (token) {
+      const expiry = Date.now() + (expiresIn - 120) * 1000;
       if (state === 'icu') {
         gToken2 = token;
-        sessionStorage.setItem('gcal_token2', token);
+        localStorage.setItem('gcal_token2', token);
+        localStorage.setItem('gcal_token2_expiry', expiry);
       } else {
         gToken = token;
-        sessionStorage.setItem('gcal_token', token);
+        localStorage.setItem('gcal_token', token);
+        localStorage.setItem('gcal_token_expiry', expiry);
       }
       history.replaceState({}, '', window.location.pathname);
     }
   }
 
-  // 保存済みトークンを復元
-  if (!gToken) { const s = sessionStorage.getItem('gcal_token'); if (s) gToken = s; }
-  if (!gToken2) { const s = sessionStorage.getItem('gcal_token2'); if (s) gToken2 = s; }
+  // 保存済みトークンを復元（有効期限チェック）
+  if (!gToken) {
+    const s = localStorage.getItem('gcal_token');
+    const exp = parseInt(localStorage.getItem('gcal_token_expiry') || '0');
+    if (s && Date.now() < exp) gToken = s;
+    else if (s) { localStorage.removeItem('gcal_token'); localStorage.removeItem('gcal_token_expiry'); }
+  }
+  if (!gToken2) {
+    const s = localStorage.getItem('gcal_token2');
+    const exp = parseInt(localStorage.getItem('gcal_token2_expiry') || '0');
+    if (s && Date.now() < exp) gToken2 = s;
+    else if (s) { localStorage.removeItem('gcal_token2'); localStorage.removeItem('gcal_token2_expiry'); }
+  }
 
   if (gToken || gToken2) {
     renderFullCalendar();
@@ -1835,7 +1849,7 @@ function requestGCalAuth(account) {
     '&redirect_uri=' + encodeURIComponent(redirectUri) +
     '&response_type=token' +
     '&scope=' + encodeURIComponent(GCAL_SCOPE) +
-    '&prompt=consent' +
+    '&prompt=select_account' +
     '&login_hint=' + encodeURIComponent(hint) +
     '&state=' + account;
   window.location.href = url;
@@ -1878,12 +1892,16 @@ function renderFullCalendar() {
     snapDuration: '00:05:00',
     slotLabelDidMount: (arg) => {
       const h = arg.date.getHours();
-      if (h === 13 || h === 19) {
-        const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
-        if (cushion) {
+      const m = arg.date.getMinutes();
+      const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
+      if (!cushion) return;
+      if (m === 0) {
+        arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
+        if ((h === 13 || h === 19)) {
           cushion.style.setProperty('color', 'rgba(255,255,255,0.9)', 'important');
           cushion.style.setProperty('font-weight', '700', 'important');
         }
+        if (h === 0) cushion.textContent = '24:00';
       }
     },
     slotLaneDidMount: (arg) => {
@@ -1972,8 +1990,8 @@ async function fetchGCalEvents(info, success, failure) {
       fetchFromToken(gToken, 'p_'),
       fetchFromToken(gToken2, 'i_'),
     ]);
-    if (ev1 === null) { gToken = null; sessionStorage.removeItem('gcal_token'); }
-    if (ev2 === null) { gToken2 = null; sessionStorage.removeItem('gcal_token2'); }
+    if (ev1 === null) { gToken = null; localStorage.removeItem('gcal_token'); localStorage.removeItem('gcal_token_expiry'); }
+    if (ev2 === null) { gToken2 = null; localStorage.removeItem('gcal_token2'); localStorage.removeItem('gcal_token2_expiry'); }
     success([...(ev1 || []), ...(ev2 || [])]);
   } catch(e) { console.error('fetchGCalEvents:', e); failure(e); }
 }
