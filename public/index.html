@@ -500,25 +500,22 @@ body::before {
 .done-drawer-cards.open { display: block; }
 /* トースト通知 */
 .toast {
-  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(16px);
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) scale(0.88);
   background: rgba(29,158,117,0.92); color: #fff;
   font-size: 13px; font-family: 'Noto Sans JP', sans-serif; font-weight: 500;
   padding: 10px 24px; border-radius: 99px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   opacity: 0; pointer-events: none; z-index: 9000;
-  transition: opacity .25s, transform .25s;
+  transition: opacity .08s, transform .13s cubic-bezier(.2, 1.5, .4, 1);
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-/* 今日締切カード強調 */
-.task-card.deadline-today {
-  border-color: rgba(255,80,64,0.5);
-  box-shadow: 0 0 0 1px rgba(255,80,64,0.25);
+.toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+/* 今日締切タグ点滅 */
+@keyframes tagPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,80,64,0); }
+  50%       { box-shadow: 0 0 0 3px rgba(255,80,64,0.45); }
 }
-@keyframes deadlinePulse {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(255,80,64,0.25); }
-  50%       { box-shadow: 0 0 0 3px rgba(255,80,64,0.4); }
-}
-.task-card.deadline-today { animation: deadlinePulse 2.5s ease-in-out infinite; }
+.deadline-today-tag { animation: tagPulse 1.6s ease-in-out infinite; }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -2385,7 +2382,7 @@ function renderCard(task, mode='today') {
       ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>`
       : '';
 
-  const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
+  const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable${isDeadlineToday?' deadline-today-tag':''}" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
   const links = s.links;
   const linkPillsHtml = links.length
@@ -2396,7 +2393,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''} ${isDeadlineToday?'deadline-today':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
       <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
@@ -2426,7 +2423,7 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰';
   return `
-  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''} ${isDeadlineToday?'deadline-today':''}" id="tc-${id}">
+  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
     <div class="pin-badge" onclick="togglePin('${id}')">✕</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
