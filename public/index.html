@@ -456,6 +456,32 @@ body::before {
   text-decoration: none; transition: border-color .15s; cursor: pointer;
 }
 .link-pill:hover { border-color: rgba(255,255,255,0.4); }
+/* 完了フラッシュ */
+@keyframes doneFlash {
+  0%   { background: transparent; }
+  30%  { background: rgba(29,158,117,0.22); }
+  100% { background: transparent; }
+}
+.task-card.done-flash { animation: doneFlash 0.65s ease-out forwards; }
+/* 実行モード誘導ヒント */
+.exec-start-hint {
+  display: none; margin-left: auto;
+  font-size: 10px; color: var(--green);
+  background: rgba(29,158,117,0.1); border: 0.5px solid rgba(29,158,117,0.35);
+  border-radius: 99px; padding: 3px 12px;
+  cursor: pointer; transition: all .2s; font-family: 'Noto Sans JP', sans-serif;
+}
+.exec-start-hint:hover { background: rgba(29,158,117,0.22); }
+.exec-start-hint.show { display: inline-block; }
+/* もっと見るボタン */
+.next-show-more { text-align: center; padding: 8px 0 4px; }
+.next-show-more-btn {
+  font-size: 11px; padding: 5px 20px; border-radius: 99px;
+  border: 0.5px solid var(--border2); background: transparent;
+  color: var(--text-dim); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s;
+}
+.next-show-more-btn:hover { border-color: #85B7EB; color: #85B7EB; }
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -1251,7 +1277,7 @@ body::before {
 
     <!-- 今日やること -->
     <div class="today-board">
-      <div class="section-header green">✅ 今日やること</div>
+      <div class="section-header green">✅ 今日やること<button id="exec-hint" class="exec-start-hint" onclick="setMode('exec')">▶ 実行を始める</button></div>
       <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
     </div>
 
@@ -2005,8 +2031,29 @@ const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 
 function setNextFilter(f) {
   nextFilter = f;
+  nextListExpanded = false;
   document.querySelectorAll('.next-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
   renderNextList();
+}
+
+let nextListExpanded = false;
+const NEXT_DEFAULT_COUNT = 5;
+
+function expandNextList() {
+  nextListExpanded = true;
+  renderNextList();
+}
+
+function updateExecHint() {
+  const hint = document.getElementById('exec-hint');
+  if (!hint) return;
+  const pinned = allTasks.filter(t => taskState[t.id]?.pinned && !taskState[t.id]?.done).length;
+  if (pinned > 0 && currentMode === 'select') {
+    hint.textContent = `▶ 実行を始める（${pinned}件）`;
+    hint.classList.add('show');
+  } else {
+    hint.classList.remove('show');
+  }
 }
 
 function renderNextList() {
@@ -2024,6 +2071,7 @@ function renderNextList() {
       return da < db ? -1 : da > db ? 1 : 0;
     });
     el.innerHTML = sorted.map(t => renderCard(t,'next')).join('');
+    applyNextListLimit(el, sorted.length);
     return;
   }
 
@@ -2063,6 +2111,22 @@ function renderNextList() {
     html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
+  applyNextListLimit(el, tasks.length);
+}
+
+function applyNextListLimit(el, total) {
+  if (nextListExpanded || total <= NEXT_DEFAULT_COUNT) return;
+  const cards = el.querySelectorAll('.task-card');
+  if (cards.length <= NEXT_DEFAULT_COUNT) return;
+  for (let i = NEXT_DEFAULT_COUNT; i < cards.length; i++) cards[i].style.display = 'none';
+  el.querySelectorAll('.card-group').forEach(g => {
+    const visible = g.querySelectorAll('.task-card:not([style*="none"])');
+    if (!visible.length) g.style.display = 'none';
+  });
+  const remaining = cards.length - NEXT_DEFAULT_COUNT;
+  el.insertAdjacentHTML('beforeend',
+    `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandNextList()">もっと見る（あと${remaining}件）</button></div>`
+  );
 }
 
 function deadlineTag(dateStr, isDone, isImportant) {
@@ -2519,22 +2583,29 @@ function toggleDone(id) {
   if (!taskState[id]) return;
   taskState[id].done = !taskState[id].done;
   const isDone = taskState[id].done;
-  document.querySelectorAll(`#tc-${id}`).forEach(el=>el.classList.toggle('done',isDone));
+  document.querySelectorAll(`#tc-${id}`).forEach(el=>{
+    el.classList.toggle('done',isDone);
+    if (isDone) {
+      el.classList.remove('done-flash');
+      void el.offsetWidth;
+      el.classList.add('done-flash');
+      setTimeout(() => el.classList.remove('done-flash'), 650);
+    }
+  });
   document.querySelectorAll(`#tt-${id}`).forEach(el=>el.classList.toggle('done',isDone));
   document.querySelectorAll(`#done-${id}`).forEach(el=>{
     el.textContent = isDone?'取り消し':'完了';
     el.classList.toggle('undo',isDone);
   });
   document.querySelectorAll(`#start-${id}`).forEach(el=>el.style.display=isDone?'none':'');
-  // 完了時は画鋲を操作不可に見せる
   document.querySelectorAll(`#tc-${id} .pin-badge`).forEach(el=>{
     el.style.cursor = isDone ? 'default' : 'pointer';
     el.style.opacity = isDone ? '0.4' : '';
   });
-  // Notionに反映
   notionUpdate(id, {'ステータス':{status:{name:isDone?'完了':'ToDo'}}}).catch(console.error);
   saveTaskState();
   updateProgress();
+  updateExecHint();
 }
 
 function togglePin(id) {
@@ -2557,6 +2628,7 @@ function togglePin(id) {
   saveTaskState();
   renderAll();
   updateProgress();
+  updateExecHint();
 }
 
 function toggleTimeDropdown(id) {
@@ -2720,6 +2792,7 @@ function setMode(mode) {
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   renderAll();
+  updateExecHint();
 }
 
 // ===== リンクメニュー =====
