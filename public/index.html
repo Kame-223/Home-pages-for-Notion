@@ -3124,7 +3124,7 @@ function renderSubtaskPanel(id) {
           <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
         </div>`;
       }).join('')
-    : '<div class="subtask-empty">小タスクなし</div>';
+    : '';
   panel.innerHTML = `<div>${listHtml}</div>
     <div class="subtask-add">
       <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..."
