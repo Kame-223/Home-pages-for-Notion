@@ -498,6 +498,16 @@ body::before {
 }
 .done-drawer-cards { display: none; }
 .done-drawer-cards.open { display: block; }
+/* 実行モード空状態 */
+.exec-empty-wrap { text-align: center; padding: 24px 12px; }
+.exec-empty-text { font-size: 12px; color: var(--text-dim); margin-bottom: 14px; line-height: 1.7; }
+.exec-empty-btn {
+  font-size: 12px; padding: 8px 24px; border-radius: 99px;
+  border: 0.5px solid rgba(127,119,221,0.4); background: rgba(127,119,221,0.1);
+  color: var(--purple); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .2s;
+}
+.exec-empty-btn:hover { background: rgba(127,119,221,0.2); }
 /* トースト通知 */
 .toast {
   position: fixed; bottom: 80px; left: 50%;
@@ -2471,7 +2481,10 @@ function renderAll() {
   const todayEl = document.getElementById('today-tasks');
   const emptyMsg = currentMode === 'select'
     ? '<div class="section-empty">👆 上から今日するタスクを選ぼう！</div>'
-    : '<div class="section-empty">今日のタスクがありません</div>';
+    : `<div class="exec-empty-wrap">
+        <div class="exec-empty-text">今日やるタスクがまだ選ばれていません</div>
+        <button class="exec-empty-btn" onclick="setMode('select')">← 選択モードで選ぶ</button>
+      </div>`;
   let todayHtml = '';
   if (!todayPending.length) {
     todayHtml = emptyMsg;
