@@ -347,6 +347,39 @@ body::before {
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
 
 /* Googleログインボタン */
+/* GCalモーダル拡張 */
+.gcal-modal { width: 460px; max-width: 95vw; }
+.gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.gcal-time-adj { display: flex; gap: 4px; flex-wrap: wrap; }
+.gcal-time-btn {
+  font-size: 10px; padding: 3px 9px; border-radius: 5px;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s; white-space: nowrap;
+}
+.gcal-time-btn:hover { border-color: var(--purple); color: var(--purple); }
+.gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+.gcal-kind-chip {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  cursor: pointer; color: var(--text-sub); transition: all .15s;
+}
+.gcal-kind-chip.active { font-weight: 600; }
+.gcal-kind-chip[data-kind="課題"].active  { background:rgba(46,168,160,0.2); border-color:#2EA8A0; color:#2EA8A0; }
+.gcal-kind-chip[data-kind="ICU"].active   { background:rgba(127,119,221,0.2); border-color:#7F77DD; color:#AFA9EC; }
+.gcal-kind-chip[data-kind="個人"].active  { background:rgba(191,160,64,0.2); border-color:#BFA040; color:#BFA040; }
+.gcal-kind-chip[data-kind="生活"].active  { background:rgba(140,160,75,0.2); border-color:#7A8B45; color:#B0C870; }
+.gcal-kind-chip[data-kind="カナダ"].active{ background:rgba(127,119,221,0.2); border-color:#7F77DD; color:#AFA9EC; }
+.gcal-kind-chip[data-kind="授業"].active  { background:rgba(60,100,210,0.2); border-color:#3C64D2; color:#85B7EB; }
+.gcal-textarea {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  color: var(--text); font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
+  outline: none; resize: vertical; min-height: 60px; box-sizing: border-box;
+  transition: border-color .15s;
+}
+.gcal-textarea:focus { border-color: rgba(127,119,221,0.5); }
+
 .gcal-login-wrap {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -1547,13 +1580,42 @@ body::before {
 </div>
 
 <!-- Googleカレンダー イベントモーダル -->
-<div class="modal-bg" id="modal-gcal">
-  <div class="modal">
+<div class="modal-bg modal-bg-center" id="modal-gcal" onclick="closeModal('gcal')">
+  <div class="modal gcal-modal" onclick="event.stopPropagation()">
     <div class="modal-title" id="gcal-modal-title">📅 予定を追加</div>
-    <input class="modal-input" id="gcal-ev-title" placeholder="タイトル"/>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <input class="modal-input" id="gcal-ev-start" type="datetime-local" style="flex:1"/>
+    <input class="modal-input" id="gcal-ev-title" placeholder="タイトル"
+      onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();submitGCalEvent()}"/>
+    <div class="gcal-time-row">
+      <input class="modal-input" id="gcal-ev-start" type="datetime-local" style="flex:1" onchange="gcalSyncEndTime()"/>
+      <span style="color:var(--text-dim);font-size:12px">→</span>
       <input class="modal-input" id="gcal-ev-end" type="datetime-local" style="flex:1"/>
+    </div>
+    <div class="gcal-time-adj" style="margin-top:6px">
+      <span style="font-size:10px;color:var(--text-dim);align-self:center">終了を</span>
+      <button class="gcal-time-btn" onclick="gcalAdjEnd(15)">+15分</button>
+      <button class="gcal-time-btn" onclick="gcalAdjEnd(30)">+30分</button>
+      <button class="gcal-time-btn" onclick="gcalAdjEnd(60)">+1時間</button>
+      <button class="gcal-time-btn" onclick="gcalAdjEnd(90)">+1.5時間</button>
+      <button class="gcal-time-btn" onclick="gcalAdjEnd(120)">+2時間</button>
+    </div>
+    <div class="edit-field" style="margin-top:10px">
+      <span class="edit-field-label">LOCATION</span>
+      <input class="modal-input" id="gcal-ev-location" placeholder="場所（任意）" style="margin-top:4px"/>
+    </div>
+    <div class="edit-field" style="margin-top:10px">
+      <span class="edit-field-label">KIND</span>
+      <div class="gcal-kind-chips" id="gcal-kind-chips">
+        <button class="gcal-kind-chip" data-kind="課題" onclick="toggleGCalKind(this)">課題</button>
+        <button class="gcal-kind-chip" data-kind="ICU" onclick="toggleGCalKind(this)">ICU</button>
+        <button class="gcal-kind-chip" data-kind="個人" onclick="toggleGCalKind(this)">個人</button>
+        <button class="gcal-kind-chip" data-kind="生活" onclick="toggleGCalKind(this)">生活</button>
+        <button class="gcal-kind-chip" data-kind="カナダ" onclick="toggleGCalKind(this)">カナダ</button>
+        <button class="gcal-kind-chip" data-kind="授業" onclick="toggleGCalKind(this)">授業</button>
+      </div>
+    </div>
+    <div class="edit-field" style="margin-top:10px">
+      <span class="edit-field-label">DESCRIPTION</span>
+      <textarea class="gcal-textarea" id="gcal-ev-desc" placeholder="説明・メモ（任意）" style="margin-top:4px"></textarea>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" id="gcal-delete-btn" style="color:var(--red);display:none" onclick="deleteGCalEvent()">削除</button>
@@ -1804,7 +1866,8 @@ function renderFullCalendar() {
     allDaySlot: false,
     slotMinTime: '06:00:00',
     slotMaxTime: '24:00:00',
-    slotDuration: '00:30:00',
+    slotDuration: '00:15:00',
+    snapDuration: '00:05:00',
     slotLabelDidMount: (arg) => {
       const h = arg.date.getHours();
       if (h === 13 || h === 19) {
@@ -1839,7 +1902,14 @@ async function fetchGCalEvents(info, success, failure) {
     const timeMin = start.toISOString();
     const timeMax = end.toISOString();
 
-    function getEventColor(title, calName, isIcu) {
+    function getEventColor(title, calName, isIcu, description) {
+      const kind = description?.match(/\[KIND:([^\]]+)\]/)?.[1];
+      if (kind === '課題')  return { bg:'rgba(46,168,160,0.22)',  border:'#2EA8A0', text:'#1A7870' };
+      if (kind === 'ICU')   return { bg:'rgba(127,119,221,0.22)', border:'#7F77DD', text:'#AFA9EC' };
+      if (kind === '個人')  return { bg:'rgba(191,160,64,0.22)',  border:'#BFA040', text:'#BFA040' };
+      if (kind === '生活')  return { bg:'rgba(140,160,75,0.22)',  border:'#7A8B45', text:'#B0C870' };
+      if (kind === 'カナダ')return { bg:'rgba(127,119,221,0.22)', border:'#7F77DD', text:'#AFA9EC' };
+      if (kind === '授業')  return { bg:'rgba(60,100,210,0.22)',  border:'#3C64D2', text:'#85B7EB' };
       if (calName === '当日行動') return { bg:'rgba(74,160,56,0.22)',  border:'#4A9038', text:'#2A6820' };
       if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.22)',  border:'#B06A30', text:'#8B4A20' };
       if (/Constitutional|憲法/.test(title))   return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
@@ -1872,7 +1942,8 @@ async function fetchGCalEvents(info, success, failure) {
           const isIcu = prefix === 'i_';
           return (data.items || []).map(e => {
             const title = e.summary || '(タイトルなし)';
-            const { bg, border, text } = getEventColor(title, cal.summary, isIcu);
+            const description = e.description || '';
+            const { bg, border, text } = getEventColor(title, cal.summary, isIcu, description);
             return {
               id: prefix + cal.id + '_' + e.id,
               title,
@@ -1881,6 +1952,7 @@ async function fetchGCalEvents(info, success, failure) {
               backgroundColor: bg,
               borderColor: border,
               textColor: text,
+              extendedProps: { description, location: e.location || '' },
             };
           });
         } catch { return []; }
@@ -1904,26 +1976,73 @@ function toLocalDatetimeInput(str) {
   return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
 }
 
+function toggleGCalKind(el) {
+  const wasActive = el.classList.contains('active');
+  document.querySelectorAll('#gcal-kind-chips .gcal-kind-chip').forEach(c => c.classList.remove('active'));
+  if (!wasActive) el.classList.add('active');
+}
+
+function gcalAdjEnd(minutes) {
+  const endEl = document.getElementById('gcal-ev-end');
+  if (!endEl.value) return;
+  const d = new Date(endEl.value);
+  d.setMinutes(d.getMinutes() + minutes);
+  endEl.value = toLocalDatetimeInput(d.toISOString());
+}
+
+function gcalSyncEndTime() {
+  const startEl = document.getElementById('gcal-ev-start');
+  const endEl = document.getElementById('gcal-ev-end');
+  if (!startEl.value || !endEl.value) return;
+  const start = new Date(startEl.value);
+  const end = new Date(endEl.value);
+  if (end <= start) {
+    const newEnd = new Date(start);
+    newEnd.setHours(newEnd.getHours() + 1);
+    endEl.value = toLocalDatetimeInput(newEnd.toISOString());
+  }
+}
+
+function parseGCalKindFromDesc(desc) {
+  if (!desc) return null;
+  const m = desc.match(/\[KIND:([^\]]+)\]/);
+  return m ? m[1] : null;
+}
+
 function openGCalModal(event, startStr, endStr) {
   gcalEditingId = event ? event.id : null;
   document.getElementById('gcal-modal-title').textContent = event ? '📅 予定を編集' : '📅 予定を追加';
   document.getElementById('gcal-ev-title').value = event ? event.title : '';
   document.getElementById('gcal-ev-start').value = toLocalDatetimeInput(event ? event.startStr : startStr);
   document.getElementById('gcal-ev-end').value = toLocalDatetimeInput(event ? event.endStr : endStr);
+  document.getElementById('gcal-ev-location').value = event?.extendedProps?.location || '';
+  const rawDesc = event?.extendedProps?.description || '';
+  const kind = parseGCalKindFromDesc(rawDesc);
+  document.getElementById('gcal-ev-desc').value = rawDesc.replace(/\[KIND:[^\]]+\]\n?/, '');
+  document.querySelectorAll('#gcal-kind-chips .gcal-kind-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.kind === kind);
+  });
   document.getElementById('gcal-delete-btn').style.display = event ? 'block' : 'none';
   openModal('gcal');
+  setTimeout(() => document.getElementById('gcal-ev-title')?.focus(), 50);
 }
 
 async function submitGCalEvent() {
   const title = document.getElementById('gcal-ev-title').value.trim() || '新しい予定';
   const start = new Date(document.getElementById('gcal-ev-start').value).toISOString();
   const end = new Date(document.getElementById('gcal-ev-end').value).toISOString();
-  const body = JSON.stringify({ summary: title, start: { dateTime: start }, end: { dateTime: end } });
+  const location = document.getElementById('gcal-ev-location').value.trim();
+  const userDesc = document.getElementById('gcal-ev-desc').value.trim();
+  const kind = document.querySelector('#gcal-kind-chips .gcal-kind-chip.active')?.dataset.kind || null;
+  const description = [kind ? `[KIND:${kind}]` : '', userDesc].filter(Boolean).join('\n');
+  const eventBody = { summary: title, start: { dateTime: start }, end: { dateTime: end } };
+  if (location) eventBody.location = location;
+  if (description) eventBody.description = description;
   const method = gcalEditingId ? 'PUT' : 'POST';
   const url = gcalEditingId
     ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalEditingId}`
     : 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-  await fetch(url, { method, headers: { Authorization: `Bearer ${gToken}`, 'Content-Type': 'application/json' }, body });
+  await fetch(url, { method, headers: { Authorization: `Bearer ${gToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
   closeModal('gcal');
   if (fcCalendar) fcCalendar.refetchEvents();
 }
@@ -1937,9 +2056,12 @@ async function deleteGCalEvent() {
 }
 
 async function moveGCalEvent(event) {
-  const body = JSON.stringify({ summary: event.title, start: { dateTime: event.start.toISOString() }, end: { dateTime: event.end.toISOString() } });
-  await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${event.id}`,
-    { method: 'PUT', headers: { Authorization: `Bearer ${gToken}`, 'Content-Type': 'application/json' }, body });
+  const eventBody = { summary: event.title, start: { dateTime: event.start.toISOString() }, end: { dateTime: event.end.toISOString() } };
+  if (event.extendedProps?.location) eventBody.location = event.extendedProps.location;
+  if (event.extendedProps?.description) eventBody.description = event.extendedProps.description;
+  const rawId = event.id.replace(/^[pi]_[^_]+_/, '');
+  await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${rawId}`,
+    { method: 'PUT', headers: { Authorization: `Bearer ${gToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
 }
 
 // ===== 週間スケジュール設定 =====
