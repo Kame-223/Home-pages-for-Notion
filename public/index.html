@@ -528,7 +528,14 @@ body::before {
 }
 .celeb-emoji { font-size: 36px; margin-bottom: 8px; }
 .celeb-title { font-size: 18px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
-.celeb-sub { font-size: 12px; color: var(--text-sub); }
+.celeb-sub { font-size: 12px; color: var(--text-sub); margin-bottom: 16px; }
+.celeb-btn {
+  font-size: 12px; padding: 8px 22px; border-radius: 99px;
+  border: 0.5px solid rgba(239,159,39,0.5); background: rgba(239,159,39,0.12);
+  color: var(--amber); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .2s;
+}
+.celeb-btn:hover { background: rgba(239,159,39,0.22); }
 .confetti-piece {
   position: absolute; width: 8px; height: 8px; border-radius: 2px;
   animation: confettiFall 1.2s ease-in forwards;
@@ -2749,6 +2756,15 @@ function toggleDone(id) {
   updateExecHint();
 }
 
+function goToFurikaeri() {
+  document.querySelectorAll('.celeb-overlay').forEach(el => el.remove());
+  setMode('exec');
+  setTimeout(() => {
+    const el = document.getElementById('exec-bottom');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+}
+
 // 持ち越し折りたたみ
 let leftoverOpen = false;
 function toggleLeftover() {
@@ -2776,6 +2792,7 @@ function celebrate() {
     <div class="celeb-emoji">🎉</div>
     <div class="celeb-title">今日のタスク全部終わった！</div>
     <div class="celeb-sub">よくやった、本当にお疲れ様！</div>
+    <button class="celeb-btn" onclick="goToFurikaeri()">📔 振り返りを書く</button>
   </div>`;
   document.body.appendChild(overlay);
   setTimeout(() => overlay.remove(), 3500);
@@ -3270,6 +3287,7 @@ async function addToInbox() {
     document.getElementById('inbox-props').style.display = 'none';
     if (document.getElementById('inbox-prop-toggle-btn')) document.getElementById('inbox-prop-toggle-btn').textContent = '＋ プロパティ';
     closeModal('inbox');
+    showToast('📥 INBOXに追加しました！', 'rgba(127,119,221,0.92)');
     await loadTasks();
   } catch(e) { console.error(e); }
   finally { if (btn) btn.disabled = false; }
