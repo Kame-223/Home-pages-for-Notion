@@ -727,8 +727,8 @@ body::before {
 .edit-chips.disabled { opacity: 0.25; pointer-events: none; }
 .edit-chips.dimmed { opacity: 0.35; }
 /* チップ個別カラー */
-.edit-chip[data-val="課題"]    { --chip-bg: rgba(255,62,191,0.18);  --chip-color: #FF7ED4; --chip-border: rgba(255,62,191,0.4); }
-.edit-chip[data-val="個人"]    { --chip-bg: rgba(196,120,110,0.18); --chip-color: #D4A098; --chip-border: rgba(196,120,110,0.4); }
+.edit-chip[data-val="課題"]    { --chip-bg: rgba(46,168,160,0.18);  --chip-color: #2EA8A0; --chip-border: rgba(46,168,160,0.4); }
+.edit-chip[data-val="個人"]    { --chip-bg: rgba(191,160,64,0.18);  --chip-color: #BFA040; --chip-border: rgba(191,160,64,0.4); }
 .edit-chip[data-val="生活"]    { --chip-bg: rgba(140,160,75,0.18);  --chip-color: #B0C870; --chip-border: rgba(140,160,75,0.4); }
 .edit-chip[data-val="ICU"]     { --chip-bg: rgba(255,255,255,0.12); --chip-color: rgba(255,255,255,0.8); --chip-border: rgba(255,255,255,0.3); }
 .edit-chip[data-val="カナダ"]  { --chip-bg: rgba(127,119,221,0.2);  --chip-color: #AFA9EC; --chip-border: rgba(175,169,236,0.45); }
@@ -2189,7 +2189,7 @@ function renderCard(task, mode='today') {
   const leftBtn = !area
     ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
     : !hasSubjectOrEla
-      ? `<button class="btn-change-prop" onclick="${editCall}">CHANGE</button>`
+      ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>`
       : '';
 
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
@@ -3041,7 +3041,7 @@ function renderGtdCard(task) {
   const hasSubjectOrElaG = !!(subjectToShow || elaToShow);
   const leftBtnG = !area
     ? `<button class="btn-set-prop" onclick="${editCall}">＋ プロパティを設定</button>`
-    : !hasSubjectOrElaG ? `<button class="btn-change-prop" onclick="${editCall}">CHANGE</button>` : '';
+    : !hasSubjectOrElaG ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>` : '';
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
