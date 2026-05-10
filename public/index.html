@@ -3117,8 +3117,8 @@ function renderSubtaskPanel(id) {
             onchange="checkSubtask('${b.id}',this.checked,'${id}')">
           <span class="subtask-text ${checked?'checked':''}">${text}</span>
           <div class="subtask-order-btns">
-            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>◀</button>
-            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▶</button>
+            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>▲</button>
+            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▼</button>
           </div>
           <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
         </div>`;
