@@ -494,6 +494,25 @@ body::before {
   text-decoration: none; transition: border-color .15s; cursor: pointer;
 }
 .link-pill:hover { border-color: rgba(255,255,255,0.4); }
+/* 完了パーティクル */
+@keyframes particleFly {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+@keyframes ringExpand {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.9; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+}
+.done-particle {
+  position: fixed; width: 8px; height: 8px; border-radius: 50%;
+  pointer-events: none; z-index: 9500;
+  animation: particleFly 0.7s ease-out forwards;
+}
+.done-ring {
+  position: fixed; border-radius: 50%; pointer-events: none; z-index: 9500;
+  border: 2px solid rgba(239,159,39,0.8);
+  animation: ringExpand 0.5s ease-out forwards;
+}
 /* 完了フラッシュ */
 @keyframes doneFlash {
   0%   { background: transparent; box-shadow: none; transform: scale(1); }
@@ -2909,6 +2928,7 @@ function toggleDone(id) {
       el.classList.remove('done-flash');
       void el.offsetWidth;
       el.classList.add('done-flash');
+      fireDoneParticles(el);
       setTimeout(() => renderAll(), 1400);
     }
   });
@@ -2931,6 +2951,48 @@ function toggleDone(id) {
   saveTaskState();
   updateProgress();
   updateExecHint();
+}
+
+function fireDoneParticles(cardEl) {
+  const rect = cardEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#EF9F27','#FFD060','#FF9A3C','#FFC87A','#fff'];
+
+  // リング
+  const ring = document.createElement('div');
+  ring.className = 'done-ring';
+  const size = Math.max(rect.width, rect.height) * 1.6;
+  ring.style.cssText = `left:${cx}px;top:${cy}px;width:${size}px;height:${size}px`;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 550);
+
+  // パーティクル
+  const count = 18;
+  for (let i = 0; i < count; i++) {
+    const angle = (360 / count) * i + (Math.random() - 0.5) * 20;
+    const dist = 60 + Math.random() * 80;
+    const rad = angle * Math.PI / 180;
+    const dx = Math.cos(rad) * dist;
+    const dy = Math.sin(rad) * dist;
+    const size = 5 + Math.random() * 6;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const delay = Math.random() * 0.12;
+
+    const p = document.createElement('div');
+    p.className = 'done-particle';
+    p.style.cssText = `
+      left:${cx - size/2}px; top:${cy - size/2}px;
+      width:${size}px; height:${size}px;
+      background:${color};
+      --dx:${dx}px; --dy:${dy}px;
+      animation-delay:${delay}s;
+      animation-duration:${0.55 + Math.random() * 0.2}s;
+      ${Math.random() > 0.5 ? 'border-radius:2px;' : ''}
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
 }
 
 function goToFurikaeri() {
