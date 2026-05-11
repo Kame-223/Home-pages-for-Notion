@@ -1775,6 +1775,8 @@ let gToken = null;   // 個人アカウント
 let gToken2 = null;  // ICUアカウント
 let fcCalendar = null;
 let gcalEditingId = null;
+let gcalCalendarId = 'primary';
+let gcalUseToken2 = false;
 
 function initGoogleCalendar() {
   const now = new Date();
@@ -1967,7 +1969,11 @@ async function fetchGCalEvents(info, success, failure) {
               backgroundColor: bg,
               borderColor: border,
               textColor: text,
-              extendedProps: { description, location: e.location || '' },
+              extendedProps: {
+                description, location: e.location || '',
+                calendarId: cal.id, eventId: e.id,
+                useToken2: isIcu,
+              },
             };
           });
         } catch { return []; }
@@ -2025,7 +2031,9 @@ function parseGCalKindFromDesc(desc) {
 }
 
 function openGCalModal(event, startStr, endStr) {
-  gcalEditingId = event ? event.id : null;
+  gcalEditingId = event ? (event.extendedProps?.eventId || event.id) : null;
+  gcalCalendarId = event ? (event.extendedProps?.calendarId || 'primary') : 'primary';
+  gcalUseToken2 = event ? !!(event.extendedProps?.useToken2) : false;
   document.getElementById('gcal-modal-title').textContent = event ? '📅 予定を編集' : '📅 予定を追加';
   document.getElementById('gcal-ev-title').value = event ? event.title : '';
   document.getElementById('gcal-ev-start').value = toLocalDatetimeInput(event ? event.startStr : startStr);
@@ -2053,19 +2061,23 @@ async function submitGCalEvent() {
   const eventBody = { summary: title, start: { dateTime: start }, end: { dateTime: end } };
   if (location) eventBody.location = location;
   if (description) eventBody.description = description;
+  const token = gcalUseToken2 ? gToken2 : gToken;
+  const calId = encodeURIComponent(gcalCalendarId);
   const method = gcalEditingId ? 'PUT' : 'POST';
   const url = gcalEditingId
-    ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalEditingId}`
-    : 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-  await fetch(url, { method, headers: { Authorization: `Bearer ${gToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
+    ? `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`
+    : `https://www.googleapis.com/calendar/v3/calendars/primary/events`;
+  await fetch(url, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
   closeModal('gcal');
   if (fcCalendar) fcCalendar.refetchEvents();
 }
 
 async function deleteGCalEvent() {
   if (!gcalEditingId) return;
-  await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalEditingId}`,
-    { method: 'DELETE', headers: { Authorization: `Bearer ${gToken}` } });
+  const token = gcalUseToken2 ? gToken2 : gToken;
+  const calId = encodeURIComponent(gcalCalendarId);
+  await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`,
+    { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
   closeModal('gcal');
   if (fcCalendar) fcCalendar.refetchEvents();
 }
@@ -2074,9 +2086,11 @@ async function moveGCalEvent(event) {
   const eventBody = { summary: event.title, start: { dateTime: event.start.toISOString() }, end: { dateTime: event.end.toISOString() } };
   if (event.extendedProps?.location) eventBody.location = event.extendedProps.location;
   if (event.extendedProps?.description) eventBody.description = event.extendedProps.description;
-  const rawId = event.id.replace(/^[pi]_[^_]+_/, '');
-  await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${rawId}`,
-    { method: 'PUT', headers: { Authorization: `Bearer ${gToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
+  const eventId = event.extendedProps?.eventId || event.id;
+  const calId = encodeURIComponent(event.extendedProps?.calendarId || 'primary');
+  const token = event.extendedProps?.useToken2 ? gToken2 : gToken;
+  await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}`,
+    { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
 }
 
 // ===== 週間スケジュール設定 =====
