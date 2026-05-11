@@ -369,12 +369,7 @@ body::before {
   cursor: pointer; color: var(--text-sub); transition: all .15s;
 }
 .gcal-kind-chip.active { font-weight: 600; }
-.gcal-kind-chip[data-kind="課題"].active  { background:rgba(46,168,160,0.2); border-color:#2EA8A0; color:#2EA8A0; }
-.gcal-kind-chip[data-kind="ICU"].active   { background:rgba(127,119,221,0.2); border-color:#7F77DD; color:#AFA9EC; }
-.gcal-kind-chip[data-kind="個人"].active  { background:rgba(191,160,64,0.2); border-color:#BFA040; color:#BFA040; }
-.gcal-kind-chip[data-kind="生活"].active  { background:rgba(140,160,75,0.2); border-color:#7A8B45; color:#B0C870; }
-.gcal-kind-chip[data-kind="カナダ"].active{ background:rgba(127,119,221,0.2); border-color:#7F77DD; color:#AFA9EC; }
-.gcal-kind-chip[data-kind="授業"].active  { background:rgba(60,100,210,0.2); border-color:#3C64D2; color:#85B7EB; }
+.gcal-kind-chip[data-kind="当日行動"].active { background:rgba(160,160,170,0.2); border-color:rgba(180,180,190,0.6); color:rgba(210,210,220,0.9); }
 .gcal-textarea {
   width: 100%; padding: 8px 12px; border-radius: 8px;
   background: var(--surface2); border: 0.5px solid var(--border2);
@@ -1616,12 +1611,7 @@ body::before {
     <div class="edit-field" style="margin-top:10px">
       <span class="edit-field-label">KIND</span>
       <div class="gcal-kind-chips" id="gcal-kind-chips">
-        <button class="gcal-kind-chip" data-kind="課題" onclick="toggleGCalKind(this)">課題</button>
-        <button class="gcal-kind-chip" data-kind="ICU" onclick="toggleGCalKind(this)">ICU</button>
-        <button class="gcal-kind-chip" data-kind="個人" onclick="toggleGCalKind(this)">個人</button>
-        <button class="gcal-kind-chip" data-kind="生活" onclick="toggleGCalKind(this)">生活</button>
-        <button class="gcal-kind-chip" data-kind="カナダ" onclick="toggleGCalKind(this)">カナダ</button>
-        <button class="gcal-kind-chip" data-kind="授業" onclick="toggleGCalKind(this)">授業</button>
+        <button class="gcal-kind-chip" data-kind="当日行動" onclick="toggleGCalKind(this)">当日行動</button>
       </div>
     </div>
     <div class="edit-field" style="margin-top:10px">
@@ -1934,12 +1924,7 @@ async function fetchGCalEvents(info, success, failure) {
 
     function getEventColor(title, calName, isIcu, description) {
       const kind = description?.match(/\[KIND:([^\]]+)\]/)?.[1];
-      if (kind === '課題')  return { bg:'rgba(46,168,160,0.22)',  border:'#2EA8A0', text:'#1A7870' };
-      if (kind === 'ICU')   return { bg:'rgba(127,119,221,0.22)', border:'#7F77DD', text:'#AFA9EC' };
-      if (kind === '個人')  return { bg:'rgba(191,160,64,0.22)',  border:'#BFA040', text:'#BFA040' };
-      if (kind === '生活')  return { bg:'rgba(140,160,75,0.22)',  border:'#7A8B45', text:'#B0C870' };
-      if (kind === 'カナダ')return { bg:'rgba(127,119,221,0.22)', border:'#7F77DD', text:'#AFA9EC' };
-      if (kind === '授業')  return { bg:'rgba(60,100,210,0.22)',  border:'#3C64D2', text:'#85B7EB' };
+      if (kind === '当日行動') return { bg:'rgba(120,120,130,0.22)', border:'rgba(160,160,170,0.7)', text:'rgba(210,210,220,0.9)' };
       if (calName === '当日行動') return { bg:'rgba(74,160,56,0.22)',  border:'#4A9038', text:'#2A6820' };
       if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.22)',  border:'#B06A30', text:'#8B4A20' };
       if (/Constitutional|憲法/.test(title))   return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
