@@ -513,14 +513,35 @@ body::before {
   border: 2px solid rgba(239,159,39,0.8);
   animation: ringExpand 0.5s ease-out forwards;
 }
-/* 完了フラッシュ */
+/* 完了フラッシュ（カラーバリエーション） */
 @keyframes doneFlash {
   0%   { background: transparent; box-shadow: none; transform: scale(1); }
   15%  { background: rgba(239,159,39,0.45); box-shadow: 0 0 28px rgba(239,159,39,0.65); transform: scale(1.012); }
   50%  { background: rgba(239,159,39,0.22); box-shadow: 0 0 14px rgba(239,159,39,0.3); }
   100% { background: transparent; box-shadow: none; transform: scale(1); }
 }
-.task-card.done-flash { animation: doneFlash 0.9s ease-out forwards; }
+@keyframes doneFlashGreen {
+  0%   { background: transparent; box-shadow: none; transform: scale(1); }
+  15%  { background: rgba(29,158,117,0.45); box-shadow: 0 0 28px rgba(29,158,117,0.65); transform: scale(1.012); }
+  50%  { background: rgba(29,158,117,0.22); box-shadow: 0 0 14px rgba(29,158,117,0.3); }
+  100% { background: transparent; box-shadow: none; transform: scale(1); }
+}
+@keyframes doneFlashBlue {
+  0%   { background: transparent; box-shadow: none; transform: scale(1); }
+  15%  { background: rgba(127,119,221,0.45); box-shadow: 0 0 28px rgba(127,119,221,0.65); transform: scale(1.012); }
+  50%  { background: rgba(127,119,221,0.22); box-shadow: 0 0 14px rgba(127,119,221,0.3); }
+  100% { background: transparent; box-shadow: none; transform: scale(1); }
+}
+@keyframes doneFlashPink {
+  0%   { background: transparent; box-shadow: none; transform: scale(1); }
+  15%  { background: rgba(233,98,130,0.45); box-shadow: 0 0 28px rgba(233,98,130,0.65); transform: scale(1.012); }
+  50%  { background: rgba(233,98,130,0.22); box-shadow: 0 0 14px rgba(233,98,130,0.3); }
+  100% { background: transparent; box-shadow: none; transform: scale(1); }
+}
+.task-card.done-flash      { animation: doneFlash      0.9s ease-out forwards; }
+.task-card.done-flash-green{ animation: doneFlashGreen 0.9s ease-out forwards; }
+.task-card.done-flash-blue { animation: doneFlashBlue  0.9s ease-out forwards; }
+.task-card.done-flash-pink { animation: doneFlashPink  0.9s ease-out forwards; }
 /* 実行モード誘導ヒント */
 .exec-start-hint-wrap { display: none; text-align: center; padding: 8px 0 16px; }
 .exec-start-hint-wrap.show { display: block; }
@@ -532,15 +553,25 @@ body::before {
   display: inline-block;
 }
 .exec-start-hint:hover { background: rgba(29,158,117,0.22); }
-/* もっと見るボタン */
+/* もっと見る / 表示数を減らすボタン */
 .next-show-more { text-align: center; padding: 10px 0 6px; }
-.next-show-more-btn {
+.next-show-more-btn, .next-show-less-btn {
   font-size: 12px; padding: 9px 32px; border-radius: 99px;
   border: 0.5px solid var(--border2); background: rgba(255,255,255,0.03);
   color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
   transition: all .15s;
 }
 .next-show-more-btn:hover { border-color: #85B7EB; color: #85B7EB; background: rgba(133,183,235,0.06); }
+.next-show-less-btn:hover { border-color: rgba(255,255,255,0.3); color: var(--text); background: rgba(255,255,255,0.05); }
+/* 追加表示されたカード */
+@keyframes newlyShownIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.task-card.newly-shown {
+  box-shadow: 0 0 0 1px rgba(133,183,235,0.4), 0 2px 8px rgba(133,183,235,0.08);
+  animation: newlyShownIn 0.35s ease-out forwards;
+}
 /* 完了タスク引き出し */
 .done-drawer { margin-top: 4px; }
 .done-drawer-toggle {
@@ -2305,10 +2336,17 @@ function setNextFilter(f) {
 }
 
 let nextListExpanded = false;
+let nextPrevCutoff = 0;
 const NEXT_DEFAULT_COUNT = 5;
 
 function expandNextList() {
   nextListExpanded = true;
+  renderNextList();
+}
+
+function collapseNextList() {
+  nextListExpanded = false;
+  nextPrevCutoff = 0;
   renderNextList();
 }
 
@@ -2400,19 +2438,28 @@ function renderNextList() {
 }
 
 function applyNextListLimit(el, total) {
-  if (nextListExpanded || total <= NEXT_DEFAULT_COUNT) return;
   const cards = Array.from(el.querySelectorAll('.task-card'));
-  if (cards.length <= NEXT_DEFAULT_COUNT) return;
+
+  if (nextListExpanded) {
+    if (cards.length > NEXT_DEFAULT_COUNT) {
+      cards.forEach((c, i) => { if (i >= nextPrevCutoff) c.classList.add('newly-shown'); });
+      el.insertAdjacentHTML('beforeend',
+        `<div class="next-show-more"><button class="next-show-less-btn" onclick="collapseNextList()">▲ 表示数を減らす</button></div>`
+      );
+    }
+    return;
+  }
+
+  if (total <= NEXT_DEFAULT_COUNT || cards.length <= NEXT_DEFAULT_COUNT) return;
   const todayStr = new Date().toISOString().split('T')[0];
-  // 当日締切タスクが5件目以降にあれば、その全件まで表示枠を広げる
   let cutoff = NEXT_DEFAULT_COUNT;
   while (cutoff < cards.length) {
-    const card = cards[cutoff];
-    const dl = card.dataset.deadline;
+    const dl = cards[cutoff].dataset.deadline;
     if (dl && dl.startsWith(todayStr)) cutoff++;
     else break;
   }
   if (cutoff >= cards.length) return;
+  nextPrevCutoff = cutoff;
   for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
   el.querySelectorAll('.card-group').forEach(g => {
     const visible = g.querySelectorAll('.task-card:not([style*="none"])');
@@ -2925,10 +2972,11 @@ function toggleDone(id) {
   document.querySelectorAll(`#tc-${id}`).forEach(el=>{
     el.classList.toggle('done',isDone);
     if (isDone && todayEl && todayEl.contains(el)) {
-      el.classList.remove('done-flash');
+      const dStyle = pickDoneStyle();
+      el.classList.remove('done-flash','done-flash-green','done-flash-blue','done-flash-pink');
       void el.offsetWidth;
-      el.classList.add('done-flash');
-      fireDoneParticles(el);
+      el.classList.add(dStyle.flash);
+      fireDoneParticles(el, dStyle);
       setTimeout(() => renderAll(), 1400);
     }
   });
@@ -2953,45 +3001,52 @@ function toggleDone(id) {
   updateExecHint();
 }
 
-function fireDoneParticles(cardEl) {
+const DONE_STYLES = [
+  { flash:'done-flash',       ring:'rgba(239,159,39,0.8)',   colors:['#EF9F27','#FFD060','#FF9A3C','#FFC87A','#fff'], count:18, minDist:60,  maxDist:140 },
+  { flash:'done-flash-green', ring:'rgba(29,158,117,0.8)',   colors:['#1D9E75','#50D9A0','#8EFFC4','#B4FFE0','#fff'], count:22, minDist:70,  maxDist:160 },
+  { flash:'done-flash-blue',  ring:'rgba(127,119,221,0.8)',  colors:['#7F77DD','#B5B0FF','#A5A0FF','#6EC6FF','#fff'], count:16, minDist:55,  maxDist:130 },
+  { flash:'done-flash-pink',  ring:'rgba(233,98,130,0.8)',   colors:['#E96282','#FF9BB5','#FF7DA8','#FFB8C8','#fff'], count:20, minDist:65,  maxDist:150 },
+  { flash:'done-flash',       ring:'rgba(255,255,255,0.5)',  colors:['#EF9F27','#1D9E75','#7F77DD','#E96282','#FFD060','#50D9A0'], count:30, minDist:80, maxDist:200, double:true },
+];
+let doneStyleCounter = 0;
+
+function pickDoneStyle() {
+  doneStyleCounter++;
+  return doneStyleCounter % 5 === 0 ? DONE_STYLES[4] : DONE_STYLES[Math.floor(Math.random() * 4)];
+}
+
+function fireDoneParticles(cardEl, style) {
   const rect = cardEl.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  const colors = ['#EF9F27','#FFD060','#FF9A3C','#FFC87A','#fff'];
 
-  // リング
-  const ring = document.createElement('div');
-  ring.className = 'done-ring';
-  const size = Math.max(rect.width, rect.height) * 1.6;
-  ring.style.cssText = `left:${cx}px;top:${cy}px;width:${size}px;height:${size}px`;
-  document.body.appendChild(ring);
-  setTimeout(() => ring.remove(), 550);
+  const addRing = (sz, color, delay) => {
+    const ring = document.createElement('div');
+    ring.className = 'done-ring';
+    ring.style.cssText = `left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;border-color:${color};${delay?`animation-delay:${delay}s`:''}`;
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), 650);
+  };
 
-  // パーティクル
-  const count = 18;
-  for (let i = 0; i < count; i++) {
-    const angle = (360 / count) * i + (Math.random() - 0.5) * 20;
-    const dist = 60 + Math.random() * 80;
+  const ringSize = Math.max(rect.width, rect.height) * 1.6;
+  addRing(ringSize, style.ring, 0);
+  if (style.double) addRing(ringSize * 0.6, 'rgba(255,255,255,0.4)', 0.15);
+
+  for (let i = 0; i < style.count; i++) {
+    const angle = (360 / style.count) * i + (Math.random() - 0.5) * 25;
+    const dist = style.minDist + Math.random() * (style.maxDist - style.minDist);
     const rad = angle * Math.PI / 180;
     const dx = Math.cos(rad) * dist;
     const dy = Math.sin(rad) * dist;
-    const size = 5 + Math.random() * 6;
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const delay = Math.random() * 0.12;
+    const sz = 4 + Math.random() * 7;
+    const color = style.colors[Math.floor(Math.random() * style.colors.length)];
+    const delay = Math.random() * 0.15;
 
     const p = document.createElement('div');
     p.className = 'done-particle';
-    p.style.cssText = `
-      left:${cx - size/2}px; top:${cy - size/2}px;
-      width:${size}px; height:${size}px;
-      background:${color};
-      --dx:${dx}px; --dy:${dy}px;
-      animation-delay:${delay}s;
-      animation-duration:${0.55 + Math.random() * 0.2}s;
-      ${Math.random() > 0.5 ? 'border-radius:2px;' : ''}
-    `;
+    p.style.cssText = `left:${cx-sz/2}px;top:${cy-sz/2}px;width:${sz}px;height:${sz}px;background:${color};--dx:${dx}px;--dy:${dy}px;animation-delay:${delay}s;animation-duration:${0.5+Math.random()*0.25}s;${Math.random()>0.5?'border-radius:2px;':''}`;
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 900);
+    setTimeout(() => p.remove(), 950);
   }
 }
 
@@ -3524,28 +3579,37 @@ async function addToInbox() {
   if (deadline)  props['締切日']      = {date:{start:deadline}};
   if (firstLink) props['作業リンク']  = {url:firstLink};
 
+  // フォームリセットとモーダルクローズを即座に（楽観的UI）
+  document.getElementById('inbox-input').value = '';
+  document.querySelectorAll('#inbox-area .edit-chip,#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('inbox-deadline-date').value = '';
+  document.getElementById('inbox-deadline-time').value = '';
+  const impEl = document.getElementById('inbox-important');
+  if (impEl) impEl.checked = false;
+  inboxLinks = [];
+  renderInboxLinks();
+  document.getElementById('inbox-props').style.display = 'none';
+  if (document.getElementById('inbox-prop-toggle-btn')) document.getElementById('inbox-prop-toggle-btn').textContent = '＋ プロパティ';
+  closeModal('inbox');
+  showToast('📥 INBOXに追加しました！', 'rgba(127,119,221,0.92)');
+  if (btn) btn.disabled = false;
+
+  // Notion保存はバックグラウンドで実行
   try {
     const page = await notionCreate(DB.tasks, props);
     if (page?.id) {
       taskState[page.id] = { done:false, pinned:false, important:isImportant,
         timeIdx:1, focusSeconds:0, jikantai:null, link:firstLink, links };
       saveTaskState();
+      allTasks.push(page);
+      try { renderAll(); } catch(e) {}
+      if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
     }
-    document.getElementById('inbox-input').value = '';
-    document.querySelectorAll('#inbox-area .edit-chip,#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
-    document.getElementById('inbox-deadline-date').value = '';
-    document.getElementById('inbox-deadline-time').value = '';
-    const impEl = document.getElementById('inbox-important');
-    if (impEl) impEl.checked = false;
-    inboxLinks = [];
-    renderInboxLinks();
-    document.getElementById('inbox-props').style.display = 'none';
-    if (document.getElementById('inbox-prop-toggle-btn')) document.getElementById('inbox-prop-toggle-btn').textContent = '＋ プロパティ';
-    closeModal('inbox');
-    showToast('📥 INBOXに追加しました！', 'rgba(127,119,221,0.92)');
-    await loadTasks();
-  } catch(e) { console.error(e); }
-  finally { if (btn) btn.disabled = false; }
+    loadTasks();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ 追加に失敗しました', 'rgba(220,50,50,0.92)');
+  }
 }
 
 let inboxLinks = [];
@@ -4043,10 +4107,38 @@ async function setGtdKind(id, gtdVal) {
   renderTaskPage();
 }
 
+const TASK_PAGE_DEFAULT_COUNT = 5;
+let taskInboxExpanded = false;
+let taskNextExpanded  = false;
+
+function applyTaskListLimit(el, expanded, expandFn, collapseFn) {
+  if (!el) return;
+  const cards = Array.from(el.querySelectorAll('.task-card'));
+  if (cards.length <= TASK_PAGE_DEFAULT_COUNT) return;
+  if (expanded) {
+    el.insertAdjacentHTML('beforeend',
+      `<div class="next-show-more"><button class="next-show-less-btn" onclick="${collapseFn}()">▲ 表示数を減らす</button></div>`
+    );
+    return;
+  }
+  for (let i = TASK_PAGE_DEFAULT_COUNT; i < cards.length; i++) cards[i].style.display = 'none';
+  el.querySelectorAll('.card-group').forEach(g => {
+    if (!g.querySelectorAll('.task-card:not([style*="none"])').length) g.style.display = 'none';
+  });
+  const remaining = cards.length - TASK_PAGE_DEFAULT_COUNT;
+  el.insertAdjacentHTML('beforeend',
+    `<div class="next-show-more"><button class="next-show-more-btn" onclick="${expandFn}()">もっと見る（あと${remaining}件）</button></div>`
+  );
+}
+
+function expandTaskInbox()   { taskInboxExpanded = true;  renderTaskPage(); }
+function collapseTaskInbox() { taskInboxExpanded = false; renderTaskPage(); }
+function expandTaskNext()    { taskNextExpanded  = true;  renderTaskPage(); }
+function collapseTaskNext()  { taskNextExpanded  = false; renderTaskPage(); }
+
 function renderTaskPage() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
   const getGtd = t => getProp(t,'GTD 種別');
-  console.log('[TaskPage] allTasks:', allTasks.length, allTasks.map(t => `"${getGtd(t)}"`).join(', '));
 
   const inboxTasks   = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
   const nextTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '▶️ 次やる');
@@ -4058,10 +4150,14 @@ function renderTaskPage() {
     el.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : `<div class="section-empty">${emptyMsg}</div>`;
   };
 
-  render(document.getElementById('task-inbox-list'), inboxTasks, 'INBOXは空です 🎉');
+  const inboxEl = document.getElementById('task-inbox-list');
+  render(inboxEl, inboxTasks, 'INBOXは空です 🎉');
+  applyTaskListLimit(inboxEl, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
 
   const nextEl = document.getElementById('task-next-list');
   if (nextEl) nextEl.innerHTML = nextTasks.length ? groupByArea(nextTasks, renderGtdCard) : '<div class="section-empty">なし</div>';
+  applyTaskListLimit(nextEl, taskNextExpanded, 'expandTaskNext', 'collapseTaskNext');
+
   render(document.getElementById('task-wait-list'),  waitTasks,  'なし');
   render(document.getElementById('task-someday-list'), somedayTasks, 'なし');
 
