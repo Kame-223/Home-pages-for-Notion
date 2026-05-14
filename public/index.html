@@ -3784,7 +3784,14 @@ async function toggleSubtaskPanel(id) {
     try {
       const res = await fetch(`/api/notion?path=blocks/${id}/children`);
       const data = await res.json();
-      subtaskData[id] = (data.results || []).filter(b => b.type === 'to_do');
+      const fresh = (data.results || []).filter(b => b.type === 'to_do');
+      // キャッシュ上にある未確定（tmp-）アイテムを保持してマージ（上書き禁止）
+      const freshTexts = new Set(fresh.map(b => b.to_do.rich_text.map(r => r.plain_text).join('')));
+      const pending = (subtaskData[id] || []).filter(b =>
+        b.id.startsWith('tmp-') &&
+        !freshTexts.has(b.to_do.rich_text.map(r => r.plain_text).join(''))
+      );
+      subtaskData[id] = [...fresh, ...pending];
       applySubtaskOrder(id);
       saveSubtaskCache(id);
     } catch(e) {
@@ -3863,6 +3870,7 @@ async function checkSubtask(blockId, checked, taskId) {
   saveSubtaskCache(taskId);
   renderSubtaskPanel(taskId);
   updateSubtaskProgress(taskId);
+  if (blockId.startsWith('tmp-')) return; // 未確定IDはNotion更新しない
   fetch(`/api/notion?path=blocks/${blockId}`, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
@@ -3879,6 +3887,7 @@ async function addSubtask(taskId, keepFocus = false) {
   const tempId = 'tmp-' + Date.now();
   if (!subtaskData[taskId]) subtaskData[taskId] = [];
   subtaskData[taskId].push({ id: tempId, type:'to_do', to_do:{ rich_text:[{plain_text:text}], checked:false } });
+  saveSubtaskCache(taskId); // リロード対策：即座にキャッシュ保存
   renderSubtaskPanel(taskId);
   updateSubtaskProgress(taskId);
   if (keepFocus) setTimeout(() => document.getElementById(`sti-${taskId}`)?.focus(), 0);
@@ -3892,8 +3901,21 @@ async function addSubtask(taskId, keepFocus = false) {
     const real = data.results?.[0];
     if (real && subtaskData[taskId]) {
       const idx = subtaskData[taskId].findIndex(b => b.id === tempId);
-      if (idx >= 0) subtaskData[taskId][idx] = real;
+      if (idx >= 0) {
+        // ユーザーが一時ID時にチェックしていた場合、その状態を引き継ぐ
+        const savedChecked = subtaskData[taskId][idx].to_do.checked;
+        subtaskData[taskId][idx] = real;
+        if (savedChecked !== real.to_do.checked) {
+          subtaskData[taskId][idx].to_do.checked = savedChecked;
+          fetch(`/api/notion?path=blocks/${real.id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({to_do:{checked: savedChecked}}),
+          }).catch(console.error);
+        }
+      }
       saveSubtaskCache(taskId);
+      saveSubtaskOrder(taskId);
     }
   } catch(e) { console.error(e); }
 }
@@ -3908,6 +3930,7 @@ async function editSubtask(blockId, newText, taskId) {
   block.to_do.rich_text = [{type:'text', text:{content:newText}, plain_text:newText}];
   saveSubtaskCache(taskId);
   updateSubtaskProgress(taskId);
+  if (blockId.startsWith('tmp-')) return; // 未確定IDはNotion更新しない（キャッシュに保存済み）
   fetch(`/api/notion?path=blocks/${blockId}`, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
@@ -3945,7 +3968,9 @@ async function deleteSubtask(blockId, taskId) {
   setTimeout(() => {
     if (!pendingSubtaskDeletes[blockId]) return;
     delete pendingSubtaskDeletes[blockId];
-    fetch(`/api/notion?path=blocks/${blockId}`, { method:'DELETE' }).catch(console.error);
+    if (!blockId.startsWith('tmp-')) { // 未確定IDはNotion削除しない
+      fetch(`/api/notion?path=blocks/${blockId}`, { method:'DELETE' }).catch(console.error);
+    }
   }, 3500);
 }
 
