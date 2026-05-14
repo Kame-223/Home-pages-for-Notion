@@ -451,6 +451,47 @@ body::before {
   width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
   background: rgba(255,255,255,0.5);
 }
+/* ===== 時間帯フィルター ===== */
+.jikantai-prompt { text-align: center; padding: 10px 0 6px; }
+.jikantai-set-btn {
+  font-size: 11px; padding: 8px 24px; border-radius: 99px;
+  border: 0.5px solid rgba(127,119,221,0.4); background: rgba(127,119,221,0.08);
+  color: var(--purple); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .2s;
+}
+.jikantai-set-btn:hover { background: rgba(127,119,221,0.2); }
+.jikantai-complete-btn {
+  font-size: 11px; padding: 8px 26px; border-radius: 99px;
+  border: 0.5px solid rgba(29,158,117,0.5); background: rgba(29,158,117,0.1);
+  color: var(--green); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .2s; font-weight: 600;
+}
+.jikantai-complete-btn:hover { background: rgba(29,158,117,0.22); }
+.jikantai-filter-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px; margin-bottom: 8px;
+  background: rgba(29,158,117,0.08); border-radius: 8px;
+  border: 0.5px solid rgba(29,158,117,0.25);
+}
+.jikantai-filter-label { font-size: 11px; color: var(--green); font-weight: 600; }
+.jikantai-filter-reset {
+  font-size: 10px; color: var(--text-dim); cursor: pointer;
+  padding: 2px 8px; border-radius: 4px; border: 0.5px solid var(--border);
+  background: none; font-family: 'Noto Sans JP', sans-serif; transition: color .15s;
+}
+.jikantai-filter-reset:hover { color: var(--text-sub); }
+.jikantai-other-toggle {
+  font-size: 11px; color: var(--text-dim); cursor: pointer;
+  padding: 10px 0 4px; text-align: center; transition: color .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  user-select: none;
+}
+.jikantai-other-toggle:hover { color: var(--text-sub); }
+.jikantai-other-toggle::before, .jikantai-other-toggle::after {
+  content: ''; flex: 1; height: 0.5px; background: var(--border);
+}
+.jikantai-other-body { display: none; }
+.jikantai-other-body.open { display: block; }
 
 /* ===== TASK CARD ===== */
 .task-card {
@@ -2351,6 +2392,41 @@ function collapseNextList() {
 }
 
 let todayDoneDrawerOpen = false;
+
+// ===== 時間帯フィルター =====
+let jikantaiFilterActive = JSON.parse(localStorage.getItem('jikantaiFilterActive') || 'false');
+let jikantaiOtherOpen = false;
+
+function getCurrentJikantaiName() {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 12) return '朝';
+  if (h >= 12 && h < 18) return '昼';
+  return '夜';
+}
+function activateJikantaiFilter() {
+  jikantaiFilterActive = true;
+  jikantaiOtherOpen = false;
+  localStorage.setItem('jikantaiFilterActive', 'true');
+  renderAll();
+}
+function deactivateJikantaiFilter() {
+  jikantaiFilterActive = false;
+  jikantaiOtherOpen = false;
+  localStorage.removeItem('jikantaiFilterActive');
+  renderAll();
+}
+function toggleJikantaiOther() {
+  jikantaiOtherOpen = !jikantaiOtherOpen;
+  const body = document.getElementById('jikantai-other-body');
+  const toggle = document.getElementById('jikantai-other-toggle');
+  if (body) body.classList.toggle('open', jikantaiOtherOpen);
+  if (toggle) {
+    const cnt = toggle.dataset.count;
+    toggle.textContent = jikantaiOtherOpen
+      ? '▲ 他の時間帯を閉じる'
+      : `▼ 他の時間帯のタスクを見る（${cnt}件）`;
+  }
+}
 function toggleDoneDrawer() {
   todayDoneDrawerOpen = !todayDoneDrawerOpen;
   const cards = document.getElementById('done-drawer-cards');
@@ -2772,12 +2848,54 @@ function renderAll() {
         <button class="exec-empty-btn" onclick="setMode('select')">← 選択モードで選ぶ</button>
       </div>`;
   let todayHtml = '';
+
+  const getJK = t => taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || null;
+  const jkEmoji = {朝:'🌅',昼:'🌞',夜:'🌙'};
+
   if (!todayPending.length) {
     todayHtml = emptyMsg;
+  } else if (jikantaiFilterActive) {
+    // ===== 時間帯フィルター ON =====
+    const curJK = getCurrentJikantaiName();
+    const curTasks   = todayPending.filter(t => (getJK(t) || '未設定') === curJK);
+    const otherTasks = todayPending.filter(t => (getJK(t) || '未設定') !== curJK);
+
+    // フィルターバー
+    todayHtml = `<div class="jikantai-filter-bar">
+      <span class="jikantai-filter-label">${jkEmoji[curJK]||''} ${curJK}のタスクを表示中</span>
+      <button class="jikantai-filter-reset" onclick="deactivateJikantaiFilter()">全表示に戻す</button>
+    </div>`;
+
+    // 現在の時間帯タスク
+    if (curTasks.length) {
+      if (currentMode === 'exec') {
+        todayHtml += curTasks.map(t => renderCard(t,'today')).join('');
+      } else {
+        todayHtml += groupByArea(curTasks, t => renderCard(t,'today'));
+      }
+    } else {
+      todayHtml += `<div class="section-empty">${jkEmoji[curJK]||''} ${curJK}のタスクはありません</div>`;
+    }
+
+    // 他の時間帯タスク（折りたたみ）
+    if (otherTasks.length) {
+      const otherHtml = currentMode === 'exec'
+        ? otherTasks.map(t => renderCard(t,'today')).join('')
+        : groupByArea(otherTasks, t => renderCard(t,'today'));
+      todayHtml += `
+        <div class="jikantai-other-toggle" id="jikantai-other-toggle"
+          data-count="${otherTasks.length}" onclick="toggleJikantaiOther()">
+          ${jikantaiOtherOpen ? '▲ 他の時間帯を閉じる' : `▼ 他の時間帯のタスクを見る（${otherTasks.length}件）`}
+        </div>
+        <div class="jikantai-other-body ${jikantaiOtherOpen?'open':''}" id="jikantai-other-body">
+          ${otherHtml}
+        </div>`;
+    }
   } else if (currentMode === 'exec') {
+    // ===== execモード（時間帯グループ） =====
     const blocks = {朝:[], 昼:[], 夜:[], 未設定:[]};
     todayPending.forEach(t => {
-      const jk = taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || '未設定';
+      const jk = getJK(t) || '未設定';
       (blocks[jk] || blocks['未設定']).push(t);
     });
     const bLabels = {朝:'🌅 朝', 昼:'🌞 昼', 夜:'🌙 夜', 未設定:'⬜ 未設定'};
@@ -2787,8 +2905,24 @@ function renderAll() {
     });
     if (!todayHtml) todayHtml = emptyMsg;
   } else {
+    // ===== selectモード（エリアグループ） =====
     todayHtml = groupByArea(todayPending, t => renderCard(t,'today'));
   }
+
+  // 時間帯設定促進プロンプト（フィルターOFF時のみ）
+  if (todayPending.length && !jikantaiFilterActive) {
+    const unset = todayPending.filter(t => !getJK(t));
+    if (unset.length > 0) {
+      todayHtml += `<div class="jikantai-prompt">
+        <button class="jikantai-set-btn" onclick="">⏰ 時間帯を設定しよう（あと${unset.length}件未設定）</button>
+      </div>`;
+    } else {
+      todayHtml += `<div class="jikantai-prompt">
+        <button class="jikantai-complete-btn" onclick="activateJikantaiFilter()">✅ 時間帯設定完了 → 今の時間帯だけ表示</button>
+      </div>`;
+    }
+  }
+
   if (todayDone.length) {
     todayHtml += `<div class="done-drawer">
       <div class="done-drawer-toggle" id="done-drawer-toggle" data-count="${todayDone.length}" onclick="toggleDoneDrawer()">✅ 完了 ${todayDone.length}件 ${todayDoneDrawerOpen ? '▲' : '▼'}</div>
