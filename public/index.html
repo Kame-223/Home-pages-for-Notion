@@ -444,12 +444,12 @@ body::before {
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
   padding: 5px 8px; margin-bottom: 6px; border-radius: 4px;
   display: flex; align-items: center; gap: 7px;
-  color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.07);
+  color: rgba(30,30,40,0.85); background: rgba(255,255,255,0.92);
 }
 .time-block-label::before {
   content: ''; display: inline-block;
   width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
-  background: rgba(255,255,255,0.5);
+  background: rgba(30,30,40,0.35);
 }
 /* ===== 時間帯フィルター ===== */
 .jikantai-prompt { text-align: center; padding: 10px 0 6px; }
@@ -2411,25 +2411,7 @@ function toggleDoneDrawer() {
   if (toggle) toggle.textContent = `✅ 完了 ${toggle.dataset.count}件 ${todayDoneDrawerOpen ? '▲' : '▼'}`;
 }
 
-function updateExecHint() {
-  const todayEl = document.getElementById('today-tasks');
-  if (!todayEl) return;
-  let wrap = document.getElementById('exec-hint-wrap');
-  const pinned = allTasks.filter(t => taskState[t.id]?.pinned && !taskState[t.id]?.done).length;
-  if (pinned > 0 && currentMode === 'select') {
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'exec-hint-wrap';
-      wrap.className = 'exec-start-hint-wrap';
-      wrap.innerHTML = `<button class="exec-start-hint" onclick="setMode('exec')"></button>`;
-      todayEl.insertBefore(wrap, todayEl.firstChild);
-    }
-    wrap.querySelector('.exec-start-hint').textContent = `▶ 実行を始める（${pinned}件）`;
-    wrap.classList.add('show');
-  } else if (wrap) {
-    wrap.classList.remove('show');
-  }
-}
+function updateExecHint() { /* 「実行を始める」ボタンは廃止 */ }
 
 function renderNextList() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
