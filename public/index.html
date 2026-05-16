@@ -444,7 +444,7 @@ body::before {
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
   padding: 5px 8px; margin-bottom: 6px; border-radius: 4px;
   display: flex; align-items: center; gap: 7px;
-  color: rgba(30,30,40,0.85); background: rgba(255,255,255,0.92);
+  color: rgba(30,30,40,0.85); background: rgba(255,255,255,0.73);
 }
 .time-block-label::before {
   content: ''; display: inline-block;
@@ -2379,6 +2379,7 @@ function collapseNextList() {
 }
 
 let todayDoneDrawerOpen = false;
+let lastProgressPct = -1;
 
 // ===== 時間帯フィルター =====
 let jikantaiOtherOpen = false;
@@ -2931,7 +2932,8 @@ function updateProgress() {
   document.getElementById('prog-total').textContent = pct+'%';
   document.getElementById('prog-total-sub').textContent = `${done}/${todayAll.length}完了`;
   document.getElementById('prog-total-fill').style.width = pct+'%';
-  if (pct === 100 && todayAll.length > 0) celebrate();
+  if (pct === 100 && todayAll.length > 0 && lastProgressPct < 100) celebrate();
+  lastProgressPct = pct;
 
   const kadai = todayAll.filter(t=>getProp(t,'エリア')==='課題');
   const kdone = kadai.filter(isDoneToday).length;
