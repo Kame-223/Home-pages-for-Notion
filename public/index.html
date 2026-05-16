@@ -2919,10 +2919,14 @@ function renderAll() {
 }
 
 function updateProgress() {
-  const isDoneTask = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  // 進捗は「今日やる」（ピン済み）タスクのみ
+  // 進捗は「今日やる」（ピン済み）タスクのみ、完了は今日のセッション（3:01〜翌3:00）内のみ
+  const session = getFurikaeriDate();
+  const isDoneToday = t => {
+    const s = taskState[t.id];
+    return s?.done && s?.doneSessionDate === session;
+  };
   const todayAll = allTasks.filter(t => taskState[t.id]?.pinned);
-  const done = todayAll.filter(isDoneTask).length;
+  const done = todayAll.filter(isDoneToday).length;
   const pct = todayAll.length ? Math.round(done/todayAll.length*100) : 0;
   document.getElementById('prog-total').textContent = pct+'%';
   document.getElementById('prog-total-sub').textContent = `${done}/${todayAll.length}完了`;
@@ -2930,14 +2934,14 @@ function updateProgress() {
   if (pct === 100 && todayAll.length > 0) celebrate();
 
   const kadai = todayAll.filter(t=>getProp(t,'エリア')==='課題');
-  const kdone = kadai.filter(isDoneTask).length;
+  const kdone = kadai.filter(isDoneToday).length;
   const kpct = kadai.length ? Math.round(kdone/kadai.length*100) : 0;
   document.getElementById('prog-task').textContent = kpct+'%';
   document.getElementById('prog-task-sub').textContent = `${kdone}/${kadai.length}完了`;
   document.getElementById('prog-task-fill').style.width = kpct+'%';
 
   const other = todayAll.filter(t=>getProp(t,'エリア')!=='課題');
-  const odone = other.filter(isDoneTask).length;
+  const odone = other.filter(isDoneToday).length;
   const opct = other.length ? Math.round(odone/other.length*100) : 0;
   document.getElementById('prog-other').textContent = opct+'%';
   document.getElementById('prog-other-sub').textContent = `${odone}/${other.length}完了`;
