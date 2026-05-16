@@ -2796,8 +2796,13 @@ function renderAll() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
   // TODAY（明示的に「今日やる」を押したタスクのみ）
+  const currentSession = getFurikaeriDate();
   const todayPending = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
-  const todayDone = allTasks.filter(t => taskState[t.id]?.pinned && isDone(t));
+  // 完了ドロワーは今日のセッション（3:01〜翌3:00）内に完了したものだけ
+  const todayDone = allTasks.filter(t => {
+    const s = taskState[t.id];
+    return s?.pinned && s?.done && s?.doneSessionDate === currentSession;
+  });
   const todayEl = document.getElementById('today-tasks');
   const emptyMsg = currentMode === 'select'
     ? '<div class="section-empty">👆 上から今日するタスクを選ぼう！</div>'
