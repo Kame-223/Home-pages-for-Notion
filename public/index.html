@@ -618,14 +618,15 @@ body::before {
 }
 .done-drawer-cards { display: none; }
 .done-drawer-cards.open { display: block; }
-/* 持ち越し折りたたみ */
-.leftover-toggle {
-  width: 100%; display: flex; align-items: center; justify-content: space-between;
-  background: none; border: none; cursor: pointer; padding: 0;
-  color: inherit; font: inherit;
+/* 持ち越し表示ボタン */
+.leftover-reveal-wrap { text-align: center; padding: 18px 0 14px; }
+.leftover-reveal-btn {
+  font-size: 12px; padding: 9px 28px; border-radius: 99px;
+  border: 0.5px solid rgba(232,92,92,0.35); background: rgba(232,92,92,0.07);
+  color: rgba(232,92,92,0.85); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .2s;
 }
-.leftover-body { display: none; }
-.leftover-body.open { display: block; }
+.leftover-reveal-btn:hover { background: rgba(232,92,92,0.16); border-color: rgba(232,92,92,0.55); }
 /* 全完了セレブレーション */
 @keyframes celebFadeIn {
   from { opacity: 0; transform: translate(-50%,-50%) scale(.8); }
@@ -1494,13 +1495,8 @@ body::before {
 
       <!-- 選択モード：直接パネル -->
       <div id="leftover-panel" class="bottom-panel">
-        <div class="section-header red" style="cursor:pointer" onclick="toggleLeftover()">
-          <button class="leftover-toggle">
-            <span id="leftover-header-text">🔄 持ち越し</span>
-            <span id="leftover-arrow">▼</span>
-          </button>
-        </div>
-        <div class="bottom-half leftover-body" id="leftover-list"><div class="loading">読み込み中...</div></div>
+        <div class="section-header red">🔄 持ち越し<span class="task-count" id="leftover-count"></span></div>
+        <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="next-panel" class="bottom-panel">
         <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
@@ -2906,14 +2902,10 @@ function renderAll() {
   }
   todayEl.innerHTML = todayHtml;
 
-  // やり残し
-  const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < today);
-  const leftEl = document.getElementById('leftover-list');
-  const leftHeaderText = document.getElementById('leftover-header-text');
-  if (leftHeaderText) leftHeaderText.textContent = leftover.length ? `🔄 持ち越し（${leftover.length}件）` : '🔄 持ち越し';
-  leftEl.innerHTML = leftover.length
-    ? groupByArea(leftover, t => renderCard(t,'leftover'))
-    : '<div class="section-empty" style="color:var(--green)">持ち越しなし 🎉</div>';
+  // やり残し（1日の切り替わりは3:01基準）
+  const sessionDate = getFurikaeriDate();
+  const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < sessionDate);
+  renderLeftoverSection(leftover);
 
   // 次やること
   renderNextList();
@@ -3012,7 +3004,9 @@ let frPageId = null;
 
 function getFurikaeriDate() {
   const now = new Date();
-  if (now.getHours() < 3) now.setDate(now.getDate() - 1);
+  const h = now.getHours(), m = now.getMinutes();
+  // 1日の切り替わりは3:01。3:00までは前日扱い。
+  if (h < 3 || (h === 3 && m === 0)) now.setDate(now.getDate() - 1);
   return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 }
 
@@ -3166,12 +3160,47 @@ function goToFurikaeri() {
   }, 200);
 }
 
-// 持ち越し折りたたみ
-let leftoverOpen = false;
-function toggleLeftover() {
-  leftoverOpen = !leftoverOpen;
-  document.getElementById('leftover-list').classList.toggle('open', leftoverOpen);
-  document.getElementById('leftover-arrow').textContent = leftoverOpen ? '▲' : '▼';
+// 持ち越し表示制御
+const LEFTOVER_DEFAULT_COUNT = 3;
+let leftoverRevealed = false;
+let leftoverExpanded = false;
+
+function revealLeftover()       { leftoverRevealed = true;  leftoverExpanded = false; renderAll(); }
+function expandLeftoverList()   { leftoverExpanded = true;  renderAll(); }
+function collapseLeftoverList() { leftoverExpanded = false; renderAll(); }
+
+function renderLeftoverSection(leftover) {
+  const leftEl = document.getElementById('leftover-list');
+  const countEl = document.getElementById('leftover-count');
+  if (!leftEl) return;
+  if (countEl) countEl.textContent = leftover.length ? `(${leftover.length})` : '';
+
+  if (!leftover.length) {
+    leftEl.innerHTML = '<div class="section-empty" style="color:var(--green)">持ち越しなし 🎉</div>';
+    return;
+  }
+  if (!leftoverRevealed) {
+    leftEl.innerHTML = `<div class="leftover-reveal-wrap">
+      <button class="leftover-reveal-btn" onclick="revealLeftover()">🔄 持ち越しタスクを表示（${leftover.length}件）</button>
+    </div>`;
+    return;
+  }
+  leftEl.innerHTML = groupByArea(leftover, t => renderCard(t,'leftover'));
+  const cards = Array.from(leftEl.querySelectorAll('.task-card'));
+  if (!leftoverExpanded && cards.length > LEFTOVER_DEFAULT_COUNT) {
+    for (let i = LEFTOVER_DEFAULT_COUNT; i < cards.length; i++) cards[i].style.display = 'none';
+    leftEl.querySelectorAll('.card-group').forEach(g => {
+      if (!g.querySelectorAll('.task-card:not([style*="none"])').length) g.style.display = 'none';
+    });
+    const remaining = cards.length - LEFTOVER_DEFAULT_COUNT;
+    leftEl.insertAdjacentHTML('beforeend',
+      `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandLeftoverList()">もっと見る（あと${remaining}件）</button></div>`
+    );
+  } else if (leftoverExpanded && cards.length > LEFTOVER_DEFAULT_COUNT) {
+    leftEl.insertAdjacentHTML('beforeend',
+      `<div class="next-show-more"><button class="next-show-less-btn" onclick="collapseLeftoverList()">▲ 表示数を減らす</button></div>`
+    );
+  }
 }
 
 // 全完了セレブレーション
