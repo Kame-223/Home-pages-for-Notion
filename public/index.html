@@ -2676,7 +2676,15 @@ function subjectTagCls(s) {
 let allTasks = [];
 const timeSteps = ['5m','30m','1h','2h','3h+'];
 function loadTaskState() {
-  try { return JSON.parse(localStorage.getItem('taskState') || '{}'); } catch { return {}; }
+  try {
+    const state = JSON.parse(localStorage.getItem('taskState') || '{}');
+    // pinnedSessionDateがないピン済みタスクは今日のセッションに移行（初回マイグレーション）
+    const session = getFurikaeriDate();
+    for (const s of Object.values(state)) {
+      if (s.pinned && !s.pinnedSessionDate) s.pinnedSessionDate = session;
+    }
+    return state;
+  } catch { return {}; }
 }
 function saveTaskState() {
   const toSave = {};
@@ -2865,9 +2873,7 @@ function renderAll() {
   const todayPending = allTasks.filter(t => {
     if (isDone(t)) return false;
     const s = taskState[t.id];
-    if (!s?.pinned) return false;
-    // pinnedSessionDateが未設定（旧データ）またはセッションが一致する場合のみ今日に表示
-    return !s.pinnedSessionDate || s.pinnedSessionDate === currentSession;
+    return s?.pinned && s?.pinnedSessionDate === currentSession;
   });
   // 完了ドロワーは今日のセッション内に完了したものだけ
   const todayDone = allTasks.filter(t => {
@@ -3006,10 +3012,10 @@ function updateProgress() {
     const s = taskState[t.id];
     return s?.done && s?.doneSessionDate === session;
   };
-  // 進捗は当日セッションにピンしたタスクのみ（前セッション分は持ち越し扱いで除外）
+  // 進捗は当日セッション（3:01〜翌3:00）にピンしたタスクのみ
   const todayAll = allTasks.filter(t => {
     const s = taskState[t.id];
-    return s?.pinned && (!s.pinnedSessionDate || s.pinnedSessionDate === session);
+    return s?.pinned && s?.pinnedSessionDate === session;
   });
   const done = todayAll.filter(isDoneToday).length;
   const pct = todayAll.length ? Math.round(done/todayAll.length*100) : 0;
