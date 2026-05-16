@@ -2681,7 +2681,7 @@ function loadTaskState() {
 function saveTaskState() {
   const toSave = {};
   for (const [id, s] of Object.entries(taskState)) {
-    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeIdx: s.timeIdx, jikantai: s.jikantai, link: s.link, links: s.links };
+    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeIdx: s.timeIdx, jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate };
   }
   localStorage.setItem('taskState', JSON.stringify(toSave));
 }
@@ -2860,10 +2860,16 @@ function renderAll() {
   const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ 次やる';};
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
-  // TODAY（明示的に「今日やる」を押したタスクのみ）
+  // TODAY：当日セッション（3:01〜翌3:00）にピンしたタスクのみ
   const currentSession = getFurikaeriDate();
-  const todayPending = allTasks.filter(t => !isDone(t) && taskState[t.id]?.pinned);
-  // 完了ドロワーは今日のセッション（3:01〜翌3:00）内に完了したものだけ
+  const todayPending = allTasks.filter(t => {
+    if (isDone(t)) return false;
+    const s = taskState[t.id];
+    if (!s?.pinned) return false;
+    // pinnedSessionDateが未設定（旧データ）またはセッションが一致する場合のみ今日に表示
+    return !s.pinnedSessionDate || s.pinnedSessionDate === currentSession;
+  });
+  // 完了ドロワーは今日のセッション内に完了したものだけ
   const todayDone = allTasks.filter(t => {
     const s = taskState[t.id];
     return s?.pinned && s?.done && s?.doneSessionDate === currentSession;
@@ -2955,8 +2961,18 @@ function renderAll() {
   todayEl.innerHTML = todayHtml;
 
   // やり残し（1日の切り替わりは3:01基準）
-  const sessionDate = getFurikaeriDate();
-  const leftover = allTasks.filter(t => !isDone(t) && getProp(t,'締切日') && getProp(t,'締切日') < sessionDate);
+  // 期限切れタスク ＋ 前セッションにピンしたが未完了のタスク（セッションをまたいだ今日やること）
+  const leftoverSet = new Set();
+  allTasks.forEach(t => {
+    if (isDone(t)) return;
+    const s = taskState[t.id];
+    const deadline = getProp(t,'締切日');
+    // 期限切れ
+    if (deadline && deadline < currentSession) { leftoverSet.add(t.id); return; }
+    // 前セッションのピン済み（pinnedSessionDateが設定済みで今日ではないもの）
+    if (s?.pinned && s?.pinnedSessionDate && s.pinnedSessionDate < currentSession) leftoverSet.add(t.id);
+  });
+  const leftover = allTasks.filter(t => leftoverSet.has(t.id));
   renderLeftoverSection(leftover);
 
   // 次やること
@@ -2990,7 +3006,11 @@ function updateProgress() {
     const s = taskState[t.id];
     return s?.done && s?.doneSessionDate === session;
   };
-  const todayAll = allTasks.filter(t => taskState[t.id]?.pinned);
+  // 進捗は当日セッションにピンしたタスクのみ（前セッション分は持ち越し扱いで除外）
+  const todayAll = allTasks.filter(t => {
+    const s = taskState[t.id];
+    return s?.pinned && (!s.pinnedSessionDate || s.pinnedSessionDate === session);
+  });
   const done = todayAll.filter(isDoneToday).length;
   const pct = todayAll.length ? Math.round(done/todayAll.length*100) : 0;
   document.getElementById('prog-total').textContent = pct+'%';
@@ -3316,8 +3336,10 @@ function togglePin(id) {
   taskState[id].pinned = !taskState[id].pinned;
   celebShown = false;
   if (taskState[id].pinned) {
+    taskState[id].pinnedSessionDate = getFurikaeriDate(); // ピンした日のセッションを記録
     showToast('✅ 今日やることに追加！');
   } else {
+    delete taskState[id].pinnedSessionDate;
     if (taskState[id].done) {
       taskState[id].done = false;
       notionUpdate(id, {'ステータス':{status:{name:'ToDo'}}}).catch(console.error);
