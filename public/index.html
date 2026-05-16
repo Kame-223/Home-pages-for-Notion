@@ -1867,31 +1867,36 @@ let gcalCalendarId = 'primary';
 let gcalUseToken2 = false;
 
 function initGoogleCalendar() {
-  const now = new Date();
-  const btn = document.getElementById('cal-edit-btn');
-  if (btn) btn.href = `https://calendar.google.com/calendar/r/day/${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+  const inIframe = window.self !== window.top;
 
-  // URLハッシュにトークンがあれば取得
+  // URLハッシュにトークンがあれば取得（メイン・iframe共通）
   const hash = window.location.hash;
   if (hash.includes('access_token=')) {
     const params = new URLSearchParams(hash.substring(1));
     const token = params.get('access_token');
     const expiresIn = parseInt(params.get('expires_in') || '3600');
-    const state = params.get('state');
+    const state = params.get('state') || '';
     if (token) {
-      const expiry = Date.now() + (expiresIn - 120) * 1000;
-      if (state === 'icu') {
-        gToken2 = token;
+      const expiry = Date.now() + (expiresIn - 30) * 1000; // バッファ30秒に短縮
+      const isIcu = state.includes('icu');
+      if (isIcu) {
+        if (!inIframe) gToken2 = token;
         localStorage.setItem('gcal_token2', token);
-        localStorage.setItem('gcal_token2_expiry', expiry);
+        localStorage.setItem('gcal_token2_expiry', String(expiry));
       } else {
-        gToken = token;
+        if (!inIframe) gToken = token;
         localStorage.setItem('gcal_token', token);
-        localStorage.setItem('gcal_token_expiry', expiry);
+        localStorage.setItem('gcal_token_expiry', String(expiry));
       }
       history.replaceState({}, '', window.location.pathname);
     }
   }
+  // iframeではトークン保存だけして終了（storageイベントでメインに通知される）
+  if (inIframe) return;
+
+  const now = new Date();
+  const btn = document.getElementById('cal-edit-btn');
+  if (btn) btn.href = `https://calendar.google.com/calendar/r/day/${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
 
   // 保存済みトークンを復元（有効期限チェック）
   if (!gToken) {
@@ -1912,6 +1917,55 @@ function initGoogleCalendar() {
   } else {
     showLoginButtons();
   }
+
+  // サイレント自動更新のスケジュール
+  scheduleGCalTokenRenewal();
+
+  // iframeがlocalStorageを更新したら新トークンを反映
+  window.addEventListener('storage', e => {
+    if (e.key === 'gcal_token' && e.newValue) {
+      gToken = e.newValue;
+      scheduleGCalTokenRenewal();
+    }
+    if (e.key === 'gcal_token2' && e.newValue) {
+      gToken2 = e.newValue;
+      scheduleGCalTokenRenewal();
+    }
+  });
+}
+
+function scheduleGCalTokenRenewal() {
+  const RENEW_BEFORE_MS = 5 * 60 * 1000; // 期限5分前に更新
+  const now = Date.now();
+  [
+    { key: 'gcal_token',  account: 'personal', hasToken: () => !!gToken  },
+    { key: 'gcal_token2', account: 'icu',      hasToken: () => !!gToken2 },
+  ].forEach(({ key, account, hasToken }) => {
+    const exp = parseInt(localStorage.getItem(key + '_expiry') || '0');
+    if (!hasToken() || exp <= now) return;
+    const delay = Math.max(0, exp - now - RENEW_BEFORE_MS);
+    setTimeout(() => silentRenewGCalToken(account), delay);
+  });
+}
+
+function silentRenewGCalToken(account) {
+  const redirectUri = window.location.origin + window.location.pathname;
+  const hint = account === 'icu' ? 'c301250n@icu.ac.jp' : 'matsuyamakosei31@gmail.com';
+  const state = account === 'icu' ? 'icu_silent' : 'personal_silent';
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+    'client_id=' + encodeURIComponent(GCAL_CLIENT_ID) +
+    '&redirect_uri=' + encodeURIComponent(redirectUri) +
+    '&response_type=token' +
+    '&scope=' + encodeURIComponent(GCAL_SCOPE) +
+    '&prompt=none' +
+    '&login_hint=' + encodeURIComponent(hint) +
+    '&state=' + state;
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;visibility:hidden;';
+  document.body.appendChild(iframe);
+  const cleanup = setTimeout(() => iframe.remove(), 20000);
+  iframe.onload = () => { clearTimeout(cleanup); setTimeout(() => iframe.remove(), 1000); };
+  iframe.src = url;
 }
 
 function showLoginButtons() {
@@ -4365,6 +4419,11 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.onload = () => {
+  // iframeでのサイレントリニューアル中はGCal初期化のみ実行して終了
+  if (window.self !== window.top) {
+    initGoogleCalendar();
+    return;
+  }
   setupBackground();
   setupBanner();
   setupDatetime();
