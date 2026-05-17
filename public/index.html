@@ -2194,8 +2194,10 @@ function renderFullCalendar() {
       if (m === 0) {
         arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
         if ((h === 13 || h === 19)) {
-          cushion.style.setProperty('color', 'rgba(255,255,255,0.9)', 'important');
-          cushion.style.setProperty('font-weight', '700', 'important');
+          cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
+          cushion.style.setProperty('font-weight', '900', 'important');
+          cushion.style.setProperty('font-size', '13px', 'important');
+          cushion.style.setProperty('letter-spacing', '0', 'important');
         }
         if (h === 0) cushion.textContent = '24:00';
       }
