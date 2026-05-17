@@ -1063,7 +1063,7 @@ body::before {
   position: fixed; inset: 0;
   background: rgba(5,3,15,0.96);
   display: none; align-items: center; justify-content: center;
-  z-index: 1000;
+  z-index: 1000; overflow-y: auto;
 }
 .focus-overlay.open { display: flex; }
 .focus-modal {
@@ -1072,6 +1072,19 @@ body::before {
   padding: 48px 40px;
   max-width: 420px; width: 100%;
   animation: fadeUp .3s ease-out;
+}
+.focus-subtask-wrap { width: 100%; margin-top: 4px; }
+.focus-subtask-toggle {
+  text-align: center; cursor: pointer;
+  font-size: 11px; color: var(--text-dim);
+  padding: 6px 0; transition: color .15s; user-select: none;
+}
+.focus-subtask-toggle:hover { color: var(--text-sub); }
+.focus-subtask-body {
+  margin-top: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid var(--border2);
+  border-radius: 10px; padding: 10px 14px;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .focus-mode-label {
@@ -1669,6 +1682,14 @@ body::before {
     <div class="focus-btns">
       <button class="focus-pause" onclick="pauseFocus()">一時停止</button>
       <button class="focus-done-btn" onclick="completeFocus()">完了</button>
+    </div>
+    <div class="focus-subtask-wrap" id="focus-subtask-wrap" style="display:none">
+      <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
+        <span id="focus-subtask-label">▶ 子タスク</span>
+      </div>
+      <div class="focus-subtask-body" id="focus-subtask-body" style="display:none">
+        <div class="subtask-panel" id="focus-stp" style="display:block"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -3441,9 +3462,76 @@ function startFocus(id) {
   currentFocusId = id;
   focusStartTs = Date.now() - (s.focusSeconds * 1000);
 
+  // 子タスクエリアの初期化
+  focusSubtaskOpen = false;
+  const stWrap = document.getElementById('focus-subtask-wrap');
+  const stBody = document.getElementById('focus-subtask-body');
+  const stPanel = document.getElementById('focus-stp');
+  if (stBody) stBody.style.display = 'none';
+  if (stPanel) stPanel.id = `stp-${id}`; // 既存subtaskパネルIDに合わせる
+  if (stWrap) stWrap.style.display = 'block';
+  updateFocusSubtaskLabel(id);
+  // キャッシュがあれば即表示準備、なければロード
+  if (!subtaskData[id]) {
+    const cached = loadSubtaskCache(id);
+    if (cached) subtaskData[id] = cached;
+  }
+
   clearInterval(focusInterval);
   updateFocusDisplay();
   focusInterval = setInterval(updateFocusDisplay, 1000);
+}
+
+let focusSubtaskOpen = false;
+
+function updateFocusSubtaskLabel(id) {
+  const label = document.getElementById('focus-subtask-label');
+  if (!label) return;
+  const blocks = subtaskData[id] || [];
+  const done = blocks.filter(b => b.to_do?.checked).length;
+  const total = blocks.length;
+  const countStr = total > 0 ? ` (${done}/${total})` : '';
+  label.textContent = focusSubtaskOpen
+    ? `▼ 子タスク${countStr}`
+    : `▶ 子タスク${countStr}`;
+}
+
+async function toggleFocusSubtask() {
+  const id = currentFocusId;
+  if (!id) return;
+  focusSubtaskOpen = !focusSubtaskOpen;
+  const body = document.getElementById('focus-subtask-body');
+  if (body) body.style.display = focusSubtaskOpen ? 'block' : 'none';
+  updateFocusSubtaskLabel(id);
+
+  if (focusSubtaskOpen) {
+    // Notionから最新を取得してレンダリング（既存ロジック流用）
+    const panel = document.getElementById(`stp-${id}`);
+    if (!subtaskData[id]) {
+      const cached = loadSubtaskCache(id);
+      if (cached) {
+        subtaskData[id] = cached;
+        if (panel) renderSubtaskPanel(id);
+      }
+    } else {
+      if (panel) renderSubtaskPanel(id);
+    }
+    // バックグラウンドで最新取得
+    try {
+      const res = await fetch(`/api/notion?path=blocks/${id}/children`);
+      const data = await res.json();
+      const fresh = (data.results || []).filter(b => b.type === 'to_do');
+      const freshTexts = new Set(fresh.map(b => b.to_do.rich_text.map(r => r.plain_text).join('')));
+      const pending = (subtaskData[id] || []).filter(b =>
+        b.id.startsWith('tmp-') && !freshTexts.has(b.to_do.rich_text.map(r => r.plain_text).join(''))
+      );
+      subtaskData[id] = [...fresh, ...pending];
+      applySubtaskOrder(id);
+      saveSubtaskCache(id);
+      if (panel) renderSubtaskPanel(id);
+      updateFocusSubtaskLabel(id);
+    } catch(e) { console.error(e); }
+  }
 }
 
 function openBearLinks(id) {
@@ -3494,6 +3582,9 @@ function pauseFocus() {
   focusInterval = null;
   focusStartTs = null;
   document.getElementById('focus-overlay').classList.remove('open');
+  // subtaskパネルIDを元に戻す
+  const stPanel = document.getElementById(`stp-${currentFocusId}`);
+  if (stPanel) stPanel.id = 'focus-stp';
   if (currentFocusId) {
     document.querySelectorAll(`#start-${currentFocusId}`).forEach(el=>{
       el.textContent = 'Restart';
@@ -3507,6 +3598,9 @@ function completeFocus() {
   clearInterval(focusInterval);
   focusStartTs = null;
   document.getElementById('focus-overlay').classList.remove('open');
+  // subtaskパネルIDを元に戻す
+  const stPanel = document.getElementById(`stp-${currentFocusId}`);
+  if (stPanel) stPanel.id = 'focus-stp';
   if (currentFocusId) toggleDone(currentFocusId);
   currentFocusId = null;
 }
