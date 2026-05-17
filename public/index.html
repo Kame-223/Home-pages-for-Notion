@@ -1788,13 +1788,13 @@ body::before {
         <span id="focus-subtask-label">▶ 子タスク</span>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="focus-quick-add" onclick="openModal('inbox')">＋ INBOX</button>
-      <button class="focus-quick-add" onclick="openModal('note')">＋ NOTE</button>
-    </div>
   </div>
   <div id="focus-subtask-body" style="display:none">
     <div class="subtask-panel" id="focus-stp" style="display:block"></div>
+  </div>
+  <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px">
+    <button class="focus-quick-add" onclick="openModal('inbox')">＋ INBOX</button>
+    <button class="focus-quick-add" onclick="openModal('note')">＋ NOTE</button>
   </div>
 </div>
 
