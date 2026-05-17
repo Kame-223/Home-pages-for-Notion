@@ -2744,6 +2744,14 @@ function areaTagCls(area) {
   if (area==='カナダ') return 'tag-purple';
   return 'tag-gray';
 }
+function areaBorderColor(area) {
+  if (area==='課題') return '#FF7ED4';
+  if (area==='個人') return '#D4A098';
+  if (area==='生活') return '#B0C870';
+  if (area==='ICU')  return 'rgba(255,255,255,0.75)';
+  if (area==='カナダ') return '#AFA9EC';
+  return 'rgba(255,255,255,0.15)';
+}
 function subjectTagCls(s) {
   if (s==='憲法') return 'tag-teal-olive';
   if (s==='社会学') return 'tag-mauve';
@@ -2755,6 +2763,7 @@ function subjectTagCls(s) {
 
 // ===== タスクデータ =====
 let allTasks = [];
+const openSubtaskPanels = new Set(); // 開いている子タスクパネルのID一覧
 const timeSteps = ['5m','30m','1h','2h','3h+'];
 function loadTaskState() {
   try {
@@ -2813,6 +2822,18 @@ async function loadTasks() {
   try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
   try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
+  // 開いていた子タスクパネルを復元
+  openSubtaskPanels.forEach(id => {
+    const panel = document.getElementById(`stp-${id}`);
+    if (!panel) { openSubtaskPanels.delete(id); return; }
+    if (subtaskData[id]) {
+      panel.style.display = 'block';
+      const arrow = document.getElementById(`sta-${id}`);
+      if (arrow) arrow.classList.add('open');
+      renderSubtaskPanel(id);
+      updateSubtaskProgress(id);
+    }
+  });
 }
 
 // ===== タスクカード描画 =====
@@ -2869,7 +2890,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px;border-left-color:${areaBorderColor(effectiveArea)}">
       <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
@@ -2899,7 +2920,7 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰';
   return `
-  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}">
+  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="border-left-color:${areaBorderColor(effectiveArea)}">
     <div class="pin-badge" onclick="togglePin('${id}')">✕</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
@@ -4511,8 +4532,10 @@ async function toggleSubtaskPanel(id) {
   if (isOpen) {
     panel.style.display = 'none';
     if (arrow) arrow.classList.remove('open');
+    openSubtaskPanels.delete(id);
     return;
   }
+  openSubtaskPanels.add(id);
   if (!subtaskData[id]) {
     panel.style.display = 'block';
     const cached = loadSubtaskCache(id);
