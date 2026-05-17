@@ -3969,8 +3969,7 @@ function startFocus(id) {
   document.getElementById('focus-overlay').classList.add('open');
   currentFocusId = id;
 
-  // カウントダウン初期化
-  const expected = timeSteps[s.timeIdx];
+  // カウントダウン初期化（expected は上で定義済み）
   focusCountdown  = FOCUS_STEP_SECS[expected] || 1800;
   focusPaused     = false;
   focusExpired    = false;
@@ -3984,10 +3983,8 @@ function startFocus(id) {
 
   // 子タスクエリアの初期化
   focusSubtaskOpen = false;
-  // カードのsubtaskパネルをクリアして重複IDを防ぐ
   const cardStPanel = document.getElementById(`stp-${id}`);
   if (cardStPanel) cardStPanel.innerHTML = '';
-  // キャッシュがあれば即ロード
   if (!subtaskData[id]) {
     const cached = loadSubtaskCache(id);
     if (cached) subtaskData[id] = cached;
@@ -3997,12 +3994,7 @@ function startFocus(id) {
   if (stBody) stBody.style.display = 'none';
   if (stWrap) stWrap.style.display = 'block';
   updateFocusSubtaskLabel(id);
-  // ボタン直下に配置（DOM描画後に計算）
   requestAnimationFrame(positionFocusSubtask);
-
-  clearInterval(focusInterval);
-  updateFocusDisplay();
-  focusInterval = setInterval(updateFocusDisplay, 1000);
 }
 
 let focusSubtaskOpen = false;
