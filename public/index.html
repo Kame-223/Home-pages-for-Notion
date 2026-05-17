@@ -1598,7 +1598,6 @@ body::before {
     <div class="schedule-col">
       <div class="section-header">📅 スケジュール<span id="cal-login-status" style="margin-left:auto;display:flex;gap:4px"></span><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
       <div id="fc-container"></div>
-      <button id="fc-latenight-btn" onclick="toggleCalLatenight()" style="width:100%;background:none;border:none;border-top:0.5px solid rgba(255,255,255,0.08);padding:5px 0;cursor:pointer;font-size:14px;color:rgba(255,255,255,0.3);transition:color .15s" title="深夜（〜3:00）を表示">🔽</button>
     </div>
 
     <!-- 今日やること -->
@@ -2152,11 +2151,8 @@ function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
   fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:00:00' : '24:15:00');
-  const btn = document.getElementById('fc-latenight-btn');
-  if (btn) {
-    btn.textContent = _calLatenight ? '🔼' : '🔽';
-    btn.style.color = _calLatenight ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)';
-  }
+  const lane = document.getElementById('fc-midnight-lane');
+  if (lane) lane.textContent = _calLatenight ? '🔼' : '🔽';
 }
 
 function renderFullCalendar() {
@@ -2186,6 +2182,9 @@ function renderFullCalendar() {
     slotDuration: '00:15:00',
     slotLabelInterval: '01:00:00',
     snapDuration: '00:05:00',
+    slotLabelContent: (arg) => {
+      if (arg.date.getHours() === 0 && arg.date.getMinutes() === 0) return '24:00';
+    },
     slotLabelDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
@@ -2193,17 +2192,28 @@ function renderFullCalendar() {
       if (!cushion) return;
       if (m === 0) {
         arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
-        if ((h === 13 || h === 19)) {
+        if (h === 13 || h === 19) {
           cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
           cushion.style.setProperty('font-weight', '900', 'important');
           cushion.style.setProperty('font-size', '13px', 'important');
           cushion.style.setProperty('letter-spacing', '0', 'important');
         }
-        if (h === 0) cushion.textContent = '24:00';
       }
     },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
+      const m = arg.date.getMinutes();
+      if (h === 0 && m === 0) {
+        arg.el.id = 'fc-midnight-lane';
+        Object.assign(arg.el.style, {
+          display:'flex', alignItems:'center', justifyContent:'center',
+          cursor:'pointer', fontSize:'16px', color:'rgba(255,255,255,0.3)',
+          userSelect:'none', background:'rgba(70,60,140,0.12)',
+        });
+        arg.el.textContent = '🔽';
+        arg.el.addEventListener('click', toggleCalLatenight);
+        return;
+      }
       if (h >= 6 && h < 12)       arg.el.style.background = 'rgba(255,190,60,0.07)';
       else if (h >= 12 && h < 18) arg.el.style.background = 'rgba(100,180,255,0.07)';
       else                         arg.el.style.background = 'rgba(70,60,140,0.12)';
