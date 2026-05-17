@@ -445,11 +445,16 @@ body::before {
   padding: 5px 8px; margin-bottom: 6px; border-radius: 4px;
   display: flex; align-items: center; gap: 7px;
   color: rgba(30,30,40,0.85); background: rgba(255,255,255,0.73);
+  transition: background 0.15s, color 0.15s;
 }
 .time-block-label::before {
   content: ''; display: inline-block;
   width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
   background: rgba(30,30,40,0.35);
+}
+.time-block-label.drag-target {
+  background: rgba(127,119,221,0.45) !important;
+  color: rgba(255,255,255,0.95) !important;
 }
 /* ===== 優先度・ドラッグ ===== */
 #today-tasks .task-card {
@@ -2987,7 +2992,7 @@ function renderAll() {
     });
     Object.entries(blocks).forEach(([key, bTasks]) => {
       if (!bTasks.length) return;
-      todayHtml += `<div class="time-block"><div class="time-block-label">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
+      todayHtml += `<div class="time-block"><div class="time-block-label" data-jk="${key}">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
     });
     if (!todayHtml) todayHtml = emptyMsg;
 
@@ -3347,7 +3352,7 @@ function applyTodayOrder(tasks) {
 }
 
 // ===== ドラッグ&ドロップ（Pointer Events + setPointerCapture版） =====
-let dragId = null, dragEl = null, dragGhost = null;
+let dragId = null, dragEl = null, dragGhost = null, dragTargetJK = null;
 
 function initTodayDrag() {
   const container = document.getElementById('today-tasks');
@@ -3437,30 +3442,78 @@ function updateInsertLine(cy) {
   document.querySelectorAll('.drag-insert-line').forEach(el => el.remove());
   const container = document.getElementById('today-tasks');
   if (!container) return;
-  const cards = Array.from(container.querySelectorAll('.task-card:not(.done):not(.dragging)'));
-  const before = cards.find(c => {
-    const r = c.getBoundingClientRect();
-    return cy < r.top + r.height / 2;
-  });
-  const line = document.createElement('div');
-  line.className = 'drag-insert-line';
-  if (before) before.before(line);
-  else if (cards.length) cards[cards.length - 1].after(line);
+
+  const timeBlocks = Array.from(container.querySelectorAll('.time-block'));
+  if (timeBlocks.length > 0) {
+    // 時間帯ブロック間ドラッグ：対象ブロックを特定
+    let targetBlock = timeBlocks.find(b => {
+      const r = b.getBoundingClientRect();
+      return cy >= r.top && cy <= r.bottom;
+    });
+    if (!targetBlock) {
+      // ブロック間の隙間はより近いほうへ
+      targetBlock = timeBlocks.reduce((closest, b) => {
+        const r = b.getBoundingClientRect();
+        const center = r.top + r.height / 2;
+        const prev = closest ? closest.getBoundingClientRect() : null;
+        const prevCenter = prev ? prev.top + prev.height / 2 : Infinity;
+        return Math.abs(cy - center) < Math.abs(cy - prevCenter) ? b : closest;
+      }, null);
+    }
+    // ラベルハイライト
+    container.querySelectorAll('.time-block-label').forEach(l => l.classList.remove('drag-target'));
+    const label = targetBlock?.querySelector('.time-block-label');
+    if (label) { label.classList.add('drag-target'); dragTargetJK = label.dataset.jk || null; }
+
+    // ブロック内の挿入位置
+    const blockCards = targetBlock ? Array.from(targetBlock.querySelectorAll('.task-card:not(.done):not(.dragging)')) : [];
+    const before = blockCards.find(c => cy < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
+    const line = document.createElement('div');
+    line.className = 'drag-insert-line';
+    if (before) before.before(line);
+    else if (blockCards.length) blockCards[blockCards.length - 1].after(line);
+    else if (label) label.after(line); // 空ブロックにはラベル直下に表示
+  } else {
+    // フラット表示（execモード等）
+    dragTargetJK = null;
+    const cards = Array.from(container.querySelectorAll('.task-card:not(.done):not(.dragging)'));
+    const before = cards.find(c => cy < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
+    const line = document.createElement('div');
+    line.className = 'drag-insert-line';
+    if (before) before.before(line);
+    else if (cards.length) cards[cards.length - 1].after(line);
+  }
 }
 
 function finishDrag() {
+  document.querySelectorAll('.time-block-label.drag-target').forEach(l => l.classList.remove('drag-target'));
   const line = document.querySelector('.drag-insert-line');
+  const savedDragId = dragId;
+  const savedTargetJK = dragTargetJK;
+
   if (line) {
     const nextId = line.nextElementSibling?.id?.replace(/^tc-/, '');
-    todayTaskOrder = todayTaskOrder.filter(id => id !== dragId);
+    todayTaskOrder = todayTaskOrder.filter(id => id !== savedDragId);
     const idx = nextId ? todayTaskOrder.indexOf(nextId) : todayTaskOrder.length;
-    todayTaskOrder.splice(idx < 0 ? todayTaskOrder.length : idx, 0, dragId);
+    todayTaskOrder.splice(idx < 0 ? todayTaskOrder.length : idx, 0, savedDragId);
     saveTodayOrder();
     line.remove();
   }
+
   dragGhost?.remove(); dragGhost = null;
   dragEl?.classList.remove('dragging');
-  dragId = null; dragEl = null;
+  dragId = null; dragEl = null; dragTargetJK = null;
+
+  // 別の時間帯ブロックにドロップされた場合は自動で設定変更
+  if (savedTargetJK && savedTargetJK !== '未設定' && taskState[savedDragId]) {
+    const currentJK = taskState[savedDragId].jikantai || null;
+    if (savedTargetJK !== currentJK) {
+      taskState[savedDragId].jikantai = savedTargetJK;
+      saveTaskState();
+      notionUpdate(savedDragId, {'実行時間帯': {select: {name: savedTargetJK}}}).catch(console.error);
+    }
+  }
+
   renderAll();
 }
 
