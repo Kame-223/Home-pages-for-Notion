@@ -1075,20 +1075,20 @@ body::before {
   /* ドーナッツ位置固定：子タスク展開でもここは動かない */
   position: relative; z-index: 1;
 }
-/* 子タスクエリア：オーバーレイ下部に絶対配置 */
+/* 子タスクエリア：ボタン直下に固定（JS で top を設定） */
 .focus-subtask-wrap {
-  position: absolute; bottom: 20px;
+  position: fixed;
   left: 50%; transform: translateX(-50%);
   width: 420px; max-width: calc(100vw - 40px);
+  z-index: 1001;
 }
 .focus-subtask-toggle {
   text-align: center; cursor: pointer;
   font-size: 11px; color: var(--text-dim);
-  padding: 6px 0; transition: color .15s; user-select: none;
+  padding: 8px 0; transition: color .15s; user-select: none;
 }
 .focus-subtask-toggle:hover { color: var(--text-sub); }
 .focus-subtask-body {
-  margin-bottom: 8px;
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border2);
   border-radius: 10px; padding: 10px 14px;
@@ -3473,18 +3473,21 @@ function startFocus(id) {
 
   // 子タスクエリアの初期化
   focusSubtaskOpen = false;
-  const stWrap = document.getElementById('focus-subtask-wrap');
-  const stBody = document.getElementById('focus-subtask-body');
-  const stPanel = document.getElementById('focus-stp');
-  if (stBody) stBody.style.display = 'none';
-  if (stPanel) stPanel.id = `stp-${id}`; // 既存subtaskパネルIDに合わせる
-  if (stWrap) stWrap.style.display = 'block';
-  updateFocusSubtaskLabel(id);
-  // キャッシュがあれば即表示準備、なければロード
+  // カードのsubtaskパネルをクリアして重複IDを防ぐ
+  const cardStPanel = document.getElementById(`stp-${id}`);
+  if (cardStPanel) cardStPanel.innerHTML = '';
+  // キャッシュがあれば即ロード
   if (!subtaskData[id]) {
     const cached = loadSubtaskCache(id);
     if (cached) subtaskData[id] = cached;
   }
+  const stBody = document.getElementById('focus-subtask-body');
+  const stWrap = document.getElementById('focus-subtask-wrap');
+  if (stBody) stBody.style.display = 'none';
+  if (stWrap) stWrap.style.display = 'block';
+  updateFocusSubtaskLabel(id);
+  // ボタン直下に配置（DOM描画後に計算）
+  requestAnimationFrame(positionFocusSubtask);
 
   clearInterval(focusInterval);
   updateFocusDisplay();
@@ -3492,6 +3495,14 @@ function startFocus(id) {
 }
 
 let focusSubtaskOpen = false;
+
+function positionFocusSubtask() {
+  const modal = document.querySelector('#focus-overlay .focus-modal');
+  const wrap  = document.getElementById('focus-subtask-wrap');
+  if (!modal || !wrap) return;
+  const rect = modal.getBoundingClientRect();
+  wrap.style.top = (rect.bottom + 4) + 'px';
+}
 
 function updateFocusSubtaskLabel(id) {
   const label = document.getElementById('focus-subtask-label');
@@ -3588,9 +3599,6 @@ function pauseFocus() {
   focusInterval = null;
   focusStartTs = null;
   document.getElementById('focus-overlay').classList.remove('open');
-  // subtaskパネルIDを元に戻す
-  const stPanel = document.getElementById(`stp-${currentFocusId}`);
-  if (stPanel) stPanel.id = 'focus-stp';
   if (currentFocusId) {
     document.querySelectorAll(`#start-${currentFocusId}`).forEach(el=>{
       el.textContent = 'Restart';
@@ -3604,9 +3612,6 @@ function completeFocus() {
   clearInterval(focusInterval);
   focusStartTs = null;
   document.getElementById('focus-overlay').classList.remove('open');
-  // subtaskパネルIDを元に戻す
-  const stPanel = document.getElementById(`stp-${currentFocusId}`);
-  if (stPanel) stPanel.id = 'focus-stp';
   if (currentFocusId) toggleDone(currentFocusId);
   currentFocusId = null;
 }
