@@ -4136,14 +4136,15 @@ async function toggleSubtaskPanel(id) {
 }
 
 function renderSubtaskPanel(id, targetEl) {
-  const panel = targetEl || document.getElementById(`stp-${id}`);
-  if (!panel) return;
-  // フォーカスモード中は focus-stp も同期更新
+  // フォーカスモード中：カードパネルへの描画をスキップしfocus-stpのみ更新（重複ID防止）
   if (!targetEl && id === currentFocusId) {
     const fp = document.getElementById('focus-stp');
     const fb = document.getElementById('focus-subtask-body');
     if (fp && fb && fb.style.display !== 'none') renderSubtaskPanel(id, fp);
+    return;
   }
+  const panel = targetEl || document.getElementById(`stp-${id}`);
+  if (!panel) return;
   const active = document.activeElement;
   if (panel.contains(active) && active.contentEditable === 'true') {
     active.blur();
@@ -4206,7 +4207,9 @@ async function checkSubtask(blockId, checked, taskId) {
   saveSubtaskCache(taskId);
   renderSubtaskPanel(taskId);
   updateSubtaskProgress(taskId);
-  if (blockId.startsWith('tmp-')) return; // 未確定IDはNotion更新しない
+  // チェック後は追加inputにフォーカス
+  setTimeout(() => document.getElementById(`sti-${taskId}`)?.focus(), 50);
+  if (blockId.startsWith('tmp-')) return;
   fetch(`/api/notion?path=blocks/${blockId}`, {
     method: 'PATCH',
     headers: {'Content-Type':'application/json'},
@@ -4282,32 +4285,16 @@ async function editSubtask(blockId, newText, taskId) {
 async function deleteSubtask(blockId, taskId) {
   const blocks = subtaskData[taskId];
   if (!blocks) return;
-  const block = blocks.find(b => b.id === blockId);
-  if (!block) return;
-  const deletedBlock = { ...block };
-  const deletedIndex = blocks.indexOf(block);
+  if (!blocks.find(b => b.id === blockId)) return;
 
   subtaskData[taskId] = blocks.filter(b => b.id !== blockId);
   renderSubtaskPanel(taskId);
   updateSubtaskProgress(taskId);
   saveSubtaskCache(taskId);
 
-  const dt = document.getElementById('delete-toast');
-  if (dt) {
-    dt.innerHTML = `<span>🗑 小タスクを削除</span><button onclick="undoSubtaskDelete('${blockId}')" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:5px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:'Noto Sans JP',sans-serif">取り消す</button>`;
-    dt.style.background = 'rgba(60,60,80,0.95)';
-    dt.classList.add('show');
-    setTimeout(() => dt.classList.remove('show'), 3500);
+  if (!blockId.startsWith('tmp-')) {
+    fetch(`/api/notion?path=blocks/${blockId}`, { method:'DELETE' }).catch(console.error);
   }
-  pendingSubtaskDeletes[blockId] = { taskId, block: deletedBlock, index: deletedIndex };
-
-  setTimeout(() => {
-    if (!pendingSubtaskDeletes[blockId]) return;
-    delete pendingSubtaskDeletes[blockId];
-    if (!blockId.startsWith('tmp-')) { // 未確定IDはNotion削除しない
-      fetch(`/api/notion?path=blocks/${blockId}`, { method:'DELETE' }).catch(console.error);
-    }
-  }, 3500);
 }
 
 function undoSubtaskDelete(blockId) {
