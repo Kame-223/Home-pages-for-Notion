@@ -325,7 +325,7 @@ body::before {
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
-.fc-timegrid-slot { height: 28px !important; }
+.fc-timegrid-slot { height: 22px !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
@@ -5378,7 +5378,7 @@ function _tdCalcTime(clientY){
   const slotsEl=document.querySelector('.fc-timegrid-slots');if(!slotsEl)return null;
   const r=slotsEl.getBoundingClientRect();
   const yOff=clientY-r.top;if(yOff<0)return null;
-  const SLOT_H=28,SLOT_MINS=15,START_H=6;
+  const SLOT_H=22,SLOT_MINS=15,START_H=6;
   const rawMins=Math.floor(yOff/SLOT_H)*SLOT_MINS;
   const snapped=Math.round(rawMins/15)*15;
   const fromMidnight=START_H*60+snapped;
