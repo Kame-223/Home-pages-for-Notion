@@ -2561,10 +2561,13 @@ function renderNextList() {
   }
 
   // プロパティフィルター
+  // 日付のみ = 23:59:59 として時刻付きと正しく比較
   const byDeadline = (a, b) => {
-    const da = getProp(a,'締切日'), db = getProp(b,'締切日');
-    if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
-    return da < db ? -1 : da > db ? 1 : 0;
+    const ma = dlMs(a), mb = dlMs(b);
+    if (!isFinite(ma) && !isFinite(mb)) return 0;
+    if (!isFinite(ma)) return 1;
+    if (!isFinite(mb)) return -1;
+    return ma - mb;
   };
 
   let html = '';
@@ -3344,6 +3347,13 @@ function goToFurikaeri() {
 // ===== 今日やることカード順序管理 =====
 let todayTaskOrder = [];
 
+// 締切日を ms に変換。日付のみ（時刻なし）は 23:59:59 扱い（＝「今日中」= 最後）
+function dlMs(task) {
+  const dl = getProp(task, '締切日');
+  if (!dl) return Infinity;
+  return new Date(dl.length <= 10 ? dl + 'T23:59:59' : dl).getTime();
+}
+
 function loadTodayOrder() {
   try { return JSON.parse(localStorage.getItem(`todayOrder_${getFurikaeriDate()}`) || '[]'); }
   catch { return []; }
@@ -3353,9 +3363,11 @@ function saveTodayOrder() {
 }
 function applyTodayOrder(tasks) {
   const ids = tasks.map(t => t.id);
-  // 既存の順序から今日にないIDを除外し、新しいタスクを末尾に追加
   todayTaskOrder = todayTaskOrder.filter(id => ids.includes(id));
-  ids.forEach(id => { if (!todayTaskOrder.includes(id)) todayTaskOrder.push(id); });
+  // 新しいタスクは締切時刻順で末尾に追加（時刻あり→日付のみの順）
+  const newTasks = tasks.filter(t => !todayTaskOrder.includes(t.id));
+  newTasks.sort((a, b) => dlMs(a) - dlMs(b));
+  newTasks.forEach(t => todayTaskOrder.push(t.id));
   const rank = new Map(todayTaskOrder.map((id, i) => [id, i]));
   return [...tasks].sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999));
 }
