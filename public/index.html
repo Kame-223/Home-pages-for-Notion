@@ -530,11 +530,11 @@ body::before {
   position: relative;
   transition: all .2s;
 }
-.task-card.area-kadai    { border-left-color: #2EA8A0; }
-.task-card.area-personal { border-left-color: #BFA040; }
-.task-card.area-seikatsu { border-left-color: #7A8B45; }
-.task-card.area-icu      { border-left-color: rgba(255,255,255,0.55); }
-.task-card.area-canada   { border-left-color: var(--purple); }
+.task-card.area-kadai    { border-left-color: #FF7ED4; }
+.task-card.area-personal { border-left-color: #D4A098; }
+.task-card.area-seikatsu { border-left-color: #B0C870; }
+.task-card.area-icu      { border-left-color: rgba(255,255,255,0.75); }
+.task-card.area-canada   { border-left-color: #AFA9EC; }
 .card-group { margin-bottom: 36px; }
 .card-group-header {
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
@@ -581,6 +581,11 @@ body::before {
   animation: ringExpand 0.5s ease-out forwards;
 }
 /* 完了フラッシュ（カラーバリエーション） */
+@keyframes screenShake {
+  0%,100%{transform:translate(0,0)} 10%{transform:translate(-5px,-4px)} 20%{transform:translate(6px,4px)}
+  30%{transform:translate(-4px,6px)} 40%{transform:translate(5px,-5px)} 50%{transform:translate(-7px,3px)}
+  60%{transform:translate(7px,-3px)} 70%{transform:translate(-4px,-5px)} 80%{transform:translate(5px,5px)} 90%{transform:translate(-3px,6px)}
+}
 @keyframes doneFlash {
   0%   { background: transparent; box-shadow: none; transform: scale(1); }
   15%  { background: rgba(239,159,39,0.45); box-shadow: 0 0 28px rgba(239,159,39,0.65); transform: scale(1.012); }
@@ -1346,19 +1351,17 @@ body::before {
 }
 .furikaeri-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
 .furikaeri-hint { font-size: 10px; color: var(--text-dim); }
-.furikaeri-done-btn { font-size: 11px; padding: 5px 18px; border-radius: 6px; background: var(--purple); color: #fff; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: background .15s; }
+.furikaeri-done-btn { font-size: 16px; padding: 8px 28px; border-radius: 8px; background: var(--purple); color: #fff; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: background .15s; }
 .furikaeri-done-btn:hover { background: #6860c0; }
 .fr-done-overlay {
   display: none; position: absolute; inset: -16px -14px -16px -14px; border-radius: 12px;
-  background: rgba(10,10,20,0.82); backdrop-filter: blur(3px);
+  background: rgba(10,10,20,0.85); backdrop-filter: blur(3px);
   flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; z-index: 10;
+  gap: 10px; z-index: 10; cursor: pointer;
 }
 .fr-done-overlay.active { display: flex; }
-.fr-done-check { font-size: 38px; line-height: 1; }
-.fr-done-label { font-size: 16px; font-weight: 700; color: var(--text); }
-.fr-edit-btn { font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; opacity: 0.35; transition: opacity .15s; margin-top: 6px; font-family: 'Noto Sans JP', sans-serif; }
-.fr-edit-btn:hover { opacity: 1; }
+.fr-done-check { font-size: 55px; line-height: 1; pointer-events: none; }
+.fr-done-label { font-size: 32px; font-weight: 700; color: var(--text); pointer-events: none; }
 .fr-textarea { resize: none; overflow: hidden; }
 .furikaeri-save {
   font-size: 12px; padding: 8px 20px; border-radius: 8px;
@@ -1629,10 +1632,9 @@ body::before {
             <span class="furikaeri-hint" id="furikaeri-hint"></span>
             <button class="furikaeri-done-btn" onclick="completeFurikaeri()">完了</button>
           </div>
-          <div class="fr-done-overlay" id="fr-done-overlay">
+          <div class="fr-done-overlay" id="fr-done-overlay" onclick="editFurikaeri()">
             <div class="fr-done-check">✅</div>
             <div class="fr-done-label">振り返り完了</div>
-            <button class="fr-edit-btn" onclick="editFurikaeri()">追記・編集する</button>
           </div>
         </div>
       </div>
@@ -2853,7 +2855,7 @@ function renderCard(task, mode='today') {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    (area && area !== '課題') ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
@@ -3320,62 +3322,61 @@ function toggleDone(id) {
   updateExecHint();
 }
 
-const _G = ['#EF9F27','#FFD060','#FFB347','#FFE066','#FFAA00','#fff'];
-const _R = ['#FF3333','#FF8C00','#FFD700','#00CC44','#0088FF','#8833FF','#FF33AA','#fff'];
+const _G  = ['#EF9F27','#FFD060','#FFB347','#FFE066','#FFAA00'];
+const _GW = [..._G, '#fff', '#FFF0A0'];
+const _R  = ['#FF3333','#FF8C00','#FFD700','#00CC44','#0088FF','#8833FF','#FF33AA','#fff'];
 const DONE_STYLES = [
-  // ── ゴールド系 ──
-  // 1. 標準バースト
-  { type:'gold', ring:'rgba(255,193,7,0.85)', colors:_G, count:22, minDist:70,  maxDist:150, pattern:'burst' },
-  // 2. 超バースト（でかく）
-  { type:'gold', ring:'rgba(255,165,0,0.95)', colors:_G, count:45, minDist:130, maxDist:320, pattern:'burst', double:true, screen:'rgba(255,180,0,0.18)' },
-  // 3. ロケット（真上に飛ぶ）
-  { type:'gold', ring:'rgba(255,215,0,0.88)', colors:_G, count:22, minDist:200, maxDist:420, pattern:'rise' },
-  // 4. スター（12本長腕）
-  { type:'gold', ring:'rgba(255,165,0,0.9)',  colors:_G, count:12, minDist:180, maxDist:320, pattern:'star' },
-  // 5. 黄金の雨（上から降る）
-  { type:'gold', ring:'rgba(255,193,7,0.7)',  colors:_G, count:40, minDist:100, maxDist:280, pattern:'rain', topSpawn:true },
-  // 6. 上向き扇（噴水）
-  { type:'gold', ring:'rgba(255,193,7,0.8)',  colors:_G, count:32, minDist:110, maxDist:280, pattern:'fan-up' },
-  // 7. 黄金角スパイラル（渦）
-  { type:'gold', ring:'rgba(255,193,7,0.9)',  colors:_G, count:28, minDist:40,  maxDist:230, pattern:'spiral' },
-  // 8. 波紋（リングのみ）
-  { type:'gold', ring:'rgba(255,193,7,0.88)', colors:_G, count:0,  minDist:0,   maxDist:0,   pattern:'burst', rings:4 },
-  // 9. 稲妻（白フラッシュ）
-  { type:'gold', ring:'rgba(255,255,200,0.95)',colors:['#fff','#FFE066','#EF9F27','#FFD060'], count:38, minDist:60, maxDist:190, pattern:'burst', screen:'rgba(255,255,220,0.55)', fast:true },
-  // 10. 近接キラキラ（至近大量）
-  { type:'gold', ring:'rgba(255,193,7,0.85)', colors:_G, count:70, minDist:10,  maxDist:85,  pattern:'burst', minSz:2, maxSz:5 },
-  // 11. 超nova（最大射程）
-  { type:'gold', ring:'rgba(255,165,0,0.95)', colors:_G, count:55, minDist:180, maxDist:450, pattern:'burst', double:true, screen:'rgba(255,200,0,0.2)' },
-  // 12. 下向き扇
-  { type:'gold', ring:'rgba(255,193,7,0.85)', colors:_G, count:30, minDist:110, maxDist:240, pattern:'fan-down' },
-  // 13. 爆縮（外→中心）
-  { type:'gold', ring:'rgba(255,165,0,0.9)',  colors:_G, count:30, minDist:120, maxDist:260, pattern:'implosion', double:true },
-  // 14. スパークル＋波紋
-  { type:'gold', ring:'rgba(255,193,7,0.9)',  colors:_G, count:40, minDist:15,  maxDist:90,  pattern:'burst', rings:3 },
-  // ── 虹系 ──
-  // 15. 虹バースト
-  { type:'rainbow', ring:'rgba(255,255,255,0.55)', colors:_R, count:38, minDist:90,  maxDist:220, pattern:'burst', double:true },
-  // 16. 虹ロケット
-  { type:'rainbow', ring:'rgba(255,255,255,0.5)',  colors:_R, count:28, minDist:200, maxDist:400, pattern:'rise' },
-  // 17. 虹の雨
-  { type:'rainbow', ring:'rgba(255,255,255,0.4)',  colors:_R, count:45, minDist:100, maxDist:280, pattern:'rain', topSpawn:true },
-  // 18. 虹スパイラル
-  { type:'rainbow', ring:'rgba(255,255,255,0.55)', colors:_R, count:32, minDist:40,  maxDist:240, pattern:'spiral' },
-  // 19. 虹スター
-  { type:'rainbow', ring:'rgba(255,255,255,0.55)', colors:_R, count:14, minDist:180, maxDist:330, pattern:'star' },
-  // 20. 虹超爆発
-  { type:'rainbow', ring:'rgba(255,255,255,0.65)', colors:_R, count:55, minDist:110, maxDist:300, pattern:'burst', double:true, screen:'rgba(200,180,255,0.25)' },
-  // 21. 虹噴水
-  { type:'rainbow', ring:'rgba(255,255,255,0.5)',  colors:_R, count:35, minDist:110, maxDist:290, pattern:'fan-up' },
-  // 22. 虹稲妻
-  { type:'rainbow', ring:'rgba(200,200,255,0.95)', colors:_R, count:42, minDist:70,  maxDist:200, pattern:'burst', screen:'rgba(210,200,255,0.55)', fast:true },
+  // 1.  小バースト（控えめ・速い）
+  { type:'gold', ring:'rgba(255,193,7,0.75)', colors:_G,  count:14, minDist:30,  maxDist:100, pattern:'burst', fast:true },
+  // 2.  標準バースト
+  { type:'gold', ring:'rgba(255,193,7,0.85)', colors:_GW, count:24, minDist:70,  maxDist:155, pattern:'burst' },
+  // 3.  大バースト（ダブルリング）
+  { type:'gold', ring:'rgba(255,165,0,0.9)',  colors:_GW, count:42, minDist:130, maxDist:270, pattern:'burst', double:true },
+  // 4.  超バースト＋フラッシュ
+  { type:'gold', ring:'rgba(255,165,0,0.95)', colors:_GW, count:58, minDist:160, maxDist:380, pattern:'burst', double:true, screen:'rgba(255,180,0,0.25)' },
+  // 5.  NOVA（最大射程・3リング）
+  { type:'gold', ring:'rgba(255,145,0,0.95)', colors:_GW, count:72, minDist:200, maxDist:500, pattern:'burst', rings:3, screen:'rgba(255,160,0,0.3)' },
+  // 6.  8本スター（長腕）
+  { type:'gold', ring:'rgba(255,165,0,0.9)',  colors:_GW, count:8,  minDist:180, maxDist:340, pattern:'star' },
+  // 7.  16本スター（中腕）
+  { type:'gold', ring:'rgba(255,193,7,0.85)', colors:_GW, count:16, minDist:120, maxDist:240, pattern:'star' },
+  // 8.  ロケット（真上・超射程）
+  { type:'gold', ring:'rgba(255,215,0,0.88)', colors:_GW, count:18, minDist:260, maxDist:520, pattern:'rise' },
+  // 9.  噴水（上扇・大量）
+  { type:'gold', ring:'rgba(255,193,7,0.82)', colors:_GW, count:40, minDist:110, maxDist:300, pattern:'fan-up' },
+  // 10. 大雨（全画面から降る・70粒・大粒）
+  { type:'gold', ring:'rgba(255,193,7,0.6)',  colors:_GW, count:70, minDist:200, maxDist:480, pattern:'rain', topSpawn:true, minSz:5, maxSz:14 },
+  // 11. 下扇（滝）
+  { type:'gold', ring:'rgba(255,193,7,0.82)', colors:_GW, count:36, minDist:100, maxDist:250, pattern:'fan-down' },
+  // 12. 黄金角スパイラル（渦）
+  { type:'gold', ring:'rgba(255,193,7,0.9)',  colors:_GW, count:32, minDist:40,  maxDist:240, pattern:'spiral' },
+  // 13. 波紋のみ（5リング・超速）
+  { type:'gold', ring:'rgba(255,193,7,0.9)',  colors:_G,  count:0,  minDist:0,   maxDist:0,   pattern:'burst', rings:5 },
+  // 14. キラキラ至近（100粒・超小）
+  { type:'gold', ring:'rgba(255,193,7,0.8)',  colors:_GW, count:100,minDist:6,   maxDist:65,  pattern:'burst', minSz:1.5, maxSz:3.5 },
+  // 15. 稲妻（白フラッシュ＋瞬速消滅）
+  { type:'gold', ring:'rgba(255,255,220,0.98)',colors:['#fff','#FFE066','#EF9F27','#FFAA00'], count:55, minDist:50, maxDist:210, pattern:'burst', screen:'rgba(255,255,230,0.72)', fast:true },
+  // 16. 爆縮（外側から中心へ吸い込まれる）
+  { type:'gold', ring:'rgba(255,165,0,0.9)',  colors:_GW, count:38, minDist:140, maxDist:320, pattern:'implosion', double:true },
+  // 17. スパークル＋3リング
+  { type:'gold', ring:'rgba(255,193,7,0.9)',  colors:_GW, count:50, minDist:12,  maxDist:80,  pattern:'burst', rings:3 },
+  // 18. スロー大粒浮遊（ゆっくり大きい）
+  { type:'gold', ring:'rgba(255,193,7,0.75)', colors:_G,  count:10, minDist:80,  maxDist:210, pattern:'burst', minSz:14, maxSz:24, slow:true },
+  // 19. クロス（十字＋斜め）
+  { type:'gold', ring:'rgba(255,165,0,0.9)',  colors:_GW, count:16, minDist:130, maxDist:290, pattern:'cross' },
+  // 20. 対角扇（斜め下）
+  { type:'gold', ring:'rgba(255,193,7,0.85)', colors:_GW, count:34, minDist:90,  maxDist:260, pattern:'fan-diag' },
+  // 21. 超近接＋超遠バースト（2段）
+  { type:'gold', ring:'rgba(255,165,0,0.92)', colors:_GW, count:30, minDist:180, maxDist:420, pattern:'burst', screen:'rgba(255,180,0,0.18)', rings:3 },
+  // ★ 22. ULTRA RAINBOW ★（22回に1回のレア）
+  { type:'rainbow', ring:'rgba(255,255,255,0.95)', colors:_R, count:90, minDist:120, maxDist:400, pattern:'burst', rings:5, screen:'rgba(170,150,255,0.75)', shake:true, minSz:3, maxSz:13 },
 ];
 let doneStyleCounter = 0;
 
 function pickDoneStyle() {
   doneStyleCounter++;
-  const isRainbow = doneStyleCounter % 3 === 0;
-  const pool = DONE_STYLES.filter(s => isRainbow ? s.type === 'rainbow' : s.type === 'gold');
+  if (doneStyleCounter % 22 === 0) return DONE_STYLES[21]; // ULTRA RAINBOW
+  const pool = DONE_STYLES.slice(0, 21);
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -3411,24 +3412,36 @@ function fireDoneParticles(cardEl, style) {
 
   if (!style.count) return;
 
+  // 画面シェイク
+  if (style.shake) {
+    document.body.style.animation = 'screenShake 0.65s ease-in-out';
+    setTimeout(() => { document.body.style.animation = ''; }, 650);
+  }
+
   const minSz = style.minSz ?? 3;
   const maxSz = style.maxSz ?? 11;
-  const baseDur = style.fast ? 0.28 : 0.55;
-  const durSpread = style.fast ? 0.12 : 0.3;
-  const removeMs = style.fast ? 500 : 1050;
+  const baseDur = style.fast ? 0.25 : style.slow ? 1.1 : 0.55;
+  const durSpread = style.fast ? 0.1  : style.slow ? 0.5  : 0.3;
+  const removeMs = style.fast ? 460  : style.slow ? 1800  : 1050;
 
   for (let i = 0; i < style.count; i++) {
     let angle;
     switch (style.pattern) {
-      case 'rise':      angle = 250 + Math.random() * 40;  break; // 真上 ± 20°
-      case 'fan-up':    angle = 200 + Math.random() * 140; break; // 上半円扇
-      case 'fan-down':  angle = 20  + Math.random() * 140; break; // 下半円扇
-      case 'spiral':    angle = i * 137.508;                break; // 黄金角スパイラル
-      case 'star':      angle = (360 / style.count) * i;   break; // 等間隔スター
+      case 'rise':      angle = 250 + Math.random() * 40;   break;
+      case 'fan-up':    angle = 200 + Math.random() * 140;  break;
+      case 'fan-down':  angle = 20  + Math.random() * 140;  break;
+      case 'fan-diag':  angle = 30  + Math.random() * 120;  break; // 斜め下扇
+      case 'spiral':    angle = i * 137.508;                 break; // 黄金角
+      case 'star':      angle = (360 / style.count) * i;    break;
+      case 'cross': {   // 8方向クロス、2粒ずつ
+        const arms = Math.round(style.count / 2);
+        angle = (360 / arms) * Math.floor(i / 2) + (Math.random() - 0.5) * 8;
+        break;
+      }
       case 'implosion':
       case 'rain':
         angle = Math.random() * 360; break;
-      default:          angle = Math.random() * 360;        break;
+      default:          angle = Math.random() * 360;         break;
     }
 
     const dist  = style.minDist + Math.random() * (style.maxDist - style.minDist);
@@ -4866,7 +4879,7 @@ function renderGtdCard(task) {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    (area && area !== '課題') ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
