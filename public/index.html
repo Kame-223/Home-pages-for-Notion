@@ -1063,7 +1063,7 @@ body::before {
   position: fixed; inset: 0;
   background: rgba(5,3,15,0.96);
   display: none; align-items: center; justify-content: center;
-  z-index: 1000; overflow-y: auto;
+  z-index: 1000;
 }
 .focus-overlay.open { display: flex; }
 .focus-modal {
@@ -1072,8 +1072,15 @@ body::before {
   padding: 48px 40px;
   max-width: 420px; width: 100%;
   animation: fadeUp .3s ease-out;
+  /* ドーナッツ位置固定：子タスク展開でもここは動かない */
+  position: relative; z-index: 1;
 }
-.focus-subtask-wrap { width: 100%; margin-top: 4px; }
+/* 子タスクエリア：オーバーレイ下部に絶対配置 */
+.focus-subtask-wrap {
+  position: absolute; bottom: 20px;
+  left: 50%; transform: translateX(-50%);
+  width: 420px; max-width: calc(100vw - 40px);
+}
 .focus-subtask-toggle {
   text-align: center; cursor: pointer;
   font-size: 11px; color: var(--text-dim);
@@ -1081,10 +1088,11 @@ body::before {
 }
 .focus-subtask-toggle:hover { color: var(--text-sub); }
 .focus-subtask-body {
-  margin-top: 8px;
+  margin-bottom: 8px;
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border2);
   border-radius: 10px; padding: 10px 14px;
+  max-height: 40vh; overflow-y: auto;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .focus-mode-label {
@@ -1683,13 +1691,14 @@ body::before {
       <button class="focus-pause" onclick="pauseFocus()">一時停止</button>
       <button class="focus-done-btn" onclick="completeFocus()">完了</button>
     </div>
-    <div class="focus-subtask-wrap" id="focus-subtask-wrap" style="display:none">
-      <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
-        <span id="focus-subtask-label">▶ 子タスク</span>
-      </div>
-      <div class="focus-subtask-body" id="focus-subtask-body" style="display:none">
-        <div class="subtask-panel" id="focus-stp" style="display:block"></div>
-      </div>
+  </div>
+  <!-- 子タスクエリア: focus-modalの外・オーバーレイ下部に固定 -->
+  <div class="focus-subtask-wrap" id="focus-subtask-wrap" style="display:none">
+    <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
+      <span id="focus-subtask-label">▶ 子タスク</span>
+    </div>
+    <div class="focus-subtask-body" id="focus-subtask-body" style="display:none">
+      <div class="subtask-panel" id="focus-stp" style="display:block"></div>
     </div>
   </div>
 </div>
@@ -3505,17 +3514,14 @@ async function toggleFocusSubtask() {
   updateFocusSubtaskLabel(id);
 
   if (focusSubtaskOpen) {
-    // Notionから最新を取得してレンダリング（既存ロジック流用）
-    const panel = document.getElementById(`stp-${id}`);
+    const focusPanel = document.getElementById('focus-stp');
+    // キャッシュまたは既存データで即表示
     if (!subtaskData[id]) {
       const cached = loadSubtaskCache(id);
-      if (cached) {
-        subtaskData[id] = cached;
-        if (panel) renderSubtaskPanel(id);
-      }
-    } else {
-      if (panel) renderSubtaskPanel(id);
+      if (cached) subtaskData[id] = cached;
     }
+    if (focusPanel) renderSubtaskPanel(id, focusPanel);
+    updateFocusSubtaskLabel(id);
     // バックグラウンドで最新取得
     try {
       const res = await fetch(`/api/notion?path=blocks/${id}/children`);
@@ -3528,7 +3534,7 @@ async function toggleFocusSubtask() {
       subtaskData[id] = [...fresh, ...pending];
       applySubtaskOrder(id);
       saveSubtaskCache(id);
-      if (panel) renderSubtaskPanel(id);
+      if (focusPanel) renderSubtaskPanel(id, focusPanel);
       updateFocusSubtaskLabel(id);
     } catch(e) { console.error(e); }
   }
@@ -4124,9 +4130,15 @@ async function toggleSubtaskPanel(id) {
   updateSubtaskProgress(id);
 }
 
-function renderSubtaskPanel(id) {
-  const panel = document.getElementById(`stp-${id}`);
+function renderSubtaskPanel(id, targetEl) {
+  const panel = targetEl || document.getElementById(`stp-${id}`);
   if (!panel) return;
+  // フォーカスモード中は focus-stp も同期更新
+  if (!targetEl && id === currentFocusId) {
+    const fp = document.getElementById('focus-stp');
+    const fb = document.getElementById('focus-subtask-body');
+    if (fp && fb && fb.style.display !== 'none') renderSubtaskPanel(id, fp);
+  }
   const active = document.activeElement;
   if (panel.contains(active) && active.contentEditable === 'true') {
     active.blur();
@@ -4177,6 +4189,8 @@ function updateSubtaskProgress(id) {
   if (countEl) countEl.textContent = `${done}/${total}`;
   if (barEl)   barEl.style.display = '';
   if (fillEl)  fillEl.style.width = pct + '%';
+  // フォーカスモード中ならラベルも更新
+  if (id === currentFocusId) updateFocusSubtaskLabel(id);
 }
 
 async function checkSubtask(blockId, checked, taskId) {
