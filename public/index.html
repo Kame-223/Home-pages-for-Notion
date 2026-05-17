@@ -1376,11 +1376,15 @@ body::before {
 .subtask-text { font-size: 11px; color: var(--text); line-height: 1.5; flex: 1; border-radius: 4px; padding: 1px 3px; outline: none; }
 .subtask-text.checked { text-decoration: line-through; color: var(--text-dim); }
 .subtask-text[contenteditable="true"]:focus { background: rgba(255,255,255,0.06); box-shadow: 0 0 0 1px rgba(127,119,221,0.4); }
-.subtask-order-btns { display: flex; flex-direction: row; gap: 3px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
-.subtask-item:hover .subtask-order-btns { opacity: 1; }
-.subtask-move-btn { background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-dim); padding: 2px 7px; line-height: 1.2; transition: all .1s; }
-.subtask-move-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-.subtask-move-btn:disabled { opacity: 0.2; cursor: default; pointer-events: none; }
+.subtask-drag-handle {
+  font-size: 13px; color: var(--text-dim); cursor: grab; flex-shrink: 0;
+  padding: 0 5px; opacity: 0.3; transition: opacity .15s;
+  touch-action: none; user-select: none; line-height: 1;
+}
+.subtask-item:hover .subtask-drag-handle { opacity: 0.75; }
+.subtask-drag-handle:active { cursor: grabbing; opacity: 1; }
+.subtask-item.subtask-dragging { opacity: 0.2; }
+.subtask-insert-line { height: 1.5px; background: rgba(255,255,255,0.6); border-radius: 2px; margin: 2px 0; pointer-events: none; }
 .subtask-del { font-size: 12px; color: var(--text-dim); background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; padding: 2px 7px; opacity: 0; transition: all .15s; flex-shrink: 0; line-height: 1.2; }
 .subtask-item:hover .subtask-del { opacity: 1; }
 .subtask-del:hover { color: var(--red); border-color: rgba(240,149,149,0.4); background: rgba(255,255,255,0.04); }
@@ -4397,6 +4401,7 @@ function renderSubtaskPanel(id, targetEl) {
         const text = b.to_do.rich_text.map(r => r.plain_text).join('') || '';
         const checked = b.to_do.checked;
         return `<div class="subtask-item">
+          <div class="subtask-drag-handle" data-bid="${b.id}" data-taskid="${id}">⠿</div>
           <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
             onchange="checkSubtask('${b.id}',this.checked,'${id}')">
           <span class="subtask-text ${checked?'checked':''}" contenteditable="${checked?'false':'true'}"
@@ -4404,10 +4409,6 @@ function renderSubtaskPanel(id, targetEl) {
             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){this.textContent='${text.replace(/'/g,"\\'")}';this.blur()}"
             onclick="event.stopPropagation()"
           >${text}</span>
-          <div class="subtask-order-btns">
-            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',-1)" ${i===0?'disabled':''}>▲</button>
-            <button class="subtask-move-btn" onclick="moveSubtask('${id}','${b.id}',1)" ${i===blocks.length-1?'disabled':''}>▼</button>
-          </div>
           <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
         </div>`;
       }).join('')
@@ -4417,6 +4418,75 @@ function renderSubtaskPanel(id, targetEl) {
       <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..."
         onkeydown="if(event.isComposing)return;if(event.key==='Enter'){event.preventDefault();event.shiftKey?addSubtask('${id}',false):addSubtask('${id}',true)}">
     </div>`;
+  initSubtaskDrag(panel, id);
+}
+
+function initSubtaskDrag(panel, taskId) {
+  panel.querySelectorAll('.subtask-drag-handle').forEach(handle => {
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      const item = handle.closest('.subtask-item');
+      const blockId = handle.dataset.bid;
+      if (!item || !blockId) return;
+
+      const rect = item.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+
+      const ghost = item.cloneNode(true);
+      ghost.style.cssText = `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;margin:0;z-index:9000;pointer-events:none;opacity:0.88;background:var(--surface2);border-radius:6px;`;
+      document.body.appendChild(ghost);
+      item.classList.add('subtask-dragging');
+      navigator.vibrate?.(30);
+
+      try { handle.setPointerCapture(e.pointerId); } catch {}
+
+      const onMove = (ev) => {
+        if (ev.pointerId !== e.pointerId) return;
+        ev.preventDefault();
+        ghost.style.top = (ev.clientY - offsetY) + 'px';
+        panel.querySelectorAll('.subtask-insert-line').forEach(l => l.remove());
+        const items = Array.from(panel.querySelectorAll('.subtask-item:not(.subtask-dragging)'));
+        const before = items.find(it => ev.clientY < it.getBoundingClientRect().top + it.getBoundingClientRect().height / 2);
+        const line = document.createElement('div');
+        line.className = 'subtask-insert-line';
+        if (before) before.before(line);
+        else if (items.length) items[items.length - 1].after(line);
+      };
+
+      const onEnd = (ev) => {
+        if (ev.pointerId !== e.pointerId) return;
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onEnd);
+        handle.removeEventListener('pointercancel', onEnd);
+
+        const line = panel.querySelector('.subtask-insert-line');
+        if (line && subtaskData[taskId]) {
+          const blocks = subtaskData[taskId];
+          const fromIdx = blocks.findIndex(b => b.id === blockId);
+          const nextHandle = line.nextElementSibling?.querySelector('.subtask-drag-handle');
+          const nextBid = nextHandle?.dataset.bid;
+          if (fromIdx >= 0) {
+            const [dragged] = blocks.splice(fromIdx, 1);
+            const toIdx = nextBid ? blocks.findIndex(b => b.id === nextBid) : blocks.length;
+            blocks.splice(toIdx < 0 ? blocks.length : toIdx, 0, dragged);
+            saveSubtaskOrder(taskId);
+            saveSubtaskCache(taskId);
+          }
+          line.remove();
+        } else if (line) line.remove();
+
+        ghost.remove();
+        item.classList.remove('subtask-dragging');
+        renderSubtaskPanel(taskId);
+        updateSubtaskProgress(taskId);
+      };
+
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onEnd);
+      handle.addEventListener('pointercancel', onEnd);
+    });
+  });
 }
 
 function updateSubtaskProgress(id) {
