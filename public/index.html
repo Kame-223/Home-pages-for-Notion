@@ -119,13 +119,13 @@ body::before {
 
 /* ===== DATETIME WIDGET ===== */
 .datetime-widget {
-  position: absolute;
+  position: fixed;
   top: 12px; right: 16px;
   background: rgba(0,0,0,0.88);
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   padding: 8px 18px;
-  z-index: 10;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1015,6 +1015,9 @@ body::before {
 .edit-chips.disabled { opacity: 0.25; pointer-events: none; }
 .edit-chips.dimmed { opacity: 0.35; }
 /* チップ個別カラー */
+.edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.18); --chip-color: #A09AE8; --chip-border: rgba(127,119,221,0.4); }
+.edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
+.edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
 .edit-chip[data-val="課題"]    { --chip-bg: rgba(46,168,160,0.18);  --chip-color: #2EA8A0; --chip-border: rgba(46,168,160,0.4); }
 .edit-chip[data-val="個人"]    { --chip-bg: rgba(191,160,64,0.18);  --chip-color: #BFA040; --chip-border: rgba(191,160,64,0.4); }
 .edit-chip[data-val="生活"]    { --chip-bg: rgba(140,160,75,0.18);  --chip-color: #B0C870; --chip-border: rgba(140,160,75,0.4); }
@@ -4210,6 +4213,9 @@ function openEditModal(id, e) {
 
   document.getElementById('edit-task-name').textContent = getProp(task,'タイトル') || '無題';
 
+  const gtd = getProp(task,'GTD 種別') || '📥 INBOX';
+  document.querySelectorAll('#edit-gtd .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === gtd));
+
   const area = getProp(task,'エリア') || '';
   document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === area));
 
@@ -4288,7 +4294,7 @@ function renderEditLinks() {
 }
 
 function resetEditModal() {
-  document.querySelectorAll('#edit-area .edit-chip, #edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#edit-gtd .edit-chip, #edit-area .edit-chip, #edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
   document.getElementById('edit-deadline-date').value = '';
   document.getElementById('edit-deadline-time').value = '';
   updateDeadlineDisplay();
@@ -4373,6 +4379,7 @@ async function saveEditModal() {
   const task = allTasks.find(t => t.id === id);
 
   const newTitle = document.getElementById('edit-task-name').textContent.trim();
+  const gtdVal = document.querySelector('#edit-gtd .edit-chip.active')?.dataset.val || '📥 INBOX';
   const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
   let subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val || null;
   let ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
@@ -4387,6 +4394,7 @@ async function saveEditModal() {
 
   if (task) {
     if (newTitle) task.properties['タイトル'] = {type:'title', title:[{text:{content:newTitle},plain_text:newTitle}]};
+    task.properties['GTD 種別'] = {type:'status', status:{name:gtdVal}};
     task.properties['エリア'] = {type:'select', select: area ? {name:area} : null};
     task.properties['科目'] = {type:'multi_select', multi_select: subjects.map(s => ({name:s}))};
     task.properties['ELAサブタグ'] = {type:'select', select: ela ? {name:ela} : null};
@@ -4404,6 +4412,7 @@ async function saveEditModal() {
   renderAll();
 
   const props = {
+    'GTD 種別': {status: {name: gtdVal}},
     'エリア': {select: area ? {name:area} : null},
     '科目': {multi_select: subjects.map(s => ({name:s}))},
     'ELAサブタグ': {select: ela ? {name:ela} : null},
@@ -5508,6 +5517,14 @@ window.onload = () => {
         <div class="edit-task-name" id="edit-task-name" contenteditable="true" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault()}"></div>
       </div>
       <button class="edit-close-btn" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="edit-field">
+      <span class="edit-field-label">GTD</span>
+      <div class="edit-chips" id="edit-gtd">
+        <button class="edit-chip" data-val="📥 INBOX"  onclick="toggleEditChip(this,'edit-gtd',false)">📥 INBOX</button>
+        <button class="edit-chip" data-val="▶️ 次やる" onclick="toggleEditChip(this,'edit-gtd',false)">▶️ 次やる</button>
+        <button class="edit-chip" data-val="🔥 今やる" onclick="toggleEditChip(this,'edit-gtd',false)">🔥 今やる</button>
+      </div>
     </div>
     <div class="edit-field">
       <span class="edit-field-label">AREA</span>
