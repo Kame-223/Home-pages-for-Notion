@@ -4726,8 +4726,6 @@ async function checkSubtask(blockId, checked, taskId) {
   saveSubtaskCache(taskId);
   renderSubtaskPanel(taskId);
   updateSubtaskProgress(taskId);
-  // チェック後は追加inputにフォーカス
-  setTimeout(() => document.getElementById(`sti-${taskId}`)?.focus(), 50);
   if (blockId.startsWith('tmp-')) return;
   fetch(`/api/notion?path=blocks/${blockId}`, {
     method: 'PATCH',
