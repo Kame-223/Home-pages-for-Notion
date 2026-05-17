@@ -1378,9 +1378,14 @@ body::before {
 .subtask-text[contenteditable="true"]:focus { background: rgba(255,255,255,0.06); box-shadow: 0 0 0 1px rgba(127,119,221,0.4); }
 .subtask-drag-handle {
   font-size: 13px; color: var(--text-dim); cursor: grab; flex-shrink: 0;
-  padding: 0 5px; opacity: 0.3; transition: opacity .15s;
+  padding: 0 10px; opacity: 0.3; transition: opacity .15s;
   touch-action: none; user-select: none; line-height: 1;
 }
+.subtask-rank {
+  font-size: 9px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+  min-width: 14px; text-align: right; flex-shrink: 0; padding-right: 2px;
+}
+.subtask-done-separator { height: 8px; }
 .subtask-item:hover .subtask-drag-handle { opacity: 0.75; }
 .subtask-drag-handle:active { cursor: grabbing; opacity: 1; }
 .subtask-item.subtask-dragging { opacity: 0.2; }
@@ -3376,7 +3381,8 @@ function setupCardDrag(card, id) {
 
   card.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.target.closest('button,a,input,select,[contenteditable="true"],.tag.clickable,.subtask-inline-toggle,.pin-badge,.time-dropdown')) return;
+    // 子タスクパネルが展開中はカードドラッグ無効
+    if (e.target.closest('button,a,input,select,[contenteditable="true"],.tag.clickable,.subtask-inline-toggle,.pin-badge,.time-dropdown,.subtask-panel')) return;
 
     const startX = e.clientX, startY = e.clientY;
     const pid = e.pointerId;
@@ -4396,22 +4402,27 @@ function renderSubtaskPanel(id, targetEl) {
     active.blur();
   }
   const blocks = subtaskData[id] || [];
+  const pendingBlocks = blocks.filter(b => !b.to_do.checked);
+  const doneBlocks   = blocks.filter(b =>  b.to_do.checked);
+  const renderItem = (b, rank) => {
+    const text = b.to_do.rich_text.map(r => r.plain_text).join('') || '';
+    const checked = b.to_do.checked;
+    return `<div class="subtask-item">
+      ${!checked ? `<div class="subtask-drag-handle" data-bid="${b.id}" data-taskid="${id}">⠿</div>` : '<div style="width:33px;flex-shrink:0"></div>'}
+      <span class="subtask-rank">${rank != null ? rank : ''}</span>
+      <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
+        onchange="checkSubtask('${b.id}',this.checked,'${id}')">
+      <span class="subtask-text ${checked?'checked':''}" contenteditable="${checked?'false':'true'}"
+        onblur="editSubtask('${b.id}',this.textContent.trim(),'${id}')"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){this.textContent='${text.replace(/'/g,"\\'")}';this.blur()}"
+        onclick="event.stopPropagation()"
+      >${text}</span>
+      <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
+    </div>`;
+  };
+  const sep = (pendingBlocks.length && doneBlocks.length) ? '<div class="subtask-done-separator"></div>' : '';
   const listHtml = blocks.length
-    ? blocks.map((b, i) => {
-        const text = b.to_do.rich_text.map(r => r.plain_text).join('') || '';
-        const checked = b.to_do.checked;
-        return `<div class="subtask-item">
-          <div class="subtask-drag-handle" data-bid="${b.id}" data-taskid="${id}">⠿</div>
-          <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
-            onchange="checkSubtask('${b.id}',this.checked,'${id}')">
-          <span class="subtask-text ${checked?'checked':''}" contenteditable="${checked?'false':'true'}"
-            onblur="editSubtask('${b.id}',this.textContent.trim(),'${id}')"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){this.textContent='${text.replace(/'/g,"\\'")}';this.blur()}"
-            onclick="event.stopPropagation()"
-          >${text}</span>
-          <button class="subtask-del" onclick="deleteSubtask('${b.id}','${id}')">✕</button>
-        </div>`;
-      }).join('')
+    ? pendingBlocks.map((b, i) => renderItem(b, i + 1)).join('') + sep + doneBlocks.map(b => renderItem(b, null)).join('')
     : '';
   panel.innerHTML = `<div>${listHtml}</div>
     <div class="subtask-add">
@@ -4512,9 +4523,22 @@ function updateSubtaskProgress(id) {
 }
 
 async function checkSubtask(blockId, checked, taskId) {
-  if (subtaskData[taskId]) {
-    const b = subtaskData[taskId].find(b => b.id === blockId);
+  const blocks = subtaskData[taskId];
+  if (blocks) {
+    const b = blocks.find(b => b.id === blockId);
     if (b) b.to_do.checked = checked;
+    // 完了→末尾へ、解除→未完了セクション末尾へ自動移動
+    const idx = blocks.findIndex(b => b.id === blockId);
+    if (idx >= 0) {
+      const [block] = blocks.splice(idx, 1);
+      if (checked) {
+        blocks.push(block); // 完了は末尾
+      } else {
+        const firstDone = blocks.findIndex(b => b.to_do.checked);
+        blocks.splice(firstDone < 0 ? blocks.length : firstDone, 0, block);
+      }
+      saveSubtaskOrder(taskId);
+    }
   }
   saveSubtaskCache(taskId);
   renderSubtaskPanel(taskId);
