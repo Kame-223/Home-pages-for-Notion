@@ -2871,9 +2871,12 @@ function renderAll() {
   // TODAY：当日セッション（3:01〜翌3:00）にピンしたタスクのみ
   const currentSession = getFurikaeriDate();
   const todayPending = allTasks.filter(t => {
-    if (isDone(t)) return false;
     const s = taskState[t.id];
-    return s?.pinned && s?.pinnedSessionDate === currentSession;
+    if (!s?.pinned || s?.pinnedSessionDate !== currentSession) return false;
+    if (isDone(t)) return false;
+    // 前セッションで完了済みのタスクは除外（マイグレーションで今日のセッションが付いていても）
+    if (s?.done && s?.doneSessionDate && s.doneSessionDate !== currentSession) return false;
+    return true;
   });
   // 完了ドロワーは今日のセッション内に完了したものだけ
   const todayDone = allTasks.filter(t => {
@@ -3012,10 +3015,13 @@ function updateProgress() {
     const s = taskState[t.id];
     return s?.done && s?.doneSessionDate === session;
   };
-  // 進捗は当日セッション（3:01〜翌3:00）にピンしたタスクのみ
+  // 進捗の母数：当日セッションにピン済み、かつ前セッションで完了済みのものは除外
   const todayAll = allTasks.filter(t => {
     const s = taskState[t.id];
-    return s?.pinned && s?.pinnedSessionDate === session;
+    if (!s?.pinned || s?.pinnedSessionDate !== session) return false;
+    // 完了済みの場合、今日のセッションで完了したものだけ含める
+    if (s?.done && s?.doneSessionDate !== session) return false;
+    return true;
   });
   const done = todayAll.filter(isDoneToday).length;
   const pct = todayAll.length ? Math.round(done/todayAll.length*100) : 0;
