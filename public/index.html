@@ -403,14 +403,14 @@ body::before {
   display: flex;
   flex-direction: column;
 }
-/* 実行モード：両カラムを viewport 高さに固定、内部スクロール */
-.content-grid:not(.select-mode) .schedule-col,
+/* 実行モード：今日やることを sticky で追従、内部スクロール */
 .content-grid:not(.select-mode) .today-board {
-  height: calc(100vh - 130px);
-  max-height: calc(100vh - 130px);
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  height: calc(100vh - 24px);
+  max-height: calc(100vh - 24px);
   overflow: hidden;
-}
-.content-grid:not(.select-mode) .today-board {
   display: flex;
   flex-direction: column;
 }
@@ -2568,16 +2568,24 @@ function addScheduleEvent() {
 
 // ===== API =====
 async function notionQuery(dbId, filter, sorts) {
-  const body = {};
-  if (filter) body.filter = filter;
-  if (sorts) body.sorts = sorts;
-  const res = await fetch(`/api/notion?path=databases/${dbId}/query`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  const base = {};
+  if (filter) base.filter = filter;
+  if (sorts) base.sorts = sorts;
+  let results = [], cursor = null;
+  do {
+    const body = { ...base, page_size: 100 };
+    if (cursor) body.start_cursor = cursor;
+    const res = await fetch(`/api/notion?path=databases/${dbId}/query`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data = await res.json();
+    results = results.concat(data.results || []);
+    cursor = data.has_more ? data.next_cursor : null;
+  } while (cursor);
+  return { results };
 }
 
 async function notionUpdate(pageId, properties) {
@@ -4261,23 +4269,20 @@ function setMode(mode) {
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   renderAll();
   updateExecHint();
-  if (fcCalendar) {
-    if (!isSelect) {
-      // 実行モード：固定高さにして内部スクロール＋現在時刻を中央に
-      fcCalendar.setOption('height', 'calc(100vh - 162px)');
-      requestAnimationFrame(() => {
-        const scroller = document.querySelector('.fc-scroller-liquid-absolute') || document.querySelector('.fc-scroller');
-        const visH = scroller ? scroller.clientHeight : window.innerHeight - 162;
-        const pxPerHour = 22 * 4;
-        const visHours = visH / pxPerHour;
-        const now = new Date();
-        const rawH = now.getHours() + now.getMinutes() / 60 - visHours / 2;
-        fcCalendar.scrollToTime({ hours: Math.floor(Math.max(6, rawH)), minutes: Math.round((Math.max(6, rawH) % 1) * 60) });
-      });
-    } else {
-      // 選択モード：全スロットを表示
-      fcCalendar.setOption('height', 'auto');
-    }
+  // カレンダーは常に全スロット表示（height: auto）
+  // Eモード切替時はページを現在時刻付近にスクロール
+  if (!isSelect) {
+    requestAnimationFrame(() => {
+      const now = new Date();
+      const minH = _calEarly ? 3 : 6;
+      const hoursFromStart = Math.max(0, now.getHours() + now.getMinutes() / 60 - minH);
+      const pxPerHour = 22 * 4;
+      const fcEl = document.getElementById('fc-el');
+      if (!fcEl) return;
+      const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
+      const target = calTop + hoursFromStart * pxPerHour - window.innerHeight / 2;
+      window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    });
   }
 }
 
