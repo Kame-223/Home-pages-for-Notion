@@ -2788,11 +2788,7 @@ function renderCard(task, mode='today') {
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable${isDeadlineToday?' deadline-today-tag':''}" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
   const links = s.links;
-  const linkPillsHtml = links.length
-    ? `<div class="link-pills-area">${links.map(u =>
-        `<a class="link-pill" href="${u}" target="_blank" title="${u}"></a>`
-      ).join('')}</div>`
-    : '';
+  const linkPillsHtml = ''; // 作業リンクピルは一時非表示（後で検討）
 
   if (mode === 'leftover' || mode === 'next') {
     return `
@@ -4274,11 +4270,7 @@ function renderGtdCard(task) {
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
-  const bearBtn = links.length
-    ? `<div class="link-pills-area">${links.map(u =>
-        `<a class="link-pill" href="${u}" target="_blank" title="${u}"></a>`
-      ).join('')}</div>`
-    : '';
+  const bearBtn = ''; // 作業リンクピルは一時非表示（後で検討）
 
   const gtdLabel = gtd || '📥 INBOX';
   const gtdOpts = [
