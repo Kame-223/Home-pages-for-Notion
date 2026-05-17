@@ -1346,6 +1346,20 @@ body::before {
 }
 .furikaeri-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
 .furikaeri-hint { font-size: 10px; color: var(--text-dim); }
+.furikaeri-done-btn { font-size: 11px; padding: 5px 18px; border-radius: 6px; background: var(--purple); color: #fff; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: background .15s; }
+.furikaeri-done-btn:hover { background: #6860c0; }
+.fr-done-overlay {
+  display: none; position: absolute; inset: -16px -14px -16px -14px; border-radius: 12px;
+  background: rgba(10,10,20,0.82); backdrop-filter: blur(3px);
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; z-index: 10;
+}
+.fr-done-overlay.active { display: flex; }
+.fr-done-check { font-size: 38px; line-height: 1; }
+.fr-done-label { font-size: 16px; font-weight: 700; color: var(--text); }
+.fr-edit-btn { font-size: 10px; color: var(--text-dim); background: none; border: none; cursor: pointer; opacity: 0.35; transition: opacity .15s; margin-top: 6px; font-family: 'Noto Sans JP', sans-serif; }
+.fr-edit-btn:hover { opacity: 1; }
+.fr-textarea { resize: none; overflow: hidden; }
 .furikaeri-save {
   font-size: 12px; padding: 8px 20px; border-radius: 8px;
   border: none; background: var(--green);
@@ -1613,6 +1627,12 @@ body::before {
 
           <div class="furikaeri-actions">
             <span class="furikaeri-hint" id="furikaeri-hint"></span>
+            <button class="furikaeri-done-btn" onclick="completeFurikaeri()">完了</button>
+          </div>
+          <div class="fr-done-overlay" id="fr-done-overlay">
+            <div class="fr-done-check">✅</div>
+            <div class="fr-done-label">振り返り完了</div>
+            <button class="fr-edit-btn" onclick="editFurikaeri()">追記・編集する</button>
           </div>
         </div>
       </div>
@@ -2833,16 +2853,12 @@ function renderCard(task, mode='today') {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
+    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
 
-  const hasSubjectOrEla = !!(subjectToShow || elaToShow);
-  const leftBtn = !area
-    ? `<button class="btn-set-prop" onclick="${editCall}">PROPERTY</button>`
-    : !hasSubjectOrEla
-      ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>`
-      : '';
+  const leftBtn = propTags ? '' : `<button class="btn-set-prop" onclick="${editCall}">PROPERTY</button>`;
 
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable${isDeadlineToday?' deadline-today-tag':''}" onclick="${editCall}" data-deadline="${deadline||''}" data-done="${s.done}" data-important="${s.important||false}">${dt.label}</span>` : '';
 
@@ -3124,6 +3140,7 @@ function setupFurikaeri() {
     localStorage.setItem('frDate', dateStr);
     localStorage.removeItem('frPageId');
     localStorage.removeItem('frContent');
+    localStorage.removeItem('frDone');
   } else {
     // 同日セッション：localStorage から内容を復元
     frPageId = localStorage.getItem('frPageId') || null;
@@ -3131,7 +3148,7 @@ function setupFurikaeri() {
       const saved = JSON.parse(localStorage.getItem('frContent') || '{}');
       ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(key => {
         const el = document.getElementById(key);
-        if (el && saved[key]) el.value = saved[key];
+        if (el && saved[key]) { el.value = saved[key]; autoResizeTextarea(el); }
       });
       ['mood','energy'].forEach(kind => {
         if (!saved[kind]) return;
@@ -3141,6 +3158,10 @@ function setupFurikaeri() {
         document.querySelectorAll(`#fr-${kind} .fr-opt:not(.selected)`).forEach(b => b.classList.add('dimmed'));
       });
     } catch(e) {}
+    // 完了状態を復元
+    if (localStorage.getItem('frDone') === 'true') {
+      document.getElementById('fr-done-overlay')?.classList.add('active');
+    }
   }
 
   if (d.getDay() === 0) document.getElementById('weekly-section')?.classList.remove('hidden');
@@ -3160,8 +3181,26 @@ function setupFurikaeri() {
   });
   ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', scheduleFrSave);
+    if (el) {
+      el.addEventListener('input', () => { autoResizeTextarea(el); scheduleFrSave(); });
+    }
   });
+}
+
+function autoResizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function completeFurikaeri() {
+  localStorage.setItem('frDone', 'true');
+  document.getElementById('fr-done-overlay')?.classList.add('active');
+  saveFurikaeri();
+}
+
+function editFurikaeri() {
+  localStorage.removeItem('frDone');
+  document.getElementById('fr-done-overlay')?.classList.remove('active');
 }
 
 let frSaveTimer = null;
@@ -4827,13 +4866,11 @@ function renderGtdCard(task) {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
+    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     subjectToShow ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
-  const hasSubjectOrElaG = !!(subjectToShow || elaToShow);
-  const leftBtnG = !area
-    ? `<button class="btn-set-prop" onclick="${editCall}">PROPERTY</button>`
-    : !hasSubjectOrElaG ? `<button class="btn-change-prop" onclick="${editCall}">PROPERTY</button>` : '';
+  const leftBtnG = propTags ? '' : `<button class="btn-set-prop" onclick="${editCall}">PROPERTY</button>`;
   const deadlineTag2 = dt ? `<span class="tag ${dt.cls} deadline-tag clickable" onclick="${editCall}" data-deadline="${deadline||''}" data-done="false" data-important="false">${dt.label}</span>` : '';
 
   const links = s.links;
