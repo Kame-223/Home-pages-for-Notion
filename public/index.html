@@ -1186,13 +1186,31 @@ body::before {
   overflow: hidden; text-overflow: ellipsis;
 }
 .focus-link-item:hover { background: rgba(55,138,221,0.1); }
+.focus-exit-btn {
+  position: absolute; top: 12px; right: 14px;
+  font-size: 11px; color: var(--text-dim); background: none;
+  border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 10px;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
+}
+.focus-exit-btn:hover { color: var(--text); border-color: var(--border2); }
 .focus-expected { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
 .focus-timer {
   font-size: 52px; font-weight: 300; color: var(--text);
   font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
 }
-.focus-timer.warning { color: var(--amber); }
-.focus-btns { display: flex; gap: 10px; margin-top: 8px; }
+.focus-timer.expired { color: var(--amber); }
+.focus-adj-row { display: flex; flex-direction: column; gap: 4px; width: 100%; margin-top: 4px; }
+.focus-adj-group { display: flex; gap: 3px; justify-content: center; }
+.focus-adj-btn {
+  font-size: 9px; padding: 4px 7px; border-radius: 5px;
+  border: 0.5px solid var(--border2); background: transparent;
+  cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all .15s;
+}
+.focus-adj-btn.minus { color: rgba(240,149,149,0.85); border-color: rgba(240,149,149,0.25); }
+.focus-adj-btn.plus  { color: rgba(93,202,165,0.85);  border-color: rgba(93,202,165,0.25); }
+.focus-adj-btn:hover:not(:disabled) { background: rgba(255,255,255,0.08); }
+.focus-adj-btn:disabled { opacity: 0.2; cursor: default; }
+.focus-btns { display: flex; gap: 10px; margin-top: 10px; }
 .focus-pause {
   font-size: 12px; padding: 10px 24px; border-radius: 10px;
   border: 0.5px solid var(--border2); background: transparent;
@@ -1207,6 +1225,7 @@ body::before {
   font-weight: 500; transition: all .2s;
 }
 .focus-done-btn:hover { background: #6B63C7; }
+.content-grid:not(.select-mode) .time-val { font-size: 20px; min-width: 46px; padding: 3px 8px; }
 
 /* モーダル */
 .modal-bg {
@@ -1724,6 +1743,7 @@ body::before {
 <!-- 集中モード -->
 <div class="focus-overlay" id="focus-overlay">
   <div class="focus-modal">
+    <button class="focus-exit-btn" onclick="exitFocus()">✕ 離脱</button>
     <div class="focus-mode-label">集中モード</div>
     <div class="focus-tags" id="focus-tags"></div>
     <div class="focus-task" id="focus-task"></div>
@@ -1733,18 +1753,36 @@ body::before {
     </div>
     <div class="focus-expected" id="focus-expected"></div>
     <div class="focus-timer" id="focus-timer">00:00</div>
+    <div class="focus-adj-row" id="focus-adj-row">
+      <div class="focus-adj-group">
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-60)">-1m</button>
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-300)">-5m</button>
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-600)">-10m</button>
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-900)">-15m</button>
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-1800)">-30m</button>
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-2700)">-45m</button>
+        <button class="focus-adj-btn minus" onclick="adjustFocusTime(-3600)">-1h</button>
+      </div>
+      <div class="focus-adj-group">
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(60)">+1m</button>
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(300)">+5m</button>
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(600)">+10m</button>
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(900)">+15m</button>
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(1800)">+30m</button>
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(2700)">+45m</button>
+        <button class="focus-adj-btn plus" onclick="adjustFocusTime(3600)">+1h</button>
+      </div>
+    </div>
     <div class="focus-btns">
-      <button class="focus-pause" onclick="pauseFocus()">一時停止</button>
+      <button class="focus-pause" id="focus-pause-btn" onclick="toggleFocusPause()">一時停止</button>
       <button class="focus-done-btn" onclick="completeFocus()">完了</button>
     </div>
-    <!-- トグルはボタン直下（modal内） -->
     <div id="focus-subtask-wrap" style="display:none; width:100%; text-align:center">
       <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
         <span id="focus-subtask-label">▶ 子タスク</span>
       </div>
     </div>
   </div>
-  <!-- 展開ボディのみ modal 外・JS で toggle 直下に配置 -->
   <div id="focus-subtask-body" style="display:none">
     <div class="subtask-panel" id="focus-stp" style="display:block"></div>
   </div>
@@ -3842,18 +3880,55 @@ document.addEventListener('click', e => {
 });
 
 // ===== 集中モード =====
-let focusInterval = null;
-let currentFocusId = null;
-let focusStartTs = null; // Date.now() at focus start (adjusted for already-elapsed seconds)
+let focusInterval    = null;
+let currentFocusId   = null;
+let focusCountdown   = 0;      // 残り秒数
+let focusPaused      = false;
+let focusExpired     = false;
+let focusLastTickTs  = null;   // 最後にtickした時刻（タブ非表示対策）
+
+const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
+
+function renderFocusTimer() {
+  const el = document.getElementById('focus-timer');
+  if (!el) return;
+  const m = String(Math.floor(focusCountdown / 60)).padStart(2, '0');
+  const s = String(focusCountdown % 60).padStart(2, '0');
+  el.textContent = m + ':' + s;
+  el.classList.toggle('expired', focusExpired);
+}
+
+function setAdjBtnsDisabled(disabled) {
+  document.querySelectorAll('.focus-adj-btn').forEach(b => { b.disabled = disabled; });
+}
+
+function focusTimerExpired() {
+  focusExpired = true;
+  focusPaused  = true;
+  clearInterval(focusInterval);
+  focusInterval = null;
+  renderFocusTimer();
+  setAdjBtnsDisabled(false);
+  const pauseBtn = document.getElementById('focus-pause-btn');
+  if (pauseBtn) pauseBtn.textContent = '延長';
+  // 点滅エフェクト
+  const overlay = document.getElementById('focus-overlay');
+  let cnt = 0;
+  const blink = setInterval(() => {
+    overlay.style.background = cnt % 2 === 0 ? 'rgba(127,119,221,0.35)' : 'rgba(5,3,15,0.96)';
+    if (++cnt >= 8) { clearInterval(blink); overlay.style.background = ''; }
+  }, 200);
+  navigator.vibrate?.([300,150,300,150,300]);
+}
 
 function updateFocusDisplay() {
-  if (!currentFocusId || focusStartTs === null) return;
-  const elapsed = Math.floor((Date.now() - focusStartTs) / 1000);
-  if (taskState[currentFocusId]) taskState[currentFocusId].focusSeconds = elapsed;
-  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
-  const sec = String(elapsed % 60).padStart(2, '0');
-  const el = document.getElementById('focus-timer');
-  if (el) el.textContent = m + ':' + sec;
+  if (focusPaused || !currentFocusId) return;
+  const now = Date.now();
+  const elapsed = focusLastTickTs ? Math.max(1, Math.floor((now - focusLastTickTs) / 1000)) : 1;
+  focusLastTickTs = now;
+  focusCountdown = Math.max(0, focusCountdown - elapsed);
+  renderFocusTimer();
+  if (focusCountdown <= 0 && !focusExpired) focusTimerExpired();
 }
 
 function startFocus(id) {
@@ -3893,7 +3968,19 @@ function startFocus(id) {
 
   document.getElementById('focus-overlay').classList.add('open');
   currentFocusId = id;
-  focusStartTs = Date.now() - (s.focusSeconds * 1000);
+
+  // カウントダウン初期化
+  const expected = timeSteps[s.timeIdx];
+  focusCountdown  = FOCUS_STEP_SECS[expected] || 1800;
+  focusPaused     = false;
+  focusExpired    = false;
+  focusLastTickTs = null;
+  renderFocusTimer();
+  setAdjBtnsDisabled(true);
+  const pauseBtn = document.getElementById('focus-pause-btn');
+  if (pauseBtn) pauseBtn.textContent = '一時停止';
+  clearInterval(focusInterval);
+  focusInterval = setInterval(updateFocusDisplay, 1000);
 
   // 子タスクエリアの初期化
   focusSubtaskOpen = false;
@@ -4018,24 +4105,53 @@ function toggleFocusLinkMenu() {
   document.getElementById('focus-link-menu').classList.toggle('open');
 }
 
-function pauseFocus() {
-  updateFocusDisplay();
+function toggleFocusPause() {
+  const pauseBtn = document.getElementById('focus-pause-btn');
+  if (focusPaused) {
+    // 再開（または延長）
+    focusPaused  = false;
+    focusExpired = false;
+    focusLastTickTs = null;
+    setAdjBtnsDisabled(true);
+    if (pauseBtn) pauseBtn.textContent = '一時停止';
+    clearInterval(focusInterval);
+    focusInterval = setInterval(updateFocusDisplay, 1000);
+  } else {
+    // 一時停止
+    focusPaused = true;
+    clearInterval(focusInterval);
+    focusInterval = null;
+    setAdjBtnsDisabled(false);
+    if (pauseBtn) pauseBtn.textContent = '再開';
+  }
+}
+
+function adjustFocusTime(deltaSecs) {
+  if (!focusPaused) return;
+  focusCountdown = Math.max(0, focusCountdown + deltaSecs);
+  renderFocusTimer();
+}
+
+function exitFocus() {
   clearInterval(focusInterval);
   focusInterval = null;
-  focusStartTs = null;
+  focusPaused  = false;
+  focusExpired = false;
   document.getElementById('focus-overlay').classList.remove('open');
   if (currentFocusId) {
-    document.querySelectorAll(`#start-${currentFocusId}`).forEach(el=>{
+    document.querySelectorAll(`#start-${currentFocusId}`).forEach(el => {
       el.textContent = 'Restart';
       el.classList.add('restart');
     });
   }
+  currentFocusId = null;
 }
 
 function completeFocus() {
-  updateFocusDisplay();
   clearInterval(focusInterval);
-  focusStartTs = null;
+  focusInterval = null;
+  focusPaused  = false;
+  focusExpired = false;
   document.getElementById('focus-overlay').classList.remove('open');
   if (currentFocusId) toggleDone(currentFocusId);
   currentFocusId = null;
@@ -5079,8 +5195,8 @@ function refreshDeadlineTags() {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
-  if (currentFocusId && focusStartTs !== null) updateFocusDisplay();
-  if (!currentFocusId) loadTasks(); // タブ復帰時にデータを更新
+  if (currentFocusId && !focusPaused) updateFocusDisplay(); // タブ復帰時にタイマーを同期
+  if (!currentFocusId) loadTasks();
 });
 
 window.onload = () => {
