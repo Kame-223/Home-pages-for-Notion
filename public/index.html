@@ -1075,20 +1075,18 @@ body::before {
   /* ドーナッツ位置固定：子タスク展開でもここは動かない */
   position: relative; z-index: 1;
 }
-/* 子タスクエリア：ボタン直下に固定（JS で top を設定） */
-.focus-subtask-wrap {
+/* 子タスクトグル：modal 内・ボタン直下 */
+.focus-subtask-toggle {
+  cursor: pointer; font-size: 11px; color: var(--text-dim);
+  padding: 8px 0; transition: color .15s; user-select: none;
+}
+.focus-subtask-toggle:hover { color: var(--text-sub); }
+/* 展開ボディ：JS で toggle 直下に fixed 配置（donut に干渉しない） */
+#focus-subtask-body {
   position: fixed;
   left: 50%; transform: translateX(-50%);
   width: 420px; max-width: calc(100vw - 40px);
   z-index: 1001;
-}
-.focus-subtask-toggle {
-  text-align: center; cursor: pointer;
-  font-size: 11px; color: var(--text-dim);
-  padding: 8px 0; transition: color .15s; user-select: none;
-}
-.focus-subtask-toggle:hover { color: var(--text-sub); }
-.focus-subtask-body {
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border2);
   border-radius: 10px; padding: 10px 14px;
@@ -1691,15 +1689,16 @@ body::before {
       <button class="focus-pause" onclick="pauseFocus()">一時停止</button>
       <button class="focus-done-btn" onclick="completeFocus()">完了</button>
     </div>
+    <!-- トグルはボタン直下（modal内） -->
+    <div id="focus-subtask-wrap" style="display:none; width:100%; text-align:center">
+      <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
+        <span id="focus-subtask-label">▶ 子タスク</span>
+      </div>
+    </div>
   </div>
-  <!-- 子タスクエリア: focus-modalの外・オーバーレイ下部に固定 -->
-  <div class="focus-subtask-wrap" id="focus-subtask-wrap" style="display:none">
-    <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
-      <span id="focus-subtask-label">▶ 子タスク</span>
-    </div>
-    <div class="focus-subtask-body" id="focus-subtask-body" style="display:none">
-      <div class="subtask-panel" id="focus-stp" style="display:block"></div>
-    </div>
+  <!-- 展開ボディのみ modal 外・JS で toggle 直下に配置 -->
+  <div id="focus-subtask-body" style="display:none">
+    <div class="subtask-panel" id="focus-stp" style="display:block"></div>
   </div>
 </div>
 
@@ -3528,11 +3527,11 @@ function startFocus(id) {
 let focusSubtaskOpen = false;
 
 function positionFocusSubtask() {
-  const modal = document.querySelector('#focus-overlay .focus-modal');
-  const wrap  = document.getElementById('focus-subtask-wrap');
-  if (!modal || !wrap) return;
-  const rect = modal.getBoundingClientRect();
-  wrap.style.top = (rect.bottom + 4) + 'px';
+  const toggle = document.getElementById('focus-subtask-toggle');
+  const body   = document.getElementById('focus-subtask-body');
+  if (!toggle || !body) return;
+  const rect = toggle.getBoundingClientRect();
+  body.style.top = (rect.bottom + 4) + 'px';
 }
 
 function updateFocusSubtaskLabel(id) {
@@ -3553,6 +3552,7 @@ async function toggleFocusSubtask() {
   focusSubtaskOpen = !focusSubtaskOpen;
   const body = document.getElementById('focus-subtask-body');
   if (body) body.style.display = focusSubtaskOpen ? 'block' : 'none';
+  if (focusSubtaskOpen) positionFocusSubtask();
   updateFocusSubtaskLabel(id);
 
   if (focusSubtaskOpen) {
