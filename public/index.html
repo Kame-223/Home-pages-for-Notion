@@ -4215,7 +4215,8 @@ function openEditModal(id, e) {
   document.getElementById('edit-task-name').textContent = getProp(task,'タイトル') || '無題';
 
   const gtd = getProp(task,'GTD 種別') || '📥 INBOX';
-  document.querySelectorAll('#edit-gtd .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === gtd));
+  const gtdBtn = document.getElementById('edit-gtd-btn');
+  if (gtdBtn) gtdBtn.textContent = gtd;
 
   const area = getProp(task,'エリア') || '';
   document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.toggle('active', c.dataset.val === area));
@@ -4295,7 +4296,9 @@ function renderEditLinks() {
 }
 
 function resetEditModal() {
-  document.querySelectorAll('#edit-gtd .edit-chip, #edit-area .edit-chip, #edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
+  const gtdBtnR = document.getElementById('edit-gtd-btn');
+  if (gtdBtnR) gtdBtnR.textContent = '📥 INBOX';
+  document.querySelectorAll('#edit-area .edit-chip, #edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
   document.getElementById('edit-deadline-date').value = '';
   document.getElementById('edit-deadline-time').value = '';
   updateDeadlineDisplay();
@@ -4380,7 +4383,7 @@ async function saveEditModal() {
   const task = allTasks.find(t => t.id === id);
 
   const newTitle = document.getElementById('edit-task-name').textContent.trim();
-  const gtdVal = document.querySelector('#edit-gtd .edit-chip.active')?.dataset.val || '📥 INBOX';
+  const gtdVal = document.getElementById('edit-gtd-btn')?.textContent || '📥 INBOX';
   const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
   let subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val || null;
   let ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
@@ -5091,6 +5094,23 @@ function renderGtdCard(task) {
   </div>`;
 }
 
+function toggleEditGtdDropdown() {
+  const dd = document.getElementById('edit-gtd-dd');
+  if (!dd) return;
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
+  document.querySelectorAll('.gtd-dropdown').forEach(el => el.classList.remove('open'));
+  const btn = document.getElementById('edit-gtd-btn');
+  const rect = btn.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = rect.left + 'px';
+  dd.classList.add('open');
+}
+function selectEditGtd(val) {
+  const btn = document.getElementById('edit-gtd-btn');
+  if (btn) btn.textContent = val;
+  document.getElementById('edit-gtd-dd')?.classList.remove('open');
+}
+
 function toggleGtdDropdown(id) {
   document.querySelectorAll('.gtd-dropdown').forEach(el => {
     if (el.id !== `gtdd-${id}`) el.classList.remove('open');
@@ -5521,10 +5541,16 @@ window.onload = () => {
     </div>
     <div class="edit-field">
       <span class="edit-field-label">GTD</span>
-      <div class="edit-chips" id="edit-gtd">
-        <button class="edit-chip" data-val="📥 INBOX"  onclick="toggleEditChip(this,'edit-gtd',false)">📥 INBOX</button>
-        <button class="edit-chip" data-val="▶️ 次やる" onclick="toggleEditChip(this,'edit-gtd',false)">▶️ 次やる</button>
-        <button class="edit-chip" data-val="🔥 今やる" onclick="toggleEditChip(this,'edit-gtd',false)">🔥 今やる</button>
+      <div class="gtd-btn-wrap">
+        <button class="btn-gtd" id="edit-gtd-btn" onclick="toggleEditGtdDropdown();event.stopPropagation()">📥 INBOX</button>
+        <div class="gtd-dropdown" id="edit-gtd-dd">
+          <div class="gtd-opt" onclick="selectEditGtd('📥 INBOX')">📥 INBOX</div>
+          <div class="gtd-opt" onclick="selectEditGtd('▶️ 次やる')">▶️ 次やる</div>
+          <div class="gtd-opt" onclick="selectEditGtd('📧 待ち')">📧 待ち</div>
+          <div class="gtd-opt" onclick="selectEditGtd('💫今じゃない')">💫今じゃない</div>
+          <div class="gtd-opt gtd-opt-fire" onclick="selectEditGtd('🔥 今やる')">🔥 今やる</div>
+          <div class="gtd-opt gtd-opt-trash" onclick="selectEditGtd('🗑ゴミ箱')">🗑ゴミ箱</div>
+        </div>
       </div>
     </div>
     <div class="edit-field">
