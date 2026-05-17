@@ -403,6 +403,14 @@ body::before {
   display: flex;
   flex-direction: column;
 }
+/* 実行モード：今日やることを sticky にしてスクロールに追従 */
+.content-grid:not(.select-mode) .today-board {
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
 .today-content { padding: 10px 12px; }
 .board-header { display: none; }
 .board-title { display: none; }
@@ -4230,6 +4238,18 @@ function setMode(mode) {
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   renderAll();
   updateExecHint();
+  if (!isSelect && fcCalendar) {
+    requestAnimationFrame(() => {
+      const scroller = document.querySelector('.fc-scroller-liquid-absolute') || document.querySelector('.fc-scroller');
+      const visH = scroller ? scroller.clientHeight : 400;
+      const pxPerHour = 22 * 4; // 22px/slot × 4 slots/hour
+      const visHours = visH / pxPerHour;
+      const now = new Date();
+      const rawH = now.getHours() + now.getMinutes() / 60 - visHours / 2;
+      const scrollH = Math.max(6, rawH);
+      fcCalendar.scrollToTime({ hours: Math.floor(scrollH), minutes: Math.round((scrollH % 1) * 60) });
+    });
+  }
 }
 
 // ===== リンクメニュー =====
