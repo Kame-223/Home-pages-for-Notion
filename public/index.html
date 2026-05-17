@@ -3074,26 +3074,44 @@ function updateProgress() {
 
 // ===== 振り返り =====
 function setupFurikaeri() {
-  // 日付表示（3時リセット基準）
   const dateStr = getFurikaeriDate();
   const d = new Date(dateStr + 'T12:00:00');
   const days = ['日','月','火','水','木','金','土'];
   document.getElementById('furikaeri-date').textContent =
     `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
 
-  // 日付が変わっていたらフォームリセット
   const savedDate = localStorage.getItem('frDate');
   if (savedDate !== dateStr) {
+    // 日付が変わったらリセット
     ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     document.querySelectorAll('.fr-opt').forEach(b => b.classList.remove('selected','dimmed'));
     frPageId = null;
     localStorage.setItem('frDate', dateStr);
+    localStorage.removeItem('frPageId');
+    localStorage.removeItem('frContent');
+  } else {
+    // 同日セッション：localStorage から内容を復元
+    frPageId = localStorage.getItem('frPageId') || null;
+    try {
+      const saved = JSON.parse(localStorage.getItem('frContent') || '{}');
+      ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(key => {
+        const el = document.getElementById(key);
+        if (el && saved[key]) el.value = saved[key];
+      });
+      ['mood','energy'].forEach(kind => {
+        if (!saved[kind]) return;
+        const btn = document.querySelector(`#fr-${kind} .fr-opt[data-val="${saved[kind]}"]`);
+        if (!btn) return;
+        btn.classList.add('selected');
+        document.querySelectorAll(`#fr-${kind} .fr-opt:not(.selected)`).forEach(b => b.classList.add('dimmed'));
+      });
+    } catch(e) {}
   }
-  // 日曜なら週次レビューを表示
-  if (d.getDay() === 0) document.getElementById('weekly-section').classList.remove('hidden');
-  // 気分・体調ボタンのセレクト（選択→強調、他→暗く、再クリックでキャンセル）
+
+  if (d.getDay() === 0) document.getElementById('weekly-section')?.classList.remove('hidden');
+
   document.querySelectorAll('.fr-options').forEach(group => {
     group.querySelectorAll('.fr-opt').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -3107,7 +3125,6 @@ function setupFurikaeri() {
       });
     });
   });
-  // テキストエリア変更で自動保存スケジュール
   ['fr-event','fr-good','fr-bad','fr-weekly','fr-next-week'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', scheduleFrSave);
@@ -3126,6 +3143,19 @@ function getFurikaeriDate() {
 }
 
 function scheduleFrSave() {
+  // localStorage に即時保存（リロード耐性）
+  try {
+    const content = {
+      mood:    document.querySelector('#fr-mood .fr-opt.selected')?.dataset.val || null,
+      energy:  document.querySelector('#fr-energy .fr-opt.selected')?.dataset.val || null,
+      'fr-event':    document.getElementById('fr-event')?.value || '',
+      'fr-good':     document.getElementById('fr-good')?.value || '',
+      'fr-bad':      document.getElementById('fr-bad')?.value || '',
+      'fr-weekly':   document.getElementById('fr-weekly')?.value || '',
+      'fr-next-week':document.getElementById('fr-next-week')?.value || '',
+    };
+    localStorage.setItem('frContent', JSON.stringify(content));
+  } catch(e) {}
   clearTimeout(frSaveTimer);
   frSaveTimer = setTimeout(() => saveFurikaeri(), 3000);
 }
@@ -3163,6 +3193,7 @@ async function saveFurikaeri() {
     } else {
       const res = await notionCreate('76f4c1ec140d8375aa5b81c589f9b247', props);
       frPageId = res.id;
+      localStorage.setItem('frPageId', frPageId); // 重複作成防止のため永続化
     }
     if (hint) { hint.textContent = '✓ 自動保存済み'; setTimeout(() => { hint.textContent = ''; }, 3000); }
   } catch(e) {
