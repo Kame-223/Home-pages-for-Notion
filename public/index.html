@@ -1225,13 +1225,20 @@ body::before {
   font-weight: 500; transition: all .2s;
 }
 .focus-done-btn:hover { background: #6B63C7; }
+.focus-quick-add {
+  font-size: 11px; padding: 6px 18px; border-radius: 8px;
+  border: 0.5px solid var(--border2); background: rgba(255,255,255,0.05);
+  color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s;
+}
+.focus-quick-add:hover { background: rgba(255,255,255,0.1); color: var(--text); }
 .content-grid:not(.select-mode) .time-val { font-size: 20px; min-width: 46px; padding: 3px 8px; }
 
 /* モーダル */
 .modal-bg {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
   display: none; align-items: flex-end; justify-content: center;
-  z-index: 500;
+  z-index: 1100;
 }
 .modal-bg.open { display: flex; }
 .modal {
@@ -1781,6 +1788,10 @@ body::before {
       <div class="focus-subtask-toggle" id="focus-subtask-toggle" onclick="toggleFocusSubtask()">
         <span id="focus-subtask-label">▶ 子タスク</span>
       </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="focus-quick-add" onclick="openModal('inbox')">＋ INBOX</button>
+      <button class="focus-quick-add" onclick="openModal('note')">＋ NOTE</button>
     </div>
   </div>
   <div id="focus-subtask-body" style="display:none">
@@ -3892,9 +3903,10 @@ const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
 function renderFocusTimer() {
   const el = document.getElementById('focus-timer');
   if (!el) return;
-  const m = String(Math.floor(focusCountdown / 60)).padStart(2, '0');
+  const h = String(Math.floor(focusCountdown / 3600)).padStart(2, '0');
+  const m = String(Math.floor((focusCountdown % 3600) / 60)).padStart(2, '0');
   const s = String(focusCountdown % 60).padStart(2, '0');
-  el.textContent = m + ':' + s;
+  el.textContent = h + ':' + m + ':' + s;
   el.classList.toggle('expired', focusExpired);
 }
 
