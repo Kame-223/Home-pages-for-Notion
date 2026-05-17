@@ -1377,17 +1377,21 @@ body::before {
 .subtask-text.checked { text-decoration: line-through; color: var(--text-dim); }
 .subtask-text[contenteditable="true"]:focus { background: rgba(255,255,255,0.06); box-shadow: 0 0 0 1px rgba(127,119,221,0.4); }
 .subtask-drag-handle {
-  font-size: 13px; color: var(--text-dim); cursor: grab; flex-shrink: 0;
-  padding: 0 10px; opacity: 0.3; transition: opacity .15s;
-  touch-action: none; user-select: none; line-height: 1;
+  display: flex; align-items: center; gap: 3px;
+  cursor: grab; flex-shrink: 0; padding: 0 4px 0 6px;
+  touch-action: none; user-select: none;
+}
+.subtask-drag-icon {
+  font-size: 13px; color: var(--text-dim); opacity: 0.3; transition: opacity .15s; line-height: 1;
 }
 .subtask-rank {
-  font-size: 9px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
-  min-width: 14px; text-align: right; flex-shrink: 0; padding-right: 2px;
+  font-size: 9px; color: rgba(255,255,255,0.55); font-family: 'JetBrains Mono', monospace;
+  min-width: 14px; text-align: right; flex-shrink: 0;
 }
 .subtask-done-separator { height: 8px; }
-.subtask-item:hover .subtask-drag-handle { opacity: 0.75; }
-.subtask-drag-handle:active { cursor: grabbing; opacity: 1; }
+.subtask-item:hover .subtask-drag-icon { opacity: 0.75; }
+.subtask-drag-handle:active { cursor: grabbing; }
+.subtask-drag-handle:active .subtask-drag-icon { opacity: 1; }
 .subtask-item.subtask-dragging { opacity: 0.2; }
 .subtask-insert-line { height: 1.5px; background: rgba(255,255,255,0.6); border-radius: 2px; margin: 2px 0; pointer-events: none; }
 .subtask-del { font-size: 12px; color: var(--text-dim); background: none; border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; padding: 2px 7px; opacity: 0; transition: all .15s; flex-shrink: 0; line-height: 1.2; }
@@ -3050,6 +3054,9 @@ function renderAll() {
   // 次やること
   renderNextList();
 
+  // 子タスクキャッシュがあるカードの進捗を常に表示
+  requestAnimationFrame(() => Object.keys(subtaskData).forEach(id => updateSubtaskProgress(id)));
+
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
   allTasks.filter(t=>!isDone(t)&&taskState[t.id]?.pinned).forEach(t=>{
@@ -4420,8 +4427,9 @@ function renderSubtaskPanel(id, targetEl) {
     const text = b.to_do.rich_text.map(r => r.plain_text).join('') || '';
     const checked = b.to_do.checked;
     return `<div class="subtask-item">
-      ${!checked ? `<div class="subtask-drag-handle" data-bid="${b.id}" data-taskid="${id}">⠿</div>` : '<div style="width:33px;flex-shrink:0"></div>'}
-      <span class="subtask-rank">${rank != null ? rank : ''}</span>
+      ${!checked
+        ? `<div class="subtask-drag-handle" data-bid="${b.id}" data-taskid="${id}"><span class="subtask-rank">${rank != null ? rank : ''}</span><span class="subtask-drag-icon">⠿</span></div>`
+        : `<div style="display:flex;align-items:center;gap:3px;padding:0 4px 0 6px;flex-shrink:0"><span class="subtask-rank" style="visibility:hidden">0</span><span class="subtask-drag-icon" style="visibility:hidden">⠿</span></div>`}
       <input type="checkbox" class="subtask-checkbox" ${checked?'checked':''}
         onchange="checkSubtask('${b.id}',this.checked,'${id}')">
       <span class="subtask-text ${checked?'checked':''}" contenteditable="${checked?'false':'true'}"
@@ -4438,7 +4446,7 @@ function renderSubtaskPanel(id, targetEl) {
     : '';
   panel.innerHTML = `<div>${listHtml}</div>
     <div class="subtask-add">
-      <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..."
+      <input class="subtask-input" id="sti-${id}" placeholder="小タスクを追加..." autocomplete="off"
         onkeydown="if(event.isComposing)return;if(event.key==='Enter'){event.preventDefault();event.shiftKey?addSubtask('${id}',false):addSubtask('${id}',true)}">
     </div>`;
   initSubtaskDrag(panel, id);
@@ -4464,6 +4472,41 @@ function initSubtaskDrag(panel, taskId) {
 
       try { handle.setPointerCapture(e.pointerId); } catch {}
 
+      let finished = false;
+      const cleanup = (doReorder) => {
+        if (finished) return;
+        finished = true;
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onUp);
+        handle.removeEventListener('pointercancel', onCancel);
+        document.removeEventListener('pointerup', docUp);
+        document.removeEventListener('pointercancel', docCancel);
+        panel.querySelectorAll('.subtask-insert-line').forEach(l => l.remove());
+
+        if (doReorder) {
+          const line = panel.querySelector('.subtask-insert-line');
+          if (line && subtaskData[taskId]) {
+            const blocks = subtaskData[taskId];
+            const fromIdx = blocks.findIndex(b => b.id === blockId);
+            const nextHandle = line.nextElementSibling?.querySelector('.subtask-drag-handle');
+            const nextBid = nextHandle?.dataset.bid;
+            if (fromIdx >= 0) {
+              const [dragged] = blocks.splice(fromIdx, 1);
+              const toIdx = nextBid ? blocks.findIndex(b => b.id === nextBid) : blocks.length;
+              blocks.splice(toIdx < 0 ? blocks.length : toIdx, 0, dragged);
+              saveSubtaskOrder(taskId);
+              saveSubtaskCache(taskId);
+            }
+            line.remove();
+          } else if (line) line.remove();
+        }
+
+        ghost.remove();
+        item.classList.remove('subtask-dragging');
+        renderSubtaskPanel(taskId);
+        updateSubtaskProgress(taskId);
+      };
+
       const onMove = (ev) => {
         if (ev.pointerId !== e.pointerId) return;
         ev.preventDefault();
@@ -4477,37 +4520,16 @@ function initSubtaskDrag(panel, taskId) {
         else if (items.length) items[items.length - 1].after(line);
       };
 
-      const onEnd = (ev) => {
-        if (ev.pointerId !== e.pointerId) return;
-        handle.removeEventListener('pointermove', onMove);
-        handle.removeEventListener('pointerup', onEnd);
-        handle.removeEventListener('pointercancel', onEnd);
-
-        const line = panel.querySelector('.subtask-insert-line');
-        if (line && subtaskData[taskId]) {
-          const blocks = subtaskData[taskId];
-          const fromIdx = blocks.findIndex(b => b.id === blockId);
-          const nextHandle = line.nextElementSibling?.querySelector('.subtask-drag-handle');
-          const nextBid = nextHandle?.dataset.bid;
-          if (fromIdx >= 0) {
-            const [dragged] = blocks.splice(fromIdx, 1);
-            const toIdx = nextBid ? blocks.findIndex(b => b.id === nextBid) : blocks.length;
-            blocks.splice(toIdx < 0 ? blocks.length : toIdx, 0, dragged);
-            saveSubtaskOrder(taskId);
-            saveSubtaskCache(taskId);
-          }
-          line.remove();
-        } else if (line) line.remove();
-
-        ghost.remove();
-        item.classList.remove('subtask-dragging');
-        renderSubtaskPanel(taskId);
-        updateSubtaskProgress(taskId);
-      };
+      const onUp     = () => cleanup(true);
+      const onCancel = () => cleanup(false);
+      const docUp    = (ev) => { if (ev.pointerId === e.pointerId) cleanup(true); };
+      const docCancel= (ev) => { if (ev.pointerId === e.pointerId) cleanup(false); };
 
       handle.addEventListener('pointermove', onMove);
-      handle.addEventListener('pointerup', onEnd);
-      handle.addEventListener('pointercancel', onEnd);
+      handle.addEventListener('pointerup', onUp);
+      handle.addEventListener('pointercancel', onCancel);
+      document.addEventListener('pointerup', docUp);
+      document.addEventListener('pointercancel', docCancel);
     });
   });
 }
