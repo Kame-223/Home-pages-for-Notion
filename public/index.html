@@ -4561,18 +4561,6 @@ async function checkSubtask(blockId, checked, taskId) {
   if (blocks) {
     const b = blocks.find(b => b.id === blockId);
     if (b) b.to_do.checked = checked;
-    // 完了→末尾へ、解除→未完了セクション末尾へ自動移動
-    const idx = blocks.findIndex(b => b.id === blockId);
-    if (idx >= 0) {
-      const [block] = blocks.splice(idx, 1);
-      if (checked) {
-        blocks.push(block); // 完了は末尾
-      } else {
-        const firstDone = blocks.findIndex(b => b.to_do.checked);
-        blocks.splice(firstDone < 0 ? blocks.length : firstDone, 0, block);
-      }
-      saveSubtaskOrder(taskId);
-    }
   }
   saveSubtaskCache(taskId);
   renderSubtaskPanel(taskId);
