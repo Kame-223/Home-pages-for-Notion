@@ -3341,90 +3341,115 @@ function applyTodayOrder(tasks) {
   return [...tasks].sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999));
 }
 
-// ===== ドラッグ&ドロップ =====
-let dragId = null, dragEl = null, dragGhost = null;
-let dragOffsetY = 0, dragContainer = null;
+// ===== ドラッグ&ドロップ（修正版） =====
+let dragId = null, dragEl = null, dragGhost = null, dragOffsetY = 0;
 
 function initTodayDrag() {
   const container = document.getElementById('today-tasks');
   if (!container) return;
-  dragContainer = container;
-  // 1番目カードをハイライト
-  const allCards = container.querySelectorAll('.task-card:not(.done)');
+  const allCards = Array.from(container.querySelectorAll('.task-card:not(.done)'));
   allCards.forEach((c, i) => c.classList.toggle('priority-first', i === 0));
-  // 各カードにドラッグセットアップ
   allCards.forEach(card => {
     const id = card.id?.replace(/^tc-/, '');
-    if (!id) return;
-    let holdTimer = null;
-    const onDown = (e) => {
-      if (e.target.closest('button,a,input,select,[contenteditable="true"],.tag.clickable,.subtask-inline-toggle,.time-dropdown,.pin-badge,.btn-done-big,.btn-start,.btn-pin-big')) return;
-      const cy = e.touches ? e.touches[0].clientY : e.clientY;
-      holdTimer = setTimeout(() => startDrag(card, id, cy, e), 350);
-    };
-    const onMove = (e) => {
-      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-    };
-    const onUp = () => { clearTimeout(holdTimer); holdTimer = null; };
-    card.addEventListener('touchstart', onDown, { passive: true });
-    card.addEventListener('touchmove', onMove, { passive: true });
-    card.addEventListener('touchend', onUp);
-    card.addEventListener('mousedown', onDown);
-    card.addEventListener('mousemove', onMove);
-    card.addEventListener('mouseup', onUp);
+    if (!id || card._dragSetup) return;
+    card._dragSetup = true;
+    setupCardDrag(card, id);
   });
 }
 
-function startDrag(card, id, clientY, e) {
+function setupCardDrag(card, id) {
+  let holdTimer = null;
+  let startX = 0, startY = 0;
+
+  // ホールド中の微小な動きでキャンセルするdocumentリスナー
+  const onPreMove = (e) => {
+    if (!holdTimer) return;
+    const pt = e.touches ? e.touches[0] : e;
+    if (Math.abs(pt.clientX - startX) > 10 || Math.abs(pt.clientY - startY) > 10) {
+      clearTimeout(holdTimer); holdTimer = null;
+      document.removeEventListener('mousemove', onPreMove);
+      document.removeEventListener('touchmove', onPreMove);
+    }
+  };
+
+  const onDown = (e) => {
+    if (e.button != null && e.button !== 0) return;
+    if (e.target.closest('button,a,input,select,[contenteditable="true"],.tag.clickable,.subtask-inline-toggle,.pin-badge,.time-dropdown')) return;
+    const pt = e.touches ? e.touches[0] : e;
+    startX = pt.clientX; startY = pt.clientY;
+    document.addEventListener('mousemove', onPreMove);
+    document.addEventListener('touchmove', onPreMove, { passive: true });
+    holdTimer = setTimeout(() => {
+      holdTimer = null;
+      document.removeEventListener('mousemove', onPreMove);
+      document.removeEventListener('touchmove', onPreMove);
+      startCardDrag(card, id, startY);
+    }, 400);
+  };
+
+  const onUp = () => {
+    if (!holdTimer) return;
+    clearTimeout(holdTimer); holdTimer = null;
+    document.removeEventListener('mousemove', onPreMove);
+    document.removeEventListener('touchmove', onPreMove);
+  };
+
+  card.addEventListener('mousedown', onDown);
+  card.addEventListener('mouseup', onUp);
+  card.addEventListener('touchstart', onDown, { passive: true });
+  card.addEventListener('touchend', onUp);
+  card.addEventListener('touchcancel', onUp);
+}
+
+function startCardDrag(card, id, startClientY) {
   dragId = id; dragEl = card;
   const rect = card.getBoundingClientRect();
-  dragOffsetY = clientY - rect.top;
-  // ゴースト作成
+  dragOffsetY = startClientY - rect.top;
+
+  // ゴースト（位置指定はinlineスタイルで明示）
   dragGhost = card.cloneNode(true);
-  dragGhost.className = 'drag-ghost ' + card.className;
-  dragGhost.style.cssText += `top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;`;
+  dragGhost.removeAttribute('id');
+  dragGhost.classList.add('drag-ghost');
+  dragGhost.style.cssText = `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;margin:0;z-index:9000;pointer-events:none;transform:scale(1.03);box-shadow:0 10px 36px rgba(0,0,0,0.55);opacity:0.9;border-radius:12px;`;
   document.body.appendChild(dragGhost);
   card.classList.add('dragging');
   navigator.vibrate?.(40);
-  // グローバルイベント
-  document.addEventListener('touchmove', onDragMove, { passive: false });
-  document.addEventListener('touchend', onDragEnd);
-  document.addEventListener('mousemove', onDragMove);
-  document.addEventListener('mouseup', onDragEnd);
+
+  document.addEventListener('mousemove', onGlobalDragMove);
+  document.addEventListener('mouseup', onGlobalDragEnd);
+  document.addEventListener('touchmove', onGlobalDragMove, { passive: false });
+  document.addEventListener('touchend', onGlobalDragEnd);
+  document.addEventListener('touchcancel', onGlobalDragEnd);
 }
 
-function onDragMove(e) {
+function onGlobalDragMove(e) {
   if (!dragId) return;
   e.preventDefault();
   const cy = e.touches ? e.touches[0].clientY : e.clientY;
   if (dragGhost) dragGhost.style.top = (cy - dragOffsetY) + 'px';
-  // 挿入ライン
+
   document.querySelectorAll('.drag-insert-line').forEach(el => el.remove());
-  const cards = Array.from(dragContainer.querySelectorAll('.task-card:not(.done):not(.dragging)'));
-  const target = cards.find(c => {
-    const r = c.getBoundingClientRect();
-    return cy < r.top + r.height / 2;
-  });
+  const container = document.getElementById('today-tasks');
+  if (!container) return;
+  const cards = Array.from(container.querySelectorAll('.task-card:not(.done):not(.dragging)'));
+  const insertBefore = cards.find(c => cy < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
   const line = document.createElement('div');
   line.className = 'drag-insert-line';
-  if (target) target.before(line);
-  else {
-    const last = cards[cards.length - 1];
-    if (last) last.after(line);
-  }
+  if (insertBefore) insertBefore.before(line);
+  else if (cards.length) cards[cards.length - 1].after(line);
 }
 
-function onDragEnd() {
+function onGlobalDragEnd() {
+  document.removeEventListener('mousemove', onGlobalDragMove);
+  document.removeEventListener('mouseup', onGlobalDragEnd);
+  document.removeEventListener('touchmove', onGlobalDragMove);
+  document.removeEventListener('touchend', onGlobalDragEnd);
+  document.removeEventListener('touchcancel', onGlobalDragEnd);
   if (!dragId) return;
-  document.removeEventListener('touchmove', onDragMove);
-  document.removeEventListener('touchend', onDragEnd);
-  document.removeEventListener('mousemove', onDragMove);
-  document.removeEventListener('mouseup', onDragEnd);
-  // 挿入位置の確定
+
   const line = document.querySelector('.drag-insert-line');
   if (line) {
-    const next = line.nextElementSibling;
-    const nextId = next?.id?.replace(/^tc-/, '');
+    const nextId = line.nextElementSibling?.id?.replace(/^tc-/, '');
     todayTaskOrder = todayTaskOrder.filter(id => id !== dragId);
     const idx = nextId ? todayTaskOrder.indexOf(nextId) : todayTaskOrder.length;
     todayTaskOrder.splice(idx < 0 ? todayTaskOrder.length : idx, 0, dragId);
