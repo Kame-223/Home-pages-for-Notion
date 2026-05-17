@@ -451,6 +451,21 @@ body::before {
   width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
   background: rgba(30,30,40,0.35);
 }
+/* ===== 優先度・ドラッグ ===== */
+.priority-first {
+  border-color: rgba(127,119,221,0.65) !important;
+  box-shadow: 0 0 0 1.5px rgba(127,119,221,0.3), 0 2px 18px rgba(127,119,221,0.18) !important;
+}
+.task-card.dragging { opacity: 0.2; }
+.drag-ghost {
+  position: fixed; z-index: 9000; pointer-events: none;
+  transform: scale(1.03); box-shadow: 0 10px 36px rgba(0,0,0,0.55);
+  border-radius: 12px; transition: none;
+}
+.drag-insert-line {
+  height: 2px; background: rgba(127,119,221,0.85);
+  border-radius: 2px; margin: 3px 0; pointer-events: none;
+}
 /* ===== 時間帯フィルター ===== */
 .jikantai-prompt { text-align: center; padding: 10px 0 6px; }
 .jikantai-set-btn {
@@ -2920,16 +2935,17 @@ function renderAll() {
   const getJK = t => taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || null;
   const jkEmoji = {朝:'🌅',昼:'🌞',夜:'🌙'};
   const bLabels  = {朝:'🌅 朝', 昼:'🌞 昼', 夜:'🌙 夜', 未設定:'⬜ 未設定'};
+  // 手動順序を適用
+  const orderedPending = applyTodayOrder(todayPending);
 
-  if (!todayPending.length) {
+  if (!orderedPending.length) {
     todayHtml = emptyMsg;
   } else if (currentMode === 'exec') {
     // ===== 実行モード：現在の時間帯のみ表示（自動フィルター） =====
     const curJK = getCurrentJikantaiName();
-    const curTasks   = todayPending.filter(t => getJK(t) === curJK);
-    const otherTasks = todayPending.filter(t => getJK(t) !== curJK);
+    const curTasks   = orderedPending.filter(t => getJK(t) === curJK);
+    const otherTasks = orderedPending.filter(t => getJK(t) !== curJK);
 
-    // フィルターバー（白・色なし）
     todayHtml = `<div class="jikantai-filter-bar">
       <span class="jikantai-filter-label">${jkEmoji[curJK]||''} ${curJK}のタスク</span>
     </div>`;
@@ -2940,7 +2956,6 @@ function renderAll() {
       todayHtml += `<div class="section-empty">${jkEmoji[curJK]||''} ${curJK}のタスクはありません</div>`;
     }
 
-    // 他の時間帯タスク（折りたたみ）
     if (otherTasks.length) {
       const otherByBlock = {朝:[], 昼:[], 夜:[], 未設定:[]};
       otherTasks.forEach(t => { const jk = getJK(t)||'未設定'; (otherByBlock[jk]||otherByBlock['未設定']).push(t); });
@@ -2959,9 +2974,9 @@ function renderAll() {
         </div>`;
     }
   } else {
-    // ===== 選択モード：朝/昼/夜/未設定でグループ表示（フィルターなし） =====
+    // ===== 選択モード：朝/昼/夜/未設定でグループ表示 =====
     const blocks = {朝:[], 昼:[], 夜:[], 未設定:[]};
-    todayPending.forEach(t => {
+    orderedPending.forEach(t => {
       const jk = getJK(t) || '未設定';
       (blocks[jk] || blocks['未設定']).push(t);
     });
@@ -2993,6 +3008,7 @@ function renderAll() {
     </div>`;
   }
   todayEl.innerHTML = todayHtml;
+  requestAnimationFrame(initTodayDrag);
 
   // やり残し（1日の切り替わりは3:01基準）
   // 期限切れタスク ＋ 前セッションにピンしたが未完了のタスク（セッションをまたいだ今日やること）
@@ -3306,6 +3322,121 @@ function goToFurikaeri() {
 }
 
 // 持ち越し表示制御
+// ===== 今日やることカード順序管理 =====
+let todayTaskOrder = [];
+
+function loadTodayOrder() {
+  try { return JSON.parse(localStorage.getItem(`todayOrder_${getFurikaeriDate()}`) || '[]'); }
+  catch { return []; }
+}
+function saveTodayOrder() {
+  localStorage.setItem(`todayOrder_${getFurikaeriDate()}`, JSON.stringify(todayTaskOrder));
+}
+function applyTodayOrder(tasks) {
+  const ids = tasks.map(t => t.id);
+  // 既存の順序から今日にないIDを除外し、新しいタスクを末尾に追加
+  todayTaskOrder = todayTaskOrder.filter(id => ids.includes(id));
+  ids.forEach(id => { if (!todayTaskOrder.includes(id)) todayTaskOrder.push(id); });
+  const rank = new Map(todayTaskOrder.map((id, i) => [id, i]));
+  return [...tasks].sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999));
+}
+
+// ===== ドラッグ&ドロップ =====
+let dragId = null, dragEl = null, dragGhost = null;
+let dragOffsetY = 0, dragContainer = null;
+
+function initTodayDrag() {
+  const container = document.getElementById('today-tasks');
+  if (!container) return;
+  dragContainer = container;
+  // 1番目カードをハイライト
+  const allCards = container.querySelectorAll('.task-card:not(.done)');
+  allCards.forEach((c, i) => c.classList.toggle('priority-first', i === 0));
+  // 各カードにドラッグセットアップ
+  allCards.forEach(card => {
+    const id = card.id?.replace(/^tc-/, '');
+    if (!id) return;
+    let holdTimer = null;
+    const onDown = (e) => {
+      if (e.target.closest('button,a,input,select,[contenteditable="true"],.tag.clickable,.subtask-inline-toggle,.time-dropdown,.pin-badge,.btn-done-big,.btn-start,.btn-pin-big')) return;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      holdTimer = setTimeout(() => startDrag(card, id, cy, e), 350);
+    };
+    const onMove = (e) => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    };
+    const onUp = () => { clearTimeout(holdTimer); holdTimer = null; };
+    card.addEventListener('touchstart', onDown, { passive: true });
+    card.addEventListener('touchmove', onMove, { passive: true });
+    card.addEventListener('touchend', onUp);
+    card.addEventListener('mousedown', onDown);
+    card.addEventListener('mousemove', onMove);
+    card.addEventListener('mouseup', onUp);
+  });
+}
+
+function startDrag(card, id, clientY, e) {
+  dragId = id; dragEl = card;
+  const rect = card.getBoundingClientRect();
+  dragOffsetY = clientY - rect.top;
+  // ゴースト作成
+  dragGhost = card.cloneNode(true);
+  dragGhost.className = 'drag-ghost ' + card.className;
+  dragGhost.style.cssText += `top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;`;
+  document.body.appendChild(dragGhost);
+  card.classList.add('dragging');
+  navigator.vibrate?.(40);
+  // グローバルイベント
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('touchend', onDragEnd);
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!dragId) return;
+  e.preventDefault();
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  if (dragGhost) dragGhost.style.top = (cy - dragOffsetY) + 'px';
+  // 挿入ライン
+  document.querySelectorAll('.drag-insert-line').forEach(el => el.remove());
+  const cards = Array.from(dragContainer.querySelectorAll('.task-card:not(.done):not(.dragging)'));
+  const target = cards.find(c => {
+    const r = c.getBoundingClientRect();
+    return cy < r.top + r.height / 2;
+  });
+  const line = document.createElement('div');
+  line.className = 'drag-insert-line';
+  if (target) target.before(line);
+  else {
+    const last = cards[cards.length - 1];
+    if (last) last.after(line);
+  }
+}
+
+function onDragEnd() {
+  if (!dragId) return;
+  document.removeEventListener('touchmove', onDragMove);
+  document.removeEventListener('touchend', onDragEnd);
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+  // 挿入位置の確定
+  const line = document.querySelector('.drag-insert-line');
+  if (line) {
+    const next = line.nextElementSibling;
+    const nextId = next?.id?.replace(/^tc-/, '');
+    todayTaskOrder = todayTaskOrder.filter(id => id !== dragId);
+    const idx = nextId ? todayTaskOrder.indexOf(nextId) : todayTaskOrder.length;
+    todayTaskOrder.splice(idx < 0 ? todayTaskOrder.length : idx, 0, dragId);
+    saveTodayOrder();
+    line.remove();
+  }
+  dragGhost?.remove(); dragGhost = null;
+  dragEl?.classList.remove('dragging');
+  dragId = null; dragEl = null;
+  renderAll();
+}
+
 const LEFTOVER_DEFAULT_COUNT = 3;
 let leftoverRevealed = false;
 let leftoverExpanded = false;
@@ -4581,6 +4712,7 @@ window.onload = () => {
     initGoogleCalendar();
     return;
   }
+  todayTaskOrder = loadTodayOrder();
   setupBackground();
   setupBanner();
   setupDatetime();
