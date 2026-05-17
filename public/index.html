@@ -403,7 +403,11 @@ body::before {
   display: flex;
   flex-direction: column;
 }
-/* 実行モード：今日やることを sticky で追従、内部スクロール */
+/* 実行モード：エリア全体を sticky 固定、内部のみスクロール */
+.content-grid:not(.select-mode) {
+  align-items: start;
+  padding-bottom: 12px;
+}
 .content-grid:not(.select-mode) .today-board {
   position: sticky;
   top: 12px;
@@ -418,6 +422,7 @@ body::before {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  overscroll-behavior: contain;
 }
 .today-content { padding: 10px 12px; }
 .board-header { display: none; }
@@ -3208,6 +3213,17 @@ function renderAll() {
     if (s?.pinned && s?.pinnedSessionDate && s.pinnedSessionDate < currentSession) leftoverSet.add(t.id);
   });
   const leftover = allTasks.filter(t => leftoverSet.has(t.id));
+  // 持ち越しタスクの時間帯設定をリセット
+  let _jkReset = false;
+  leftover.forEach(t => {
+    const s = taskState[t.id];
+    if (s?.jikantai) {
+      s.jikantai = null;
+      notionUpdate(t.id, {'実行時間帯': {select: null}}).catch(console.error);
+      _jkReset = true;
+    }
+  });
+  if (_jkReset) saveTaskState();
   renderLeftoverSection(leftover);
 
   // 次やること
@@ -3349,7 +3365,7 @@ function autoResizeTextarea(el) {
 function completeFurikaeri() {
   localStorage.setItem('frDone', 'true');
   document.getElementById('fr-done-overlay')?.classList.add('active');
-  saveFurikaeri();
+  setTimeout(() => saveFurikaeri(), 80); // UIを先に更新してからAPI送信
 }
 
 function editFurikaeri() {
@@ -4017,6 +4033,7 @@ function focusTimerExpired() {
   navigator.vibrate?.([300,150,300,150,300]);
 }
 
+let _focusSaveTick = 0;
 function updateFocusDisplay() {
   if (focusPaused || !currentFocusId) return;
   const now = Date.now();
@@ -4024,6 +4041,11 @@ function updateFocusDisplay() {
   focusLastTickTs = now;
   focusCountdown = Math.max(0, focusCountdown - elapsed);
   renderFocusTimer();
+  // 30秒ごとに残り時間を保存（ページ移動などでも復元できるよう）
+  if (++_focusSaveTick % 30 === 0 && taskState[currentFocusId]) {
+    taskState[currentFocusId].savedCountdown = focusCountdown;
+    saveTaskState();
+  }
   if (focusCountdown <= 0 && !focusExpired) focusTimerExpired();
 }
 
@@ -5334,8 +5356,15 @@ function refreshDeadlineTags() {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) return;
-  if (currentFocusId && !focusPaused) updateFocusDisplay(); // タブ復帰時にタイマーを同期
+  if (document.hidden) {
+    // タブ非表示時：カウントダウンを即時保存
+    if (currentFocusId && !focusPaused && taskState[currentFocusId]) {
+      taskState[currentFocusId].savedCountdown = focusCountdown;
+      saveTaskState();
+    }
+    return;
+  }
+  if (currentFocusId && !focusPaused) updateFocusDisplay();
   if (!currentFocusId) loadTasks();
 });
 
