@@ -1515,6 +1515,22 @@ body::before {
 .gtd-opt-fire:hover { background: rgba(248,113,113,0.1); }
 .gtd-opt-trash { color: var(--text-dim); }
 .gtd-opt-trash:hover { background: rgba(255,255,255,0.05); }
+
+/* 今日やること → カレンダー ドラッグ */
+.td-drag-ghost {
+  position: fixed; z-index: 9999; pointer-events: none;
+  background: rgba(127,119,221,0.92); color: #fff;
+  padding: 7px 14px; border-radius: 9px; font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+  transform: translate(-50%, -50%);
+  white-space: nowrap; max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis;
+  transition: background .12s;
+}
+.td-drag-ghost.over-cal { background: rgba(46,180,100,0.95); }
+.td-drag-ghost.over-cal::after { content: '  ' attr(data-time); opacity: 0.85; }
+.task-card.td-dragging { opacity: 0.35; transition: opacity .15s; }
 </style>
 </head>
 <body>
@@ -5258,6 +5274,7 @@ window.onload = () => {
   initGoogleCalendar();
   setupFurikaeri();
   loadTasks();
+  initTodayCardDrag();
   document.querySelector('.content-grid').classList.add('select-mode');
   setInterval(refreshDeadlineTags, 1000);
   // 60秒ごとに自動更新（ドラッグ中・集中モード中はスキップ）
@@ -5268,6 +5285,107 @@ window.onload = () => {
     loadTasks();
   }, 60000);
 };
+
+// ===== 今日やること → カレンダー ドラッグ =====
+let _tdId=null,_tdGhost=null,_tdTimer=null,_tdOk=false,_tdXY=null;
+
+function initTodayCardDrag(){
+  const el=document.getElementById('today-tasks');
+  if(!el||el._tdInit)return;
+  el._tdInit=true;
+  el.addEventListener('pointerdown',_tdDown,{passive:true});
+}
+
+function _tdDown(e){
+  const card=e.target.closest('.task-card');
+  if(!card)return;
+  if(e.target.closest('button,input,textarea,.subtask-panel,.gtd-btn-wrap,.time-wrap,.bear-btn'))return;
+  const id=card.id.replace(/^tc-/,'');
+  if(!id||taskState[id]?.done)return;
+  _tdXY={x:e.clientX,y:e.clientY};
+  _tdTimer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),300);
+  const cancel=(ev)=>{
+    if(ev.type==='pointermove'&&_tdXY){const dx=ev.clientX-_tdXY.x,dy=ev.clientY-_tdXY.y;if(dx*dx+dy*dy<64)return;}
+    clearTimeout(_tdTimer);_tdTimer=null;
+    card.removeEventListener('pointerup',cancel);
+    card.removeEventListener('pointermove',cancel);
+    card.removeEventListener('pointercancel',cancel);
+  };
+  card.addEventListener('pointerup',cancel,{once:true});
+  card.addEventListener('pointermove',cancel);
+  card.addEventListener('pointercancel',cancel,{once:true});
+}
+
+function _tdStart(id,card,cx,cy){
+  _tdOk=true;_tdId=id;
+  const task=allTasks.find(t=>t.id===id);
+  const title=task?(getProp(task,'タイトル')||'無題'):'無題';
+  _tdGhost=document.createElement('div');
+  _tdGhost.className='td-drag-ghost';
+  _tdGhost.textContent='📅 '+title;
+  _tdGhost.style.left=cx+'px';_tdGhost.style.top=cy+'px';
+  document.body.appendChild(_tdGhost);
+  card.classList.add('td-dragging');
+  document.addEventListener('pointermove',_tdMove,{passive:true});
+  document.addEventListener('pointerup',_tdEnd);
+  document.addEventListener('pointercancel',_tdClean,{once:true});
+  navigator.vibrate?.([30]);
+}
+
+function _tdMove(e){
+  if(!_tdOk||!_tdGhost)return;
+  _tdGhost.style.left=e.clientX+'px';_tdGhost.style.top=e.clientY+'px';
+  const over=_tdOverCal(e.clientX,e.clientY);
+  _tdGhost.classList.toggle('over-cal',over);
+  if(over){const t=_tdCalcTime(e.clientY);if(t){const h=String(t.getHours()).padStart(2,'0'),m=String(t.getMinutes()).padStart(2,'0');_tdGhost.dataset.time=h+':'+m;}
+  }else{delete _tdGhost.dataset.time;}
+}
+
+function _tdEnd(e){
+  if(!_tdOk)return;
+  if(_tdOverCal(e.clientX,e.clientY)){
+    const st=_tdCalcTime(e.clientY);
+    if(st){
+      const id=_tdId;
+      const task=allTasks.find(t=>t.id===id);
+      const title=task?(getProp(task,'タイトル')||'無題'):'無題';
+      const s=taskState[id]||{};
+      const durMins=FOCUS_STEP_SECS[timeSteps[s.timeIdx]]?Math.round(FOCUS_STEP_SECS[timeSteps[s.timeIdx]]/60):60;
+      const et=new Date(st.getTime()+durMins*60000);
+      openGCalModal(null,st.toISOString(),et.toISOString());
+      setTimeout(()=>{const inp=document.getElementById('gcal-ev-title');if(inp)inp.value=title;},30);
+    }
+  }
+  _tdClean();
+}
+
+function _tdClean(){
+  _tdOk=false;
+  if(_tdGhost){_tdGhost.remove();_tdGhost=null;}
+  if(_tdId){document.querySelectorAll(`#tc-${_tdId}`).forEach(el=>el.classList.remove('td-dragging'));_tdId=null;}
+  document.removeEventListener('pointermove',_tdMove);
+  document.removeEventListener('pointerup',_tdEnd);
+  document.removeEventListener('pointercancel',_tdClean);
+}
+
+function _tdOverCal(x,y){
+  const fc=document.getElementById('fc-el');if(!fc)return false;
+  const r=fc.getBoundingClientRect();
+  return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;
+}
+
+function _tdCalcTime(clientY){
+  const slotsEl=document.querySelector('.fc-timegrid-slots');if(!slotsEl)return null;
+  const r=slotsEl.getBoundingClientRect();
+  const yOff=clientY-r.top;if(yOff<0)return null;
+  const SLOT_H=28,SLOT_MINS=15,START_H=6;
+  const rawMins=Math.floor(yOff/SLOT_H)*SLOT_MINS;
+  const snapped=Math.round(rawMins/15)*15;
+  const fromMidnight=START_H*60+snapped;
+  const d=new Date(fcCalendar.getDate());
+  d.setHours(Math.floor(fromMidnight/60),fromMidnight%60,0,0);
+  return d;
+}
 
 // ===== 🐉 DRAGON MASCOT =====
 (function(){
