@@ -3638,7 +3638,7 @@ function setupCardDrag(card, id) {
 
     const timer = setTimeout(() => {
       card.removeEventListener('pointermove', onMove);
-      if (!moved) activateDrag(card, id, startY, pid);
+      // カード並び替えは無効（300msホールドはカレンダードラッグに使用）
     }, 120);
 
     const cancel = (ev) => {
