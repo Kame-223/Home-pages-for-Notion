@@ -3981,8 +3981,9 @@ function startFocus(id) {
   document.getElementById('focus-overlay').classList.add('open');
   currentFocusId = id;
 
-  // カウントダウン初期化（expected は上で定義済み）
-  focusCountdown  = FOCUS_STEP_SECS[expected] || 1800;
+  // カウントダウン初期化（離脱時の残り時間があれば復元）
+  const saved = taskState[id]?.savedCountdown;
+  focusCountdown  = (saved && saved > 0) ? saved : (FOCUS_STEP_SECS[expected] || 1800);
   focusPaused     = false;
   focusExpired    = false;
   focusLastTickTs = null;
@@ -4144,6 +4145,8 @@ function exitFocus() {
   focusExpired = false;
   document.getElementById('focus-overlay').classList.remove('open');
   if (currentFocusId) {
+    if (taskState[currentFocusId]) taskState[currentFocusId].savedCountdown = focusCountdown;
+    saveTaskState();
     document.querySelectorAll(`#start-${currentFocusId}`).forEach(el => {
       el.textContent = 'Restart';
       el.classList.add('restart');
@@ -4159,7 +4162,10 @@ function completeFocus() {
   focusExpired = false;
   document.getElementById('focus-overlay').classList.remove('open');
   window.dragonReact?.('focusEnd');
-  if (currentFocusId) toggleDone(currentFocusId);
+  if (currentFocusId) {
+    if (taskState[currentFocusId]) delete taskState[currentFocusId].savedCountdown;
+    toggleDone(currentFocusId);
+  }
   currentFocusId = null;
 }
 
