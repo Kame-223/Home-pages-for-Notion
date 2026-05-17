@@ -3382,7 +3382,7 @@ function setupCardDrag(card, id) {
     const timer = setTimeout(() => {
       card.removeEventListener('pointermove', onMove);
       if (!moved) activateDrag(card, id, startY, pid);
-    }, 200);
+    }, 120);
 
     const cancel = (ev) => {
       if (ev.pointerId !== pid) return;
