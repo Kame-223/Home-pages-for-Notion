@@ -1598,6 +1598,7 @@ body::before {
     <div class="schedule-col">
       <div class="section-header">📅 スケジュール<span id="cal-login-status" style="margin-left:auto;display:flex;gap:4px"></span><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
       <div id="fc-container"></div>
+      <button id="fc-latenight-btn" onclick="toggleCalLatenight()" style="width:100%;background:none;border:none;border-top:0.5px solid rgba(255,255,255,0.08);padding:5px 0;cursor:pointer;font-size:14px;color:rgba(255,255,255,0.3);transition:color .15s" title="深夜（〜3:00）を表示">🔽</button>
     </div>
 
     <!-- 今日やること -->
@@ -2144,6 +2145,18 @@ function updateLoginStatus() {
     gToken  ? `<span style="font-size:9px;color:var(--green)" title="個人アカウント">✓個人</span>` : `<button class="cal-edit-btn" onclick="requestGCalAuth('personal')" style="font-size:9px">+個人</button>`,
     gToken2 ? `<span style="font-size:9px;color:var(--green)" title="ICU">✓ICU</span>` : `<button class="cal-edit-btn" onclick="requestGCalAuth('icu')" style="font-size:9px;color:var(--blue)">+ICU</button>`,
   ].join('');
+}
+
+let _calLatenight = false;
+function toggleCalLatenight() {
+  _calLatenight = !_calLatenight;
+  if (!fcCalendar) return;
+  fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:00:00' : '24:15:00');
+  const btn = document.getElementById('fc-latenight-btn');
+  if (btn) {
+    btn.textContent = _calLatenight ? '🔼' : '🔽';
+    btn.style.color = _calLatenight ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)';
+  }
 }
 
 function renderFullCalendar() {
