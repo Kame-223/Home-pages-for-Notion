@@ -3984,6 +3984,9 @@ function startFocus(id) {
   // カウントダウン初期化（離脱時の残り時間があれば復元）
   const saved = taskState[id]?.savedCountdown;
   focusCountdown  = (saved && saved > 0) ? saved : (FOCUS_STEP_SECS[expected] || 1800);
+  // Restartボタンをリロード後も維持するためにfocusSecondsをセット
+  taskState[id].focusSeconds = Math.max(1, taskState[id].focusSeconds || 0);
+  saveTaskState();
   focusPaused     = false;
   focusExpired    = false;
   focusLastTickTs = null;
