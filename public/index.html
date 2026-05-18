@@ -409,15 +409,17 @@ body::before {
   padding-bottom: 12px;
 }
 .content-grid:not(.select-mode) .today-board {
-  overflow: visible;       /* sticky child が機能するよう overflow:hidden を解除 */
+  overflow: visible;
   background: transparent;
   border: none;
   min-height: unset;
+  display: block;          /* block にすることで inner の sticky が確実に動く */
 }
 .content-grid:not(.select-mode) .today-board-inner {
   position: sticky;
   top: 12px;
   height: calc(100vh - 24px);
+  flex: none;              /* 親のflex:1を上書き */
   overflow: hidden;
   display: flex;
   flex-direction: column;
