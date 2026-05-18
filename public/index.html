@@ -420,12 +420,12 @@ body::before {
 }
 .content-grid:not(.select-mode) .today-content {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: hidden; /* ページスクロールと連動させるためJS制御 */
   min-height: 0;
 }
-/* ドラッグ中のスクロール干渉を防ぐ */
+/* ドラッグ干渉防止（ページスクロールはJS側で行うのでpan-y不要） */
 .content-grid:not(.select-mode) .today-content .task-card {
-  touch-action: pan-y;
+  touch-action: none;
 }
 .today-content { padding: 10px 12px; }
 .board-header { display: none; }
@@ -2962,6 +2962,7 @@ async function loadTasks() {
   }
   syncDoneTasksToNotion();
   try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
+  requestAnimationFrame(syncExecScroll);
   try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
   // 開いていた子タスクパネルを復元
@@ -4286,6 +4287,18 @@ function completeFocus() {
 
 // ===== モード切替 =====
 let currentMode = 'select';
+// ページスクロールと today-content を連動
+function syncExecScroll() {
+  if (currentMode !== 'exec') return;
+  const tc = document.getElementById('today-tasks');
+  if (!tc) return;
+  const maxTc = tc.scrollHeight - tc.clientHeight;
+  if (maxTc <= 0) return; // コンテンツが収まっている場合はスクロール不要
+  const maxPage = Math.max(1, document.body.scrollHeight - window.innerHeight);
+  tc.scrollTop = Math.round((window.scrollY / maxPage) * maxTc);
+}
+window.addEventListener('scroll', syncExecScroll, { passive: true });
+
 function setMode(mode) {
   currentMode = mode;
   const isSelect = mode === 'select';
@@ -4297,9 +4310,8 @@ function setMode(mode) {
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   renderAll();
   updateExecHint();
-  // カレンダーは常に全スロット表示（height: auto）
-  // Eモード切替時はページを現在時刻付近にスクロール
   if (!isSelect) {
+    // Eモード：ページを現在時刻付近にスクロールし、タスク連動も同期
     requestAnimationFrame(() => {
       const now = new Date();
       const minH = _calEarly ? 3 : 6;
@@ -4310,7 +4322,13 @@ function setMode(mode) {
       const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
       const target = calTop + hoursFromStart * pxPerHour - window.innerHeight / 2;
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+      // スクロール完了後に連動も同期
+      setTimeout(syncExecScroll, 400);
     });
+  } else {
+    // Sモードに戻したらtodayContentのscrollTopをリセット
+    const tc = document.getElementById('today-tasks');
+    if (tc) tc.scrollTop = 0;
   }
 }
 
