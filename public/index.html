@@ -3693,38 +3693,38 @@ function initTodayDrag() {
 }
 
 function setupCardDrag(card, id) {
-  // iOS長押しメニュー・テキスト選択を防ぐ
   card.addEventListener('contextmenu', e => e.preventDefault());
 
   card.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    // 子タスクパネルが展開中はカードドラッグ無効
     if (e.target.closest('button,a,input,select,[contenteditable="true"],.tag.clickable,.subtask-inline-toggle,.pin-badge,.time-dropdown,.subtask-panel')) return;
 
     const startX = e.clientX, startY = e.clientY;
     const pid = e.pointerId;
-    let moved = false;
+
+    const cleanup = () => {
+      card.removeEventListener('pointermove', onMove);
+      card.removeEventListener('pointerup', onUp);
+      card.removeEventListener('pointercancel', onUp);
+    };
 
     const onMove = (ev) => {
       if (ev.pointerId !== pid) return;
-      if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) moved = true;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      // 縦方向に主に動いた場合、カード並び替えドラッグ開始（カレンダードラッグをキャンセル）
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+        cleanup();
+        if (_tdTimer) { clearTimeout(_tdTimer); _tdTimer = null; }
+        activateDrag(card, id, startY, pid);
+      }
     };
-    card.addEventListener('pointermove', onMove);
 
-    const timer = setTimeout(() => {
-      card.removeEventListener('pointermove', onMove);
-      // カード並び替えは無効（300msホールドはカレンダードラッグに使用）
-    }, 120);
+    const onUp = (ev) => { if (ev.pointerId !== pid) return; cleanup(); };
 
-    const cancel = (ev) => {
-      if (ev.pointerId !== pid) return;
-      clearTimeout(timer);
-      card.removeEventListener('pointermove', onMove);
-      card.removeEventListener('pointerup', cancel);
-      card.removeEventListener('pointercancel', cancel);
-    };
-    card.addEventListener('pointerup', cancel);
-    card.addEventListener('pointercancel', cancel);
+    card.addEventListener('pointermove', onMove, { passive: true });
+    card.addEventListener('pointerup', onUp);
+    card.addEventListener('pointercancel', onUp);
   });
 }
 
@@ -4277,20 +4277,30 @@ function completeFocus() {
 let currentMode = 'select';
 // 実行モード：today-board を body 直下に移動 → position:fixed 確実に適用
 // ※ 位置はpage-wrapperの幾何から計算（DOM操作後も変わらない安定値）
-// 実行モード：today-board はグリッドでカレンダーと同じ高さ、inner がstickyで画面に貼り付き
+// 実行モード：today-board-innerをfixedにしてヘッダー固定、today-contentだけスクロール
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: グリッドに任せてカレンダーと同じ高さになる。overflow:visibleでinnerのstickyを妨げない
-  board.style.overflow = 'visible';
+  // boardのグリッド列位置をそのまま使う（計算不要）
+  const rect = board.getBoundingClientRect();
+  if (rect.width < 50) { requestAnimationFrame(applyExecFixed); return; }
 
-  // inner: stickyでビューポートに貼り付く。自分自身に背景・ボーダーを持つ
+  // board: グリッド内に残したまま透明な器にする（高さはグリッドが決める＝カレンダーと同じ）
+  Object.assign(board.style, {
+    background: 'transparent',
+    border: 'none',
+    overflow: 'visible',
+  });
+
+  // inner: fixedでヘッダーを含めた全体をビューポートに固定
   Object.assign(inner.style, {
-    position     : 'sticky',
+    position     : 'fixed',
     top          : '10px',
+    left         : Math.round(rect.left) + 'px',
+    width        : Math.round(rect.width) + 'px',
     height       : 'calc(100vh - 20px)',
     display      : 'flex',
     flexDirection: 'column',
@@ -4301,9 +4311,10 @@ function applyExecFixed() {
     borderRadius : '10px',
     boxSizing    : 'border-box',
   });
-  // today-content: flex:1でinnerの残り高さを埋め、syncExecScrollでスクロール
+
+  // today-content: flex:1で残り高さを埋め、overflow:autoでA＋B両対応
   Object.assign(tc.style, {
-    flex: '1', overflowY: 'hidden', minHeight: '0',
+    flex: '1', overflowY: 'auto', minHeight: '0',
   });
   syncExecScroll();
 }
