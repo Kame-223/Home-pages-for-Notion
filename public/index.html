@@ -4298,37 +4298,29 @@ function completeFocus() {
 
 // ===== モード切替 =====
 let currentMode = 'select';
-// 実行モード：today-board-inner を body 直下に移動して position:fixed を確実に適用
+// 実行モード：today-board-inner を body 直下に移動 → position:fixed で完全固定
 function applyExecFixed() {
   const inner = document.getElementById('today-board-inner');
   const schedCol = document.querySelector('.schedule-col');
   if (!inner || !schedCol) return;
-
-  // body 直下に移動（祖先の overflow/transform の影響を排除）
-  if (inner.parentElement !== document.body) {
-    document.body.appendChild(inner);
-  }
-
   const sr = schedCol.getBoundingClientRect();
-  const schedHdr = schedCol.querySelector('.section-header');
-  const hdrBottom = schedHdr ? schedHdr.getBoundingClientRect().bottom : sr.top;
-  const panelTop = Math.max(10, Math.round(hdrBottom));
-  const panelH = Math.max(200, window.innerHeight - panelTop - 10);
+  if (sr.width < 50) { requestAnimationFrame(applyExecFixed); return; } // レイアウト未完了
+
+  // body直下に移動（祖先のoverflow/transformの影響を完全に排除）
+  if (inner.parentElement !== document.body) document.body.appendChild(inner);
 
   inner.classList.add('exec-fixed-inner');
   Object.assign(inner.style, {
     position: 'fixed',
-    top: panelTop + 'px',
+    top: '10px',
     left: (sr.right + 12) + 'px',
     width: sr.width + 'px',
-    height: panelH + 'px',
+    height: 'calc(100vh - 20px)',
     zIndex: '50',
     background: 'rgba(13,13,26,0.72)',
     border: '0.5px solid rgba(255,255,255,0.12)',
     borderRadius: '10px',
-    margin: '0',
-    padding: '0',
-    boxSizing: 'border-box',
+    margin: '0', padding: '0', boxSizing: 'border-box',
   });
   syncExecScroll();
 }
@@ -4337,10 +4329,7 @@ function resetExecFixed() {
   const inner = document.getElementById('today-board-inner');
   const board = document.querySelector('.today-board');
   if (!inner) return;
-  // today-board に戻す
-  if (inner.parentElement === document.body && board) {
-    board.appendChild(inner);
-  }
+  if (inner.parentElement === document.body && board) board.appendChild(inner);
   inner.classList.remove('exec-fixed-inner');
   inner.removeAttribute('style');
   const tc = document.getElementById('today-tasks');
@@ -4384,15 +4373,11 @@ function setMode(mode) {
       const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
       const target = calTop + hoursFromStart * pxPerHour - window.innerHeight / 2;
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-      // スクロール完了後に固定配置（450ms待機）
-      setTimeout(() => {
-        applyExecFixed();
-        // リサイズ時も再計算
-        if (_tbResizeObs) _tbResizeObs.disconnect();
-        _tbResizeObs = new ResizeObserver(applyExecFixed);
-        const sc = document.querySelector('.schedule-col');
-        if (sc) _tbResizeObs.observe(sc);
-      }, 450);
+      applyExecFixed();
+      if (_tbResizeObs) _tbResizeObs.disconnect();
+      _tbResizeObs = new ResizeObserver(applyExecFixed);
+      const sc = document.querySelector('.schedule-col');
+      if (sc) _tbResizeObs.observe(sc);
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
