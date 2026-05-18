@@ -403,8 +403,7 @@ body::before {
   display: flex;
   flex-direction: column;
 }
-/* 実行モード：today-board は通常グリッド（カレンダーと同高さ）
-   today-board-inner だけ sticky で viewport 内に固定 */
+/* 実行モード：today-boardは空の器、today-board-inner はJSでfixed配置 */
 .content-grid:not(.select-mode) {
   padding-bottom: 12px;
 }
@@ -413,26 +412,19 @@ body::before {
   background: transparent;
   border: none;
   min-height: unset;
-  display: block;          /* block にすることで inner の sticky が確実に動く */
 }
-.content-grid:not(.select-mode) .today-board-inner {
-  position: sticky;
-  top: 12px;
-  height: calc(100vh - 24px);
-  flex: none;              /* 親のflex:1を上書き */
+/* JS fixed適用時 */
+.today-board-inner.exec-fixed-inner {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: rgba(13,13,26,0.72);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
 }
-.content-grid:not(.select-mode) .today-content {
+.today-board-inner.exec-fixed-inner .today-content {
   flex: 1;
-  overflow-y: hidden; /* scrollTop は JS（ページスクロール連動）で制御 */
+  overflow-y: hidden;
   min-height: 0;
 }
-.content-grid:not(.select-mode) .today-content .task-card {
+.today-board-inner.exec-fixed-inner .today-content .task-card {
   touch-action: none;
 }
 /* select モード用デフォルト */
@@ -2978,7 +2970,10 @@ async function loadTasks() {
   }
   syncDoneTasksToNotion();
   try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
-  requestAnimationFrame(syncExecScroll);
+  requestAnimationFrame(() => {
+    if (currentMode === 'exec') applyExecFixed();
+    syncExecScroll();
+  });
   try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
   // 開いていた子タスクパネルを復元
@@ -4303,6 +4298,46 @@ function completeFocus() {
 
 // ===== モード切替 =====
 let currentMode = 'select';
+// 実行モード：today-board-inner を fixed 配置（カレンダー内容エリアに揃える）
+function applyExecFixed() {
+  const inner = document.getElementById('today-board-inner');
+  const schedCol = document.querySelector('.schedule-col');
+  if (!inner || !schedCol) return;
+  const sr = schedCol.getBoundingClientRect();
+  // カレンダーのヘッダー直下から始める
+  const schedHdr = schedCol.querySelector('.section-header');
+  const contentTop = schedHdr
+    ? Math.round(schedHdr.getBoundingClientRect().bottom)
+    : Math.round(sr.top);
+  const panelTop = Math.max(10, contentTop);
+  const panelH = Math.max(200, window.innerHeight - panelTop - 10);
+  inner.classList.add('exec-fixed-inner');
+  Object.assign(inner.style, {
+    position: 'fixed',
+    top: panelTop + 'px',
+    left: (sr.right + 12) + 'px',
+    width: sr.width + 'px',
+    height: panelH + 'px',
+    zIndex: '50',
+    background: 'rgba(13,13,26,0.72)',
+    border: '0.5px solid rgba(255,255,255,0.12)',
+    borderRadius: '10px',
+    margin: '0',
+  });
+  syncExecScroll();
+}
+
+function resetExecFixed() {
+  const inner = document.getElementById('today-board-inner');
+  if (!inner) return;
+  inner.classList.remove('exec-fixed-inner');
+  inner.removeAttribute('style');
+  const tc = document.getElementById('today-tasks');
+  if (tc) tc.scrollTop = 0;
+}
+
+let _tbResizeObs = null;
+
 // ページスクロールと today-content を連動
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
@@ -4328,7 +4363,7 @@ function setMode(mode) {
   updateExecHint();
   if (!isSelect) {
     requestAnimationFrame(() => {
-      // ページを現在時刻付近にスクロール
+      // ページを現在時刻付近にスクロール → 落ち着いたら固定パネル配置
       const now = new Date();
       const minH = _calEarly ? 3 : 6;
       const hoursFromStart = Math.max(0, now.getHours() + now.getMinutes() / 60 - minH);
@@ -4338,11 +4373,19 @@ function setMode(mode) {
       const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
       const target = calTop + hoursFromStart * pxPerHour - window.innerHeight / 2;
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-      setTimeout(syncExecScroll, 400);
+      // スクロール完了後に固定配置（450ms待機）
+      setTimeout(() => {
+        applyExecFixed();
+        // リサイズ時も再計算
+        if (_tbResizeObs) _tbResizeObs.disconnect();
+        _tbResizeObs = new ResizeObserver(applyExecFixed);
+        const sc = document.querySelector('.schedule-col');
+        if (sc) _tbResizeObs.observe(sc);
+      }, 450);
     });
   } else {
-    const tc = document.getElementById('today-tasks');
-    if (tc) tc.scrollTop = 0;
+    if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
+    resetExecFixed();
   }
 }
 
