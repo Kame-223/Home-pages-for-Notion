@@ -422,7 +422,10 @@ body::before {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  overscroll-behavior: contain;
+}
+/* ドラッグ中のスクロール干渉を防ぐ */
+.content-grid:not(.select-mode) .today-content .task-card {
+  touch-action: pan-y;
 }
 .today-content { padding: 10px 12px; }
 .board-header { display: none; }
@@ -2173,7 +2176,7 @@ function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
   fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:00:00' : '24:15:00');
-  const btn = document.querySelector('.fc-expand-btn-down');
+  const btn = document.getElementById('fc-btn-down');
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
 }
 
@@ -2181,8 +2184,30 @@ function toggleCalEarly() {
   _calEarly = !_calEarly;
   if (!fcCalendar) return;
   fcCalendar.setOption('slotMinTime', _calEarly ? '03:01:00' : '06:00:00');
-  const btn = document.querySelector('.fc-expand-btn-up');
+  const btn = document.getElementById('fc-btn-up');
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
+}
+
+function addFcExpandBtns() {
+  document.getElementById('fc-btn-up')?.remove();
+  document.getElementById('fc-btn-down')?.remove();
+  const fcEl = document.getElementById('fc-el');
+  if (!fcEl) return;
+  fcEl.style.position = 'relative';
+  const labelEl = fcEl.querySelector('.fc-timegrid-slot-label');
+  const labelW = labelEl ? labelEl.offsetWidth : 46;
+  const header = fcEl.querySelector('.fc-col-header') || fcEl.querySelector('.fc-timegrid-divider');
+  const headerH = header ? (header.getBoundingClientRect().bottom - fcEl.getBoundingClientRect().top) : 32;
+  const base = `position:absolute;left:0;width:${labelW}px;text-align:center;font-size:12px;font-family:monospace;cursor:pointer;color:rgba(255,255,255,0.45);background:rgba(13,13,26,0.88);z-index:5;user-select:none;padding:1px 0;`;
+  const up = document.createElement('div');
+  up.id = 'fc-btn-up'; up.textContent = _calEarly ? '↓' : '↑';
+  up.style.cssText = base + `top:${Math.round(headerH)}px;`;
+  up.onclick = e => { e.stopPropagation(); toggleCalEarly(); };
+  const dn = document.createElement('div');
+  dn.id = 'fc-btn-down'; dn.textContent = _calLatenight ? '↑' : '↓';
+  dn.style.cssText = base + 'bottom:0;';
+  dn.onclick = e => { e.stopPropagation(); toggleCalLatenight(); };
+  fcEl.appendChild(up); fcEl.appendChild(dn);
 }
 
 function renderFullCalendar() {
@@ -2219,35 +2244,16 @@ function renderFullCalendar() {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
-      if (!cushion) return;
-      if (m === 0) {
-        arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
-        if (h === 13 || h === 19) {
-          cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
-          cushion.style.setProperty('font-weight', '900', 'important');
-          cushion.style.setProperty('font-size', '13px', 'important');
-          cushion.style.setProperty('letter-spacing', '0', 'important');
-        }
-        // ↑ ボタン：6:00 のラベル上に挿入（早朝拡張）
-        if (h === 6 && !arg.el.querySelector('.fc-expand-btn-up')) {
-          const btn = document.createElement('div');
-          btn.className = 'fc-expand-btn-up';
-          btn.textContent = '↑';
-          btn.style.cssText = 'cursor:pointer;text-align:center;font-size:10px;color:rgba(255,255,255,0.35);line-height:1.2;user-select:none;font-family:monospace;';
-          btn.addEventListener('click', (e) => { e.stopPropagation(); toggleCalEarly(); });
-          arg.el.insertBefore(btn, cushion);
-        }
-        // ↓ ボタン：24:00 のラベル下に追加（深夜拡張）
-        if (h === 0 && !arg.el.querySelector('.fc-expand-btn-down')) {
-          const btn = document.createElement('div');
-          btn.className = 'fc-expand-btn-down';
-          btn.textContent = '↓';
-          btn.style.cssText = 'cursor:pointer;text-align:center;font-size:10px;color:rgba(255,255,255,0.35);line-height:1.2;user-select:none;font-family:monospace;';
-          btn.addEventListener('click', (e) => { e.stopPropagation(); toggleCalLatenight(); });
-          arg.el.appendChild(btn);
-        }
+      if (!cushion || m !== 0) return;
+      arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
+      if (h === 13 || h === 19) {
+        cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
+        cushion.style.setProperty('font-weight', '900', 'important');
+        cushion.style.setProperty('font-size', '13px', 'important');
+        cushion.style.setProperty('letter-spacing', '0', 'important');
       }
     },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       if (h >= 6 && h < 12)       arg.el.style.background = 'rgba(255,190,60,0.07)';
@@ -5413,15 +5419,15 @@ function _tdDown(e){
   _tdXY={x:e.clientX,y:e.clientY};
   _tdTimer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),300);
   const cancel=(ev)=>{
-    if(ev.type==='pointermove'&&_tdXY){const dx=ev.clientX-_tdXY.x,dy=ev.clientY-_tdXY.y;if(dx*dx+dy*dy<64)return;}
+    if(ev.type==='pointermove'&&_tdXY){const dx=ev.clientX-_tdXY.x,dy=ev.clientY-_tdXY.y;if(dx*dx+dy*dy<225)return;}
     clearTimeout(_tdTimer);_tdTimer=null;
     card.removeEventListener('pointerup',cancel);
     card.removeEventListener('pointermove',cancel);
     card.removeEventListener('pointercancel',cancel);
   };
   card.addEventListener('pointerup',cancel,{once:true});
-  card.addEventListener('pointermove',cancel);
-  card.addEventListener('pointercancel',cancel,{once:true});
+  card.addEventListener('pointermove', cancel, {passive: true});
+  card.addEventListener('pointercancel', cancel, {once:true});
 }
 
 function _tdStart(id,card,cx,cy){
