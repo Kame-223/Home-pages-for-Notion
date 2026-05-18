@@ -4298,19 +4298,23 @@ function completeFocus() {
 
 // ===== モード切替 =====
 let currentMode = 'select';
-// 実行モード：today-board-inner を fixed 配置（カレンダー内容エリアに揃える）
+// 実行モード：today-board-inner を body 直下に移動して position:fixed を確実に適用
 function applyExecFixed() {
   const inner = document.getElementById('today-board-inner');
   const schedCol = document.querySelector('.schedule-col');
   if (!inner || !schedCol) return;
+
+  // body 直下に移動（祖先の overflow/transform の影響を排除）
+  if (inner.parentElement !== document.body) {
+    document.body.appendChild(inner);
+  }
+
   const sr = schedCol.getBoundingClientRect();
-  // カレンダーのヘッダー直下から始める
   const schedHdr = schedCol.querySelector('.section-header');
-  const contentTop = schedHdr
-    ? Math.round(schedHdr.getBoundingClientRect().bottom)
-    : Math.round(sr.top);
-  const panelTop = Math.max(10, contentTop);
+  const hdrBottom = schedHdr ? schedHdr.getBoundingClientRect().bottom : sr.top;
+  const panelTop = Math.max(10, Math.round(hdrBottom));
   const panelH = Math.max(200, window.innerHeight - panelTop - 10);
+
   inner.classList.add('exec-fixed-inner');
   Object.assign(inner.style, {
     position: 'fixed',
@@ -4323,13 +4327,20 @@ function applyExecFixed() {
     border: '0.5px solid rgba(255,255,255,0.12)',
     borderRadius: '10px',
     margin: '0',
+    padding: '0',
+    boxSizing: 'border-box',
   });
   syncExecScroll();
 }
 
 function resetExecFixed() {
   const inner = document.getElementById('today-board-inner');
+  const board = document.querySelector('.today-board');
   if (!inner) return;
+  // today-board に戻す
+  if (inner.parentElement === document.body && board) {
+    board.appendChild(inner);
+  }
   inner.classList.remove('exec-fixed-inner');
   inner.removeAttribute('style');
   const tc = document.getElementById('today-tasks');
