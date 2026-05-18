@@ -4277,34 +4277,31 @@ function completeFocus() {
 let currentMode = 'select';
 // 実行モード：today-board を body 直下に移動 → position:fixed 確実に適用
 // ※ 位置はpage-wrapperの幾何から計算（DOM操作後も変わらない安定値）
-// 実行モード：stickyでボードをビューポートに貼り付け、ヘッダーは常に固定
+// 実行モード：today-board はグリッドでカレンダーと同じ高さ、inner がstickyで画面に貼り付き
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // position:sticky でグリッド内に残したまま画面に貼り付け（DOM移動なし）
-  Object.assign(board.style, {
+  // board: グリッドに任せてカレンダーと同じ高さになる。overflow:visibleでinnerのstickyを妨げない
+  board.style.overflow = 'visible';
+
+  // inner: stickyでビューポートに貼り付く。自分自身に背景・ボーダーを持つ
+  Object.assign(inner.style, {
     position     : 'sticky',
     top          : '10px',
-    alignSelf    : 'start',
     height       : 'calc(100vh - 20px)',
-    zIndex       : '50',
-    overflow     : 'hidden',
     display      : 'flex',
     flexDirection: 'column',
+    overflow     : 'hidden',
+    zIndex       : '50',
     background   : 'rgba(13,13,26,0.72)',
     border       : '0.5px solid rgba(255,255,255,0.12)',
     borderRadius : '10px',
     boxSizing    : 'border-box',
   });
-  // inner wrapper: flex column, fills board height
-  Object.assign(inner.style, {
-    flex: '1', display: 'flex', flexDirection: 'column',
-    overflow: 'hidden', minHeight: '0',
-  });
-  // today-content: flex:1 fills remaining space, scroll driven by syncExecScroll
+  // today-content: flex:1でinnerの残り高さを埋め、syncExecScrollでスクロール
   Object.assign(tc.style, {
     flex: '1', overflowY: 'hidden', minHeight: '0',
   });
