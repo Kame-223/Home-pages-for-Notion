@@ -403,16 +403,6 @@ body::before {
   display: flex;
   flex-direction: column;
 }
-/* 実行モード：today-boardは空の器、today-board-inner はJSでfixed配置 */
-.content-grid:not(.select-mode) {
-  padding-bottom: 12px;
-}
-.content-grid:not(.select-mode) .today-board {
-  overflow: visible;
-  background: transparent;
-  border: none;
-  min-height: unset;
-}
 /* select モード用デフォルト */
 .today-board-inner {
   display: flex;
@@ -420,6 +410,7 @@ body::before {
   flex: 1;
 }
 .today-content { padding: 10px 12px; }
+#today-tasks::-webkit-scrollbar { display: none; }
 .board-header { display: none; }
 .board-title { display: none; }
 
@@ -4286,32 +4277,18 @@ function completeFocus() {
 let currentMode = 'select';
 // 実行モード：today-board を body 直下に移動 → position:fixed 確実に適用
 // ※ 位置はpage-wrapperの幾何から計算（DOM操作後も変わらない安定値）
+// 実行モード：stickyでボードをビューポートに貼り付け、ヘッダーは常に固定
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   const tc    = document.getElementById('today-tasks');
-  const pw    = document.querySelector('.page-wrapper');
-  const sbar  = document.querySelector('.sidebar');
-  if (!board || !pw || !sbar) return;
+  if (!board || !inner || !tc) return;
 
-  const pwR  = pw.getBoundingClientRect();
-  if (pwR.width < 100) { requestAnimationFrame(applyExecFixed); return; }
-
-  const sideW = sbar.offsetWidth || 68;
-  const mainW = pwR.width - sideW;
-  const pad   = 12;
-  const gap   = 12;
-  const colW  = Math.round((mainW - pad * 2 - gap) / 2);
-  const left  = Math.round(pwR.left + sideW + pad + colW + gap);
-
-  if (board.parentElement !== document.body) document.body.appendChild(board);
-
-  // outer board: fixed container
+  // position:sticky でグリッド内に残したまま画面に貼り付け（DOM移動なし）
   Object.assign(board.style, {
-    position     : 'fixed',
+    position     : 'sticky',
     top          : '10px',
-    left         : left + 'px',
-    width        : colW + 'px',
+    alignSelf    : 'start',
     height       : 'calc(100vh - 20px)',
     zIndex       : '50',
     overflow     : 'hidden',
@@ -4320,15 +4297,15 @@ function applyExecFixed() {
     background   : 'rgba(13,13,26,0.72)',
     border       : '0.5px solid rgba(255,255,255,0.12)',
     borderRadius : '10px',
-    margin: '0', padding: '0', boxSizing: 'border-box',
+    boxSizing    : 'border-box',
   });
-  // inner wrapper: fill remaining height
-  if (inner) Object.assign(inner.style, {
+  // inner wrapper: flex column, fills board height
+  Object.assign(inner.style, {
     flex: '1', display: 'flex', flexDirection: 'column',
     overflow: 'hidden', minHeight: '0',
   });
-  // today-content: scrollable area (scroll driven by syncExecScroll)
-  if (tc) Object.assign(tc.style, {
+  // today-content: flex:1 fills remaining space, scroll driven by syncExecScroll
+  Object.assign(tc.style, {
     flex: '1', overflowY: 'hidden', minHeight: '0',
   });
   syncExecScroll();
@@ -4337,12 +4314,7 @@ function applyExecFixed() {
 function resetExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
-  const grid  = document.querySelector('.content-grid');
   if (!board) return;
-  if (board.parentElement === document.body && grid) {
-    const br = grid.querySelector('.bottom-row');
-    br ? grid.insertBefore(board, br) : grid.appendChild(board);
-  }
   board.removeAttribute('style');
   if (inner) inner.removeAttribute('style');
   const tc = document.getElementById('today-tasks');
