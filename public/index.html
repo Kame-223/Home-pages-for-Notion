@@ -403,12 +403,21 @@ body::before {
   display: flex;
   flex-direction: column;
 }
-/* 実行モード：today-boardはJS側でfixed配置するため最低限のみ */
+/* 実行モード：today-board は通常グリッド（カレンダーと同高さ）
+   today-board-inner だけ sticky で viewport 内に固定 */
 .content-grid:not(.select-mode) {
   padding-bottom: 12px;
 }
-/* JS fixed適用中のtoday-board内部スタイル */
-.today-board.exec-fixed {
+.content-grid:not(.select-mode) .today-board {
+  overflow: visible;       /* sticky child が機能するよう overflow:hidden を解除 */
+  background: transparent;
+  border: none;
+  min-height: unset;
+}
+.content-grid:not(.select-mode) .today-board-inner {
+  position: sticky;
+  top: 12px;
+  height: calc(100vh - 24px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -416,13 +425,19 @@ body::before {
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
 }
-.today-board.exec-fixed .today-content {
+.content-grid:not(.select-mode) .today-content {
   flex: 1;
-  overflow-y: hidden; /* scrollTopをJSで制御 */
+  overflow-y: hidden; /* scrollTop は JS（ページスクロール連動）で制御 */
   min-height: 0;
 }
-.today-board.exec-fixed .today-content .task-card {
+.content-grid:not(.select-mode) .today-content .task-card {
   touch-action: none;
+}
+/* select モード用デフォルト */
+.today-board-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 .today-content { padding: 10px 12px; }
 .board-header { display: none; }
@@ -1623,8 +1638,10 @@ body::before {
 
     <!-- 今日やること -->
     <div class="today-board">
-      <div class="section-header green">✅ 今日やること</div>
-      <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
+      <div class="today-board-inner" id="today-board-inner">
+        <div class="section-header green">✅ 今日やること</div>
+        <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
+      </div>
     </div>
 
     <!-- 下段 -->
@@ -2959,7 +2976,7 @@ async function loadTasks() {
   }
   syncDoneTasksToNotion();
   try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
-  requestAnimationFrame(() => { if (currentMode === 'exec') applyExecFixed(); syncExecScroll(); });
+  requestAnimationFrame(syncExecScroll);
   try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
   // 開いていた子タスクパネルを復元
@@ -4284,36 +4301,6 @@ function completeFocus() {
 
 // ===== モード切替 =====
 let currentMode = 'select';
-// 実行モード：today-boardをfixed配置
-let _tbResizeObs = null;
-
-function applyExecFixed() {
-  const board = document.querySelector('.today-board');
-  const schedCol = document.querySelector('.schedule-col');
-  if (!board || !schedCol) return;
-  const sr = schedCol.getBoundingClientRect();
-  board.classList.add('exec-fixed');
-  Object.assign(board.style, {
-    position: 'fixed',
-    top: '12px',
-    left: (sr.right + 12) + 'px',
-    width: sr.width + 'px',
-    height: 'calc(100vh - 24px)',
-    zIndex: '50',
-    margin: '0',
-  });
-  syncExecScroll();
-}
-
-function resetExecFixed() {
-  const board = document.querySelector('.today-board');
-  if (!board) return;
-  board.classList.remove('exec-fixed');
-  board.removeAttribute('style');
-  const tc = document.getElementById('today-tasks');
-  if (tc) tc.scrollTop = 0;
-}
-
 // ページスクロールと today-content を連動
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
@@ -4339,13 +4326,6 @@ function setMode(mode) {
   updateExecHint();
   if (!isSelect) {
     requestAnimationFrame(() => {
-      // today-boardをfixed配置
-      applyExecFixed();
-      // ウィンドウリサイズ時に再計算
-      if (_tbResizeObs) _tbResizeObs.disconnect();
-      _tbResizeObs = new ResizeObserver(applyExecFixed);
-      const sc = document.querySelector('.schedule-col');
-      if (sc) _tbResizeObs.observe(sc);
       // ページを現在時刻付近にスクロール
       const now = new Date();
       const minH = _calEarly ? 3 : 6;
@@ -4359,8 +4339,8 @@ function setMode(mode) {
       setTimeout(syncExecScroll, 400);
     });
   } else {
-    if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
-    resetExecFixed();
+    const tc = document.getElementById('today-tasks');
+    if (tc) tc.scrollTop = 0;
   }
 }
 
