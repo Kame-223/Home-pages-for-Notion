@@ -4277,35 +4277,27 @@ function completeFocus() {
 let currentMode = 'select';
 // 実行モード：today-board を body 直下に移動 → position:fixed 確実に適用
 // ※ 位置はpage-wrapperの幾何から計算（DOM操作後も変わらない安定値）
-// 実行モード：today-board-innerをfixedにしてヘッダー固定、today-contentだけスクロール
+// 実行モード：stickyでヘッダー固定＋振り返りへの被り防止
+// position:sticky はコンテナ(today-board)の外に出られないので振り返りへの被りが CSS レベルで不可能
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   const tc    = document.getElementById('today-tasks');
-  const sc    = document.querySelector('.schedule-col'); // 常にフロー内で位置が安定
-  if (!board || !inner || !tc || !sc) return;
+  if (!board || !inner || !tc) return;
 
-  const scRect = sc.getBoundingClientRect();
-  if (scRect.width < 50) { requestAnimationFrame(applyExecFixed); return; }
-
-  // schedule-col の右端 + gridのgap(12px) = today-boardの左端
-  // schedule-col と today-board は同じ1fr幅なので width も同じ
-  const left  = Math.round(scRect.right + 12);
-  const width = Math.round(scRect.width);
-
-  // board: グリッド内に残したまま透明な器（高さはグリッドがカレンダーに合わせる）
+  // board: グリッドで高さを決める（カレンダーと同じ高さになる）
+  // overflow:visible が必須 - これがないとstickyが親にクリップされて動かない
   Object.assign(board.style, {
+    overflow  : 'visible',
     background: 'transparent',
-    border: 'none',
-    overflow: 'visible',
+    border    : 'none',
+    minHeight : '0',
   });
 
-  // inner: fixedでヘッダーごとビューポートに固定
+  // inner: sticky でビューポートに貼り付く（boardの下端で自動的に止まる）
   Object.assign(inner.style, {
-    position     : 'fixed',
+    position     : 'sticky',
     top          : '10px',
-    left         : left + 'px',
-    width        : width + 'px',
     height       : 'calc(100vh - 20px)',
     display      : 'flex',
     flexDirection: 'column',
@@ -4337,24 +4329,12 @@ function resetExecFixed() {
 let _tbResizeObs = null;
 
 // ページスクロールと today-content を連動
+// ページスクロールに合わせてタスクカードをスクロール（A モード）
+// 高さ制限は position:sticky が CSS レベルで自動処理するので不要
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
-  const inner = document.getElementById('today-board-inner');
-  const tc    = document.getElementById('today-tasks');
-  if (!inner || !tc) return;
-
-  // schedule-col（常にノーマルフロー内）の下端でパネル高さを制限
-  // → 振り返りセクションへの被りを防ぐ
-  const sc = document.querySelector('.schedule-col');
-  if (sc) {
-    const scBottom = sc.getBoundingClientRect().bottom;
-    const vh = window.innerHeight;
-    const h  = Math.max(0, Math.min(scBottom - 10, vh - 20));
-    inner.style.height = h + 'px';
-    inner.style.display = h <= 0 ? 'none' : '';
-  }
-
-  // タスクスクロール同期（A: ページスクロールに比例）
+  const tc = document.getElementById('today-tasks');
+  if (!tc) return;
   const maxTc = tc.scrollHeight - tc.clientHeight;
   if (maxTc <= 0) return;
   const maxPage = Math.max(1, document.body.scrollHeight - window.innerHeight);
