@@ -3137,23 +3137,26 @@ function renderAll() {
       ${curTasks.length ? curTasks.map(t => renderCard(t,'today')).join('') : `<div class="section-empty">${jkEmoji[curJK]||''} ${curJK}のタスクはありません</div>`}
     </div>`;
 
-    if (otherTasks.length) {
+    // 他の時間帯：タスクがゼロでも空ブロックを表示（ドラッグのドロップ先として）
+    {
       const otherByBlock = {朝:[], 昼:[], 夜:[], 未設定:[]};
       otherTasks.forEach(t => { const jk = getJK(t)||'未設定'; (otherByBlock[jk]||otherByBlock['未設定']).push(t); });
       let otherHtml = '';
       Object.entries(otherByBlock).forEach(([key, bTasks]) => {
-        if (!bTasks.length) return;
-        // data-jkを付与→ドラッグ時に時間帯変更が機能する
+        if (key === curJK) return; // 現在の時間帯は上で表示済み
+        if (key === '未設定' && !bTasks.length) return; // 未設定は空なら省略
         otherHtml += `<div class="time-block"><div class="time-block-label" data-jk="${key}">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
       });
-      todayHtml += `
-        <div class="jikantai-other-toggle" id="jikantai-other-toggle"
-          data-count="${otherTasks.length}" onclick="toggleJikantaiOther()">
-          ${jikantaiOtherOpen ? '▲ 他の時間帯を閉じる' : `▼ 他の時間帯のタスクを見る（${otherTasks.length}件）`}
-        </div>
-        <div class="jikantai-other-body ${jikantaiOtherOpen?'open':''}" id="jikantai-other-body">
-          ${otherHtml}
-        </div>`;
+      if (otherHtml) {
+        todayHtml += `
+          <div class="jikantai-other-toggle" id="jikantai-other-toggle"
+            data-count="${otherTasks.length}" onclick="toggleJikantaiOther()">
+            ${jikantaiOtherOpen ? '▲ 他の時間帯を閉じる' : `▼ 他の時間帯のタスクを見る（${otherTasks.length}件）`}
+          </div>
+          <div class="jikantai-other-body ${jikantaiOtherOpen?'open':''}" id="jikantai-other-body">
+            ${otherHtml}
+          </div>`;
+      }
     }
   } else {
     // ===== 選択モード：朝/昼/夜/未設定でグループ表示 =====
