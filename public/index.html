@@ -3131,15 +3131,11 @@ function renderAll() {
     const curTasks   = orderedPending.filter(t => getJK(t) === curJK);
     const otherTasks = orderedPending.filter(t => getJK(t) !== curJK);
 
-    todayHtml = `<div class="jikantai-filter-bar">
-      <span class="jikantai-filter-label">${jkEmoji[curJK]||''} ${curJK}のタスク</span>
+    // time-blockでラップ＋data-jkを付与→クロスブロックドラッグが機能する
+    todayHtml = `<div class="time-block">
+      <div class="time-block-label" data-jk="${curJK}">${jkEmoji[curJK]||''} ${curJK}のタスク</div>
+      ${curTasks.length ? curTasks.map(t => renderCard(t,'today')).join('') : `<div class="section-empty">${jkEmoji[curJK]||''} ${curJK}のタスクはありません</div>`}
     </div>`;
-
-    if (curTasks.length) {
-      todayHtml += curTasks.map(t => renderCard(t,'today')).join('');
-    } else {
-      todayHtml += `<div class="section-empty">${jkEmoji[curJK]||''} ${curJK}のタスクはありません</div>`;
-    }
 
     if (otherTasks.length) {
       const otherByBlock = {朝:[], 昼:[], 夜:[], 未設定:[]};
@@ -3147,7 +3143,8 @@ function renderAll() {
       let otherHtml = '';
       Object.entries(otherByBlock).forEach(([key, bTasks]) => {
         if (!bTasks.length) return;
-        otherHtml += `<div class="time-block"><div class="time-block-label">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
+        // data-jkを付与→ドラッグ時に時間帯変更が機能する
+        otherHtml += `<div class="time-block"><div class="time-block-label" data-jk="${key}">${bLabels[key]}</div>${bTasks.map(t=>renderCard(t,'today')).join('')}</div>`;
       });
       todayHtml += `
         <div class="jikantai-other-toggle" id="jikantai-other-toggle"
@@ -3741,28 +3738,47 @@ function activateDrag(card, id, startY, pointerId) {
   card.classList.add('dragging');
   navigator.vibrate?.(50);
 
-  // pointerCaptureでカード外に出ても追従
+  // ドラッグ中は他の時間帯も展開してクロスブロック移動できるようにする
+  const otherBody = document.getElementById('jikantai-other-body');
+  if (otherBody) otherBody.classList.add('open');
+
   try { card.setPointerCapture(pointerId); } catch {}
+
+  // rAFスロットル：ghostは毎イベント更新、insertLineは1フレーム1回
+  let latestCy = startY, rafPending = false;
 
   const onMove = (e) => {
     if (e.pointerId !== pointerId) return;
     e.preventDefault();
-    dragGhost.style.top = (e.clientY - offsetY) + 'px';
-    updateInsertLine(e.clientY);
+    latestCy = e.clientY;
+    dragGhost.style.top = (latestCy - offsetY) + 'px';
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(() => { updateInsertLine(latestCy); rafPending = false; });
+    }
   };
 
-  const onEnd = (e) => {
-    if (e.pointerId !== pointerId) return;
+  // ドラッグ終了処理（card・documentどちらから呼ばれても1回だけ実行）
+  const endDrag = () => {
+    if (!dragId) return;
     card.removeEventListener('pointermove', onMove);
     card.removeEventListener('pointerup', onEnd);
     card.removeEventListener('pointercancel', onEnd);
+    document.removeEventListener('pointerup', onDocEnd);
+    document.removeEventListener('pointercancel', onDocEnd);
     try { card.releasePointerCapture(pointerId); } catch {}
     finishDrag();
   };
 
+  const onEnd    = (e) => { if (e.pointerId !== pointerId) return; endDrag(); };
+  const onDocEnd = (e) => { if (e.pointerId !== pointerId) return; endDrag(); };
+
   card.addEventListener('pointermove', onMove);
   card.addEventListener('pointerup', onEnd);
   card.addEventListener('pointercancel', onEnd);
+  // document安全ネット：pointerCaptureが失われた場合のフォールバック
+  document.addEventListener('pointerup', onDocEnd);
+  document.addEventListener('pointercancel', onDocEnd);
 }
 
 function updateInsertLine(cy) {
