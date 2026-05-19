@@ -4341,14 +4341,15 @@ function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const inner = document.getElementById('today-board-inner');
   const tc    = document.getElementById('today-tasks');
-  const board = document.querySelector('.today-board');
   if (!inner || !tc) return;
 
-  // カレンダー行の下端に合わせてパネル高さを制限（振り返りセクションへの被りを防ぐ）
-  if (board) {
-    const boardBottom = board.getBoundingClientRect().bottom;
+  // schedule-col（常にノーマルフロー内）の下端でパネル高さを制限
+  // → 振り返りセクションへの被りを防ぐ
+  const sc = document.querySelector('.schedule-col');
+  if (sc) {
+    const scBottom = sc.getBoundingClientRect().bottom;
     const vh = window.innerHeight;
-    const h  = Math.max(0, Math.min(boardBottom - 10, vh - 20));
+    const h  = Math.max(0, Math.min(scBottom - 10, vh - 20));
     inner.style.height = h + 'px';
     inner.style.display = h <= 0 ? 'none' : '';
   }
