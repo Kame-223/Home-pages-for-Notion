@@ -4313,6 +4313,9 @@ let _todayMouseBound = false;
 let _todayWheelBound = false;
 function _todayWheelHandler(e) {
   if (currentMode !== 'exec') return;
+  // B モード中（タスクが溢れていてtcが独立スクロール中）は tc に任せる
+  const tc = document.getElementById('today-tasks');
+  if (tc && tc.style.overflowY === 'auto') return;
   e.preventDefault();
   window.scrollBy({ top: e.deltaY, left: 0, behavior: 'auto' });
 }
@@ -4357,12 +4360,13 @@ function applyExecFixed() {
     boxSizing    : 'border-box',
   });
 
-  // ヘッダーの自然な高さを記録
+  // ヘッダーの自然な高さと sticky の基準 top を記録
   const headerEl = inner.querySelector('.section-header');
   if (headerEl) {
     inner._headerNaturalH = headerEl.offsetHeight || 38;
     headerEl.style.flexShrink = '0';
   }
+  inner._stickyBaseTop = stickyTop; // スクロール連動の基準値
 
   Object.assign(tc.style, {
     flex      : '1',
@@ -4388,30 +4392,25 @@ function applyExecFixed() {
   syncExecScroll();
 }
 
-// スクロール時: ヘッダー collapse + カード sync（sticky が位置を自動管理）
+// スクロール時: sticky の top をカレンダーヘッダーと連動させてヘッダーを自然に消す
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const inner = document.getElementById('today-board-inner');
   if (!inner || inner.style.position !== 'sticky') return;
 
-  // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
-  const headerEl       = inner.querySelector('.section-header');
   const scheduleHeader = document.querySelector('.schedule-col > .section-header');
-  if (headerEl) {
-    const naturalH = inner._headerNaturalH || 38;
-    const shBottom = scheduleHeader
-      ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
-      : 0;
-    if (shBottom <= 0) {
-      headerEl.style.display = 'none';
-    } else {
-      headerEl.style.display   = '';
-      headerEl.style.height    = shBottom + 'px';
-      headerEl.style.minHeight = '0px';
-      headerEl.style.boxSizing = 'border-box';
-      headerEl.style.overflow  = 'hidden';
-    }
-  }
+  const naturalH       = inner._headerNaturalH || 38;
+  const stickyBaseTop  = inner._stickyBaseTop  || 0;
+
+  // カレンダーヘッダーが何px見えているか（0〜naturalH）
+  const shVisible = scheduleHeader
+    ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
+    : 0;
+
+  // カレンダーヘッダーが消えた分だけパネル全体を上にずらす
+  // → 「今日やること」ヘッダーもカレンダーと完全に同じ速度・タイミングで消える
+  const headerGone = naturalH - shVisible; // 消えた量（0〜naturalH）
+  inner.style.top  = (stickyBaseTop - headerGone) + 'px';
 
   syncExecScroll();
 }
