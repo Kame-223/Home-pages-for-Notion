@@ -220,6 +220,14 @@ body::before {
 .content-grid.select-mode .today-board { order: 0; }
 .content-grid {
 }
+/* 実行モード: today-board を右列全体(row1+2)にスパン → sticky が振り返りエリアまで追従 */
+.content-grid:not(.select-mode) .today-board {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+.content-grid:not(.select-mode) .bottom-row {
+  grid-column: 1;
+}
 
 /* ===== SCHEDULE ===== */
 .schedule-col {
