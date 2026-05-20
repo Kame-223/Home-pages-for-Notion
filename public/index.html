@@ -4339,7 +4339,7 @@ function applyExecFixed() {
 
   // A モード：デフォルトは overflow-y:hidden → ホイールがページへ → syncExecScroll が動く
   Object.assign(tc.style, {
-    flex: '1', overflowY: 'hidden', minHeight: '0',
+    flex: '1', overflowY: 'hidden', minHeight: '0', marginTop: '0',
   });
 
   // B モード：mouseenter/leave で overflow を切り替え（1回だけ登録）
@@ -4364,12 +4364,15 @@ function resetExecFixed() {
   board.removeAttribute('style');
   if (inner) inner.removeAttribute('style');
   const tc = document.getElementById('today-tasks');
-  if (tc) { tc.removeAttribute('style'); tc.style.transform = ''; tc.scrollTop = 0; }
+  if (tc) { tc.removeAttribute('style'); tc.scrollTop = 0; }
 }
 
 let _tbResizeObs = null;
 
 // A モード：ページスクロールに比例してタスクカードをエリア内で移動
+// overflow あり  → scrollTop でコンテンツを上にスクロール
+// overflow なし  → margin-top でカードを下方向へ移動（最大200px）
+// ※ transform は親の overflow:hidden でクリップされるため margin-top を使用
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const tc = document.getElementById('today-tasks');
@@ -4380,14 +4383,11 @@ function syncExecScroll() {
   const maxTc   = tc.scrollHeight - tc.clientHeight;
 
   if (maxTc > 0) {
-    // overflow あり：scrollTop でコンテンツを上にスクロール
+    tc.style.marginTop = '0';
     tc.scrollTop = Math.round(ratio * maxTc);
-    tc.style.transform = '';
   } else {
-    // overflow なし：translateY でカードを下方向に動かす（最大200px）
-    const freeSpace = tc.clientHeight - tc.scrollHeight;
-    const move = Math.round(ratio * Math.min(freeSpace, 200));
-    tc.style.transform = `translateY(${move}px)`;
+    const move = Math.round(ratio * 200);
+    tc.style.marginTop = move + 'px';
     tc.scrollTop = 0;
   }
 }
