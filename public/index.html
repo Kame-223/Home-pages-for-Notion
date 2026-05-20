@@ -4487,28 +4487,27 @@ function setMode(mode) {
       if (!fcEl) return;
       const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
       const target = Math.max(0, calTop + hoursFromStart * pxPerHour - window.innerHeight / 2);
+      // スクロール前に暫定的にパネルを設定（exec 開始の瞬間から見える）
+      applyExecFixed();
+
       window.scrollTo({ top: target, behavior: 'smooth' });
 
-      // スクロール完了後に applyExecFixed を呼ぶ（board.top が最終位置を反映するため）
+      // スクロール完了後に再設定（board.top が最終位置を反映してから top を確定）
+      if (_tbResizeObs) _tbResizeObs.disconnect();
+      _tbResizeObs = new ResizeObserver(() => {}); // 空：sticky+calc(100vh)が自動追従
+      const sc = document.querySelector('.schedule-col');
+      if (sc) _tbResizeObs.observe(sc);
+
       let _applied = false;
       const _doApply = () => {
         if (_applied) return;
         _applied = true;
         window.removeEventListener('scrollend', _doApply);
-        applyExecFixed();
-        if (_tbResizeObs) _tbResizeObs.disconnect();
-        _tbResizeObs = new ResizeObserver(() => requestAnimationFrame(() => {
-          if (currentMode !== 'exec') return;
-          const i = document.getElementById('today-board-inner');
-          if (!i || i.style.position !== 'sticky') return;
-          // sticky は width:100% で自動追従、height も calc(100vh) で固定
-        }));
-        const sc = document.querySelector('.schedule-col');
-        if (sc) _tbResizeObs.observe(sc);
+        applyExecFixed(); // top を最終スクロール位置で確定
       };
-      // scrollend イベント（Chrome 114+）+ 1秒フォールバック
+      // scrollend イベント（Chrome 114+）+ 1.2秒フォールバック
       window.addEventListener('scrollend', _doApply, { once: true });
-      setTimeout(_doApply, 1000);
+      setTimeout(_doApply, 1200);
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
