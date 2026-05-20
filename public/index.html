@@ -4323,28 +4323,26 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: overflow:visible にして sticky が viewport を scroll container にできるようにする
-  // （overflow:hidden のままだと board 自身が scroll container になり sticky が機能しない）
+  // board: グリッドに残してレイアウト維持、見た目だけ消す
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
     minHeight : '0',
-    overflow  : 'visible',
   });
 
-  // portal から元に戻す（前回 body に移動していた場合）
-  if (inner.parentElement === document.body) {
-    board.insertBefore(inner, board.firstChild);
+  // inner を document.body 直下に移動（全ての CSS 制約・overflow clipping から解放）
+  if (inner.parentElement !== document.body) {
+    document.body.appendChild(inner);
   }
 
-  // inner: position:sticky でカレンダーと同じ y 位置に吸着
-  const rect      = board.getBoundingClientRect();
-  const stickyTop = Math.max(0, Math.round(rect.top));
+  // position:fixed でビューポートに固定（top:0, height:フルビューポート）
+  const rect = board.getBoundingClientRect();
   Object.assign(inner.style, {
-    position     : 'sticky',
-    top          : stickyTop + 'px',
-    width        : '100%',
-    height       : (window.innerHeight - stickyTop - 10) + 'px',
+    position     : 'fixed',
+    top          : '0',
+    left         : rect.left + 'px',
+    width        : rect.width + 'px',
+    height       : (window.innerHeight - 10) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4355,26 +4353,28 @@ function applyExecFixed() {
     boxSizing    : 'border-box',
   });
 
-  // ヘッダーの自然な高さを記録（スクロールで縮める基準値）
+  // ヘッダーの自然な高さを記録
   const headerEl = inner.querySelector('.section-header');
   if (headerEl) {
     inner._headerNaturalH = headerEl.offsetHeight || 38;
     headerEl.style.flexShrink = '0';
   }
 
-  // A モード：overflow-y:hidden → ホイールがページへバブル → syncExecScroll が動く
   Object.assign(tc.style, {
-    flex: '1', overflowY: 'hidden', minHeight: '0', marginTop: '0',
+    flex      : '1',
+    overflowY : 'hidden',
+    minHeight : '0',
+    marginTop : '0',
+    transition: 'margin-top 0.15s ease-out',
   });
 
-  // B モード：mouseenter/leave で overflow を切り替え（1回だけ登録）
   if (!_todayMouseBound) {
     inner.addEventListener('mouseenter', _todayMouseEnter);
     inner.addEventListener('mouseleave', _todayMouseLeave);
     _todayMouseBound = true;
   }
 
-  // ホイールイベントを window に転送（sticky+overflow:hidden がイベントを消費するのを回避）
+  // fixed 要素上のホイールを window に転送（固定要素がイベントを消費する場合の対策）
   if (!_todayWheelBound) {
     inner.addEventListener('wheel', _todayWheelHandler, { passive: false });
     _todayWheelBound = true;
@@ -4384,11 +4384,23 @@ function applyExecFixed() {
   syncExecScroll();
 }
 
-// スクロール時: sticky が位置を自動管理するのでヘッダー collapse とカード sync だけ
+// スクロール時: left/width 更新 + ヘッダー collapse + カード sync
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const inner = document.getElementById('today-board-inner');
-  if (!inner || inner.style.position !== 'sticky') return;
+  if (!inner || inner.style.position !== 'fixed') return;
+  const board = document.querySelector('.today-board');
+
+  // left/width: リサイズ対応（height は触らない）
+  if (board) {
+    const rect = board.getBoundingClientRect();
+    inner.style.left  = rect.left + 'px';
+    inner.style.width = rect.width + 'px';
+    // board が完全に画面外なら非表示
+    const offScreen = rect.bottom < 0 || rect.top > window.innerHeight;
+    inner.style.display = offScreen ? 'none' : 'flex';
+    if (offScreen) { syncExecScroll(); return; }
+  }
 
   // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
   const headerEl       = inner.querySelector('.section-header');
@@ -4441,26 +4453,22 @@ function resetExecFixed() {
 
 let _tbResizeObs = null;
 
-// Eモード開始時の scrollY を基準に ratio を計算（開始後のスクロールで 0→1 になる）
-let _execBaseScrollY = 0;
-
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const tc = document.getElementById('today-tasks');
   if (!tc) return;
 
-  // Eモード開始位置からのスクロール量（px）
-  const delta = Math.max(0, window.scrollY - _execBaseScrollY);
-  const maxTc = tc.scrollHeight - tc.clientHeight;
+  const maxPage = Math.max(1, document.body.scrollHeight - window.innerHeight);
+  const ratio   = Math.min(1, Math.max(0, window.scrollY / maxPage));
+  const maxTc   = tc.scrollHeight - tc.clientHeight;
 
   if (maxTc > 0) {
-    // タスクが溢れる場合: scrollTop でタスク一覧をスクロール
-    const ratio = Math.min(1, delta / Math.max(1, document.body.scrollHeight - window.innerHeight - _execBaseScrollY));
+    // タスクが溢れる: scrollTop でスクロール
     tc.style.marginTop = '0';
     tc.scrollTop = Math.round(ratio * maxTc);
   } else {
-    // タスクが少ない場合: 1px スクロール = 1px 移動、最大 100px
-    tc.style.marginTop = Math.min(100, delta) + 'px';
+    // タスクが少ない: marginTop で上下に移動（0〜200px）
+    tc.style.marginTop = Math.round(ratio * 200) + 'px';
     tc.scrollTop = 0;
   }
 }
@@ -4488,17 +4496,18 @@ function setMode(mode) {
       if (!fcEl) return;
       const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
       const target = calTop + hoursFromStart * pxPerHour - window.innerHeight / 2;
-      _execBaseScrollY = Math.max(0, target); // カード移動の基準スクロール位置
-      window.scrollTo({ top: _execBaseScrollY, behavior: 'smooth' });
+      window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       applyExecFixed();
       if (_tbResizeObs) _tbResizeObs.disconnect();
-      // sticky なので width:100% で自動追従、resize 時は height だけ再計算
+      // リサイズ時は left/width のみ更新（height は触らない）
       _tbResizeObs = new ResizeObserver(() => requestAnimationFrame(() => {
         if (currentMode !== 'exec') return;
+        const b = document.querySelector('.today-board');
         const i = document.getElementById('today-board-inner');
-        if (!i || i.style.position !== 'sticky') return;
-        const sTop = parseFloat(i.style.top) || 0;
-        i.style.height = (window.innerHeight - sTop - 10) + 'px';
+        if (!b || !i || i.style.position !== 'fixed') return;
+        const r = b.getBoundingClientRect();
+        i.style.left  = r.left + 'px';
+        i.style.width = r.width + 'px';
       }));
       const sc = document.querySelector('.schedule-col');
       if (sc) _tbResizeObs.observe(sc);
