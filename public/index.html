@@ -4337,6 +4337,13 @@ function applyExecFixed() {
     boxSizing    : 'border-box',
   });
 
+  // ヘッダーの自然な高さを記録（スクロールで縮める基準値）
+  const headerEl = inner.querySelector('.section-header');
+  if (headerEl) {
+    inner._headerNaturalH = headerEl.offsetHeight || 38;
+    headerEl.style.flexShrink = '0';
+  }
+
   // A モード：overflow-y:hidden → ホイールがページへバブル → syncExecScroll が動く
   Object.assign(tc.style, {
     flex: '1', overflowY: 'hidden', minHeight: '0', marginTop: '0',
@@ -4349,7 +4356,7 @@ function applyExecFixed() {
     _todayMouseBound = true;
   }
 
-  _syncExecPanelPos(); // 位置・高さを正確に反映してから
+  _syncExecPanelPos();
   syncExecScroll();
 }
 
@@ -4361,14 +4368,13 @@ function _syncExecPanelPos() {
   if (!board || !inner || inner.style.position !== 'fixed') return;
   const rect = board.getBoundingClientRect();
 
-  // パネル上端 = today-board の上端をそのまま追従（負値になると header が viewport 外へ消える）
-  const pTop    = rect.top;
-  // パネル下端 = today-board の下端 と ビューポート下端10px手前 の小さい方
+  // パネルは常にビューポート内（0以上）に配置。ヘッダーだけ縮めて消す
+  const pTop    = Math.max(0, rect.top);
   const pBottom = Math.min(rect.bottom, window.innerHeight - 10);
   const pHeight = pBottom - pTop;
 
-  // board が完全に画面外、またはパネル高さが細すぎる → 非表示
-  if (pHeight < 80 || rect.bottom < pTop || rect.top > window.innerHeight) {
+  // board が完全に画面外 → 非表示
+  if (pHeight < 20 || rect.bottom < 0 || rect.top > window.innerHeight) {
     inner.style.display = 'none';
     return;
   }
@@ -4378,6 +4384,17 @@ function _syncExecPanelPos() {
   inner.style.height = pHeight + 'px';
   inner.style.left   = rect.left + 'px';
   inner.style.width  = rect.width + 'px';
+
+  // ヘッダー: rect.top が負になった分だけ高さを縮めて消す
+  const headerEl = inner.querySelector('.section-header');
+  if (headerEl) {
+    const naturalH     = inner._headerNaturalH || 38;
+    const scrolledPast = Math.max(0, -rect.top);
+    headerEl.style.height   = Math.max(0, naturalH - scrolledPast) + 'px';
+    headerEl.style.overflow = 'hidden';
+  }
+
+  syncExecScroll(); // ヘッダー高変化に合わせてカード位置を再計算
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
@@ -4391,7 +4408,11 @@ function resetExecFixed() {
     _todayMouseBound = false;
   }
   board.removeAttribute('style');
-  if (inner) inner.removeAttribute('style');
+  if (inner) {
+    const headerEl = inner.querySelector('.section-header');
+    if (headerEl) { headerEl.style.height = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
+    inner.removeAttribute('style');
+  }
   const tc = document.getElementById('today-tasks');
   if (tc) { tc.removeAttribute('style'); tc.scrollTop = 0; }
 }
