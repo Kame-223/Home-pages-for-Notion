@@ -4454,12 +4454,14 @@ function syncExecScroll() {
   const maxTc   = tc.scrollHeight - tc.clientHeight;
 
   if (maxTc > 0) {
-    // タスクが溢れる: scrollTop でスクロール
+    // タスクが溢れる: scrollTop でスクロール（先頭〜末尾まで）
     tc.style.marginTop = '0';
     tc.scrollTop = Math.round(ratio * maxTc);
   } else {
-    // タスクが少ない: marginTop で上下に移動（0〜200px）
-    tc.style.marginTop = Math.round(ratio * 200) + 'px';
+    // タスクが少ない: タスクエリアの空きスペース全体を使って上下に移動
+    // maxMargin = エリアの高さ - コンテンツの高さ = カードが動ける最大量
+    const maxMargin = Math.max(0, tc.clientHeight - tc.scrollHeight);
+    tc.style.marginTop = Math.round(ratio * maxMargin) + 'px';
     tc.scrollTop = 0;
   }
 }
