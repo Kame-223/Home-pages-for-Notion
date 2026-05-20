@@ -4364,21 +4364,32 @@ function resetExecFixed() {
   board.removeAttribute('style');
   if (inner) inner.removeAttribute('style');
   const tc = document.getElementById('today-tasks');
-  if (tc) { tc.removeAttribute('style'); tc.scrollTop = 0; }
+  if (tc) { tc.removeAttribute('style'); tc.style.transform = ''; tc.scrollTop = 0; }
 }
 
 let _tbResizeObs = null;
 
-// A モード：ページスクロールに比例して today-tasks.scrollTop を更新
-// overflow-y:hidden でも scrollTop は JS で変更可能 → カードがエリア内を移動
+// A モード：ページスクロールに比例してタスクカードをエリア内で移動
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const tc = document.getElementById('today-tasks');
   if (!tc) return;
-  const maxTc = tc.scrollHeight - tc.clientHeight;
-  if (maxTc <= 0) return;
+
   const maxPage = Math.max(1, document.body.scrollHeight - window.innerHeight);
-  tc.scrollTop = Math.round((window.scrollY / maxPage) * maxTc);
+  const ratio   = Math.min(1, Math.max(0, window.scrollY / maxPage));
+  const maxTc   = tc.scrollHeight - tc.clientHeight;
+
+  if (maxTc > 0) {
+    // overflow あり：scrollTop でコンテンツを上にスクロール
+    tc.scrollTop = Math.round(ratio * maxTc);
+    tc.style.transform = '';
+  } else {
+    // overflow なし：translateY でカードを下方向に動かす（最大200px）
+    const freeSpace = tc.clientHeight - tc.scrollHeight;
+    const move = Math.round(ratio * Math.min(freeSpace, 200));
+    tc.style.transform = `translateY(${move}px)`;
+    tc.scrollTop = 0;
+  }
 }
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
