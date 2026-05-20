@@ -4388,6 +4388,7 @@ function applyExecFixed() {
     _todayWheelBound = true;
   }
 
+  _refreshExecScrollCache(); // boardTop / scrollRange を確定
   _syncExecPanelPos();
   syncExecScroll();
 }
@@ -4444,37 +4445,53 @@ function resetExecFixed() {
 
 let _tbResizeObs = null;
 
+// ===== exec scroll キャッシュ =====
+// boardTop と scrollRange はドキュメント座標で固定値（スクロール中に変わらない）。
+// スクロールのたびに再計算せず、exec モード開始時に1回だけキャッシュする。
+let _execBoardTop    = 0;
+let _execScrollRange = 0;
+
+function _refreshExecScrollCache() {
+  const sc    = document.querySelector('.schedule-col');
+  const inner = document.getElementById('today-board-inner');
+  if (!sc || !inner) return;
+  const scH     = sc.offsetHeight;
+  const stickyH = inner.offsetHeight;   // calc(100vh - 10px) が適用済みの実高さ
+  if (scH < 100 || stickyH < 100) return; // レンダリング未完了なら無視
+  _execBoardTop    = sc.getBoundingClientRect().top + window.scrollY;
+  _execScrollRange = Math.max(0, scH - stickyH);
+}
+
+window.addEventListener('resize', () => {
+  if (currentMode === 'exec') _refreshExecScrollCache();
+}, { passive: true });
+
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
-  const tc    = document.getElementById('today-tasks');
-  const inner = document.getElementById('today-board-inner');
-  const sc    = document.querySelector('.schedule-col');
-  if (!tc || !inner || !sc) return;
+  const tc = document.getElementById('today-tasks');
+  if (!tc) return;
 
-  // schedule-col（カレンダー列）の viewport 基準 bottom を使ってスクロール進捗を求める。
-  // today-board と同じグリッド行なので sc.offsetHeight = 行高さ = 今日やることエリアの高さ。
-  // scBottom が scH（行が画面に入り始め）→ stickyH（行が画面から出きる直前）へ変化する
-  // 区間で ratio 0→1 にすることで、カードがエリア末尾まで正確に追従する。
-  const stickyH     = inner.offsetHeight;
-  const scH         = sc.offsetHeight;
-  const scBottom    = sc.getBoundingClientRect().bottom;
-  const scrollRange = scH - stickyH;
-  const ratio = scrollRange > 0
-    ? Math.min(1, Math.max(0, (scH - scBottom) / scrollRange))
-    : 0;
+  // キャッシュがなければ取得試行
+  if (_execScrollRange <= 0) _refreshExecScrollCache();
+  if (_execScrollRange <= 0) return;
+
+  // ratio: 0 = カレンダー先頭（カード TOP）、1 = カレンダー末尾（カード BOTTOM）
+  const ratio = Math.min(1, Math.max(0,
+    (window.scrollY - _execBoardTop) / _execScrollRange
+  ));
 
   // tc は flex:1 のため marginTop 分だけ clientHeight が縮む
-  // → 現在の marginTop を足して「marginTop=0 のときの高さ」を復元する
+  // → currentMargin を足して「marginTop=0 のときの高さ」を復元する
   const currentMargin = parseFloat(tc.style.marginTop) || 0;
   const origTcH       = tc.clientHeight + currentMargin;
   const maxTc         = tc.scrollHeight - origTcH;
 
   if (maxTc > 0) {
-    // タスクが溢れる: scrollTop でスクロール（先頭〜末尾まで）
+    // タスクが溢れる: scrollTop でスクロール
     tc.style.marginTop = '0';
     tc.scrollTop = Math.round(ratio * maxTc);
   } else {
-    // タスクが少ない: タスクエリアの空きスペース全体を使って上下に移動
+    // タスクが少ない: 空きスペースを使って上下に移動
     const maxMargin = Math.max(0, origTcH - tc.scrollHeight);
     tc.style.marginTop = Math.round(ratio * maxMargin) + 'px';
     tc.scrollTop = 0;
@@ -4524,6 +4541,9 @@ function setMode(mode) {
       // scrollend イベント（Chrome 114+）+ 1.2秒フォールバック
       window.addEventListener('scrollend', _doApply, { once: true });
       setTimeout(_doApply, 1200);
+      // FullCalendar の遅延描画が完了した後にキャッシュを再確定
+      setTimeout(() => { if (currentMode === 'exec') _refreshExecScrollCache(); }, 300);
+      setTimeout(() => { if (currentMode === 'exec') _refreshExecScrollCache(); }, 1500);
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
