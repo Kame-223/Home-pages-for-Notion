@@ -4321,12 +4321,15 @@ function applyExecFixed() {
     minHeight : '0',
   });
 
-  // inner: position:fixed の骨格だけ設定（top/height/left/width は _syncExecPanelPos が計算）
+  // inner: position:fixed で配置（top は今この瞬間の board 位置に固定、スクロールで動かさない）
   const rect = board.getBoundingClientRect();
+  const initTop = Math.max(0, rect.top);
   Object.assign(inner.style, {
     position     : 'fixed',
+    top          : initTop + 'px',
     left         : rect.left + 'px',
     width        : rect.width + 'px',
+    height       : (Math.min(rect.bottom, window.innerHeight - 10) - initTop) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4360,7 +4363,7 @@ function applyExecFixed() {
   syncExecScroll();
 }
 
-// スクロール・リサイズ時にパネルの位置・高さ・表示状態を同期
+// スクロール時: top は動かさず、下端クリップ・left/width・ヘッダー・カードのみ更新
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const board = document.querySelector('.today-board');
@@ -4368,22 +4371,21 @@ function _syncExecPanelPos() {
   if (!board || !inner || inner.style.position !== 'fixed') return;
   const rect = board.getBoundingClientRect();
 
-  // パネルは常にビューポート内（0以上）に配置。ヘッダーだけ縮めて消す
-  const pTop    = Math.max(0, rect.top);
-  const pBottom = Math.min(rect.bottom, window.innerHeight - 10);
-  const pHeight = pBottom - pTop;
-
   // board が完全に画面外 → 非表示
-  if (pHeight < 20 || rect.bottom < 0 || rect.top > window.innerHeight) {
+  if (rect.bottom < 0 || rect.top > window.innerHeight) {
     inner.style.display = 'none';
     return;
   }
-
   inner.style.display = 'flex';
-  inner.style.top    = pTop + 'px';
-  inner.style.height = pHeight + 'px';
-  inner.style.left   = rect.left + 'px';
-  inner.style.width  = rect.width + 'px';
+
+  // left/width のみ更新（リサイズ対応）、top は動かさない
+  inner.style.left  = rect.left + 'px';
+  inner.style.width = rect.width + 'px';
+
+  // height: 固定された top から board 下端までをクリップ
+  const fixedTop = parseFloat(inner.style.top) || 0;
+  const pBottom  = Math.min(rect.bottom, window.innerHeight - 10);
+  inner.style.height = Math.max(20, pBottom - fixedTop) + 'px';
 
   // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
   const headerEl       = inner.querySelector('.section-header');
@@ -4480,7 +4482,7 @@ function setMode(mode) {
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       applyExecFixed();
       if (_tbResizeObs) _tbResizeObs.disconnect();
-      _tbResizeObs = new ResizeObserver(_syncExecPanelPos);
+      _tbResizeObs = new ResizeObserver(applyExecFixed);
       const sc = document.querySelector('.schedule-col');
       if (sc) _tbResizeObs.observe(sc);
     });
