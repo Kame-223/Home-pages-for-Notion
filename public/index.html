@@ -4340,9 +4340,9 @@ function applyExecFixed() {
   }
 
   // inner: position:sticky でカレンダーと同位置に固定
-  // scrollend 後に呼ばれるため board.top は最終スクロール位置を反映
-  const rect      = board.getBoundingClientRect();
-  const stickyTop = Math.max(0, Math.round(rect.top));
+  // top=0: board.top>0 の間は自然位置に追随、board.top<=0 でビューポート上端に吸着
+  // top>0 を使うと「スクロール前の board.top 値」でパネルが固定されギャップが生じる
+  const stickyTop = 0;
   Object.assign(inner.style, {
     position     : 'sticky',
     top          : stickyTop + 'px',
