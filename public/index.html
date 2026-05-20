@@ -4314,26 +4314,28 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: グリッドに残して列幅を維持、見た目だけ消す
+  // board: overflow:visible にして sticky が viewport を scroll container にできるようにする
+  // （overflow:hidden のままだと board 自身が scroll container になり sticky が機能しない）
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
     minHeight : '0',
+    overflow  : 'visible',
   });
 
-  // inner を document.body 直下に移動（祖先の overflow:hidden や transform による
-  // position:fixed のクリッピング・含有ブロック変更を完全回避するポータルパターン）
-  if (inner.parentElement !== document.body) {
-    document.body.appendChild(inner);
+  // portal から元に戻す（前回 body に移動していた場合）
+  if (inner.parentElement === document.body) {
+    board.insertBefore(inner, board.firstChild);
   }
 
-  const rect = board.getBoundingClientRect();
+  // inner: position:sticky でカレンダーと同じ y 位置に吸着
+  const rect      = board.getBoundingClientRect();
+  const stickyTop = Math.max(0, Math.round(rect.top));
   Object.assign(inner.style, {
-    position     : 'fixed',
-    top          : '0px',
-    left         : rect.left + 'px',
-    width        : rect.width + 'px',
-    height       : (window.innerHeight - 10) + 'px',
+    position     : 'sticky',
+    top          : stickyTop + 'px',
+    width        : '100%',
+    height       : (window.innerHeight - stickyTop - 10) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4367,25 +4369,11 @@ function applyExecFixed() {
   syncExecScroll();
 }
 
-// スクロール時: top は動かさず、下端クリップ・left/width・ヘッダー・カードのみ更新
+// スクロール時: sticky が位置を自動管理するのでヘッダー collapse とカード sync だけ
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
-  const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
-  if (!board || !inner || inner.style.position !== 'fixed') return;
-  const rect = board.getBoundingClientRect();
-
-  // board が完全に画面外 → 非表示
-  if (rect.bottom < 0 || rect.top > window.innerHeight) {
-    inner.style.display = 'none';
-    return;
-  }
-  inner.style.display = 'flex';
-
-  // left/width のみ更新（リサイズ対応）
-  // top・height はスクロールで触らない → applyExecFixed でのみ設定
-  inner.style.left  = rect.left + 'px';
-  inner.style.width = rect.width + 'px';
+  if (!inner || inner.style.position !== 'sticky') return;
 
   // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
   const headerEl       = inner.querySelector('.section-header');
@@ -4394,12 +4382,10 @@ function _syncExecPanelPos() {
     const naturalH = inner._headerNaturalH || 38;
     const shBottom = scheduleHeader
       ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
-      : Math.max(0, naturalH + rect.top);
+      : 0;
     if (shBottom <= 0) {
-      // 完全に消す（display:none で padding も含め確実に非表示）
       headerEl.style.display = 'none';
     } else {
-      // 部分表示: border-box でパディング込みの高さを制御
       headerEl.style.display   = '';
       headerEl.style.height    = shBottom + 'px';
       headerEl.style.minHeight = '0px';
@@ -4408,7 +4394,7 @@ function _syncExecPanelPos() {
     }
   }
 
-  syncExecScroll(); // ヘッダー高変化に合わせてカード位置を再計算
+  syncExecScroll();
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
@@ -4423,7 +4409,6 @@ function resetExecFixed() {
   }
   board.removeAttribute('style');
   if (inner) {
-    // inner を today-board の先頭に戻す（ポータルから元に戻す）
     if (inner.parentElement === document.body) {
       board.insertBefore(inner, board.firstChild);
     }
@@ -4486,16 +4471,13 @@ function setMode(mode) {
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       applyExecFixed();
       if (_tbResizeObs) _tbResizeObs.disconnect();
-      // リサイズ時は left/width/height のみ更新（top=0 は不変）
+      // sticky なので width:100% で自動追従、resize 時は height だけ再計算
       _tbResizeObs = new ResizeObserver(() => requestAnimationFrame(() => {
         if (currentMode !== 'exec') return;
-        const b = document.querySelector('.today-board');
         const i = document.getElementById('today-board-inner');
-        if (!b || !i || i.style.position !== 'fixed') return;
-        const r = b.getBoundingClientRect();
-        i.style.left   = r.left + 'px';
-        i.style.width  = r.width + 'px';
-        i.style.height = (window.innerHeight - 10) + 'px';
+        if (!i || i.style.position !== 'sticky') return;
+        const sTop = parseFloat(i.style.top) || 0;
+        i.style.height = (window.innerHeight - sTop - 10) + 'px';
       }));
       const sc = document.querySelector('.schedule-col');
       if (sc) _tbResizeObs.observe(sc);
