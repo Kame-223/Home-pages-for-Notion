@@ -4329,7 +4329,7 @@ function applyExecFixed() {
     top          : initTop + 'px',
     left         : rect.left + 'px',
     width        : rect.width + 'px',
-    height       : (Math.min(rect.bottom, window.innerHeight - 10) - initTop) + 'px',
+    height       : (window.innerHeight - 10 - initTop) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4382,10 +4382,14 @@ function _syncExecPanelPos() {
   inner.style.left  = rect.left + 'px';
   inner.style.width = rect.width + 'px';
 
-  // height: 固定された top から board 下端までをクリップ
-  const fixedTop = parseFloat(inner.style.top) || 0;
-  const pBottom  = Math.min(rect.bottom, window.innerHeight - 10);
-  inner.style.height = Math.max(20, pBottom - fixedTop) + 'px';
+  // height: board が実際に画面下から消えるときだけクリップ（再レンダリング中の一時縮小は無視）
+  const fixedTop   = parseFloat(inner.style.top) || 0;
+  const fullHeight = window.innerHeight - 10 - fixedTop;
+  const isNearBottom = rect.bottom < window.innerHeight - 10 && rect.top < 0;
+  const pHeight = isNearBottom
+    ? Math.max(20, rect.bottom - fixedTop)
+    : Math.max(20, fullHeight);
+  inner.style.height = pHeight + 'px';
 
   // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
   const headerEl       = inner.querySelector('.section-header');
