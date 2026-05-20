@@ -4372,8 +4372,9 @@ function applyExecFixed() {
     flex      : '1',
     overflowY : 'hidden',
     minHeight : '0',
-    marginTop : '0',
-    transition: 'margin-top 0.15s ease-out',
+    // marginTop は syncExecScroll が管理する（ここでリセットすると flash の原因になる）
+    // transition は使わない（アニメーション中の clientHeight と style.marginTop の不一致が
+    // origTcH の誤計算を招き、カードがパネル底まで届かない原因になるため）
   });
 
   if (!_todayMouseBound) {
@@ -4481,8 +4482,10 @@ function syncExecScroll() {
   ));
 
   // tc は flex:1 のため marginTop 分だけ clientHeight が縮む
-  // → currentMargin を足して「marginTop=0 のときの高さ」を復元する
-  const currentMargin = parseFloat(tc.style.marginTop) || 0;
+  // → 実際に描画されている marginTop（getComputedStyle）+ clientHeight で元の高さを復元する
+  // tc.style.marginTop（目標値）ではなく getComputedStyle（実描画値）を使う理由:
+  // transition がある場合にアニメーション途中の clientHeight と不一致になるのを防ぐため
+  const currentMargin = parseFloat(getComputedStyle(tc).marginTop) || 0;
   const origTcH       = tc.clientHeight + currentMargin;
   const maxTc         = tc.scrollHeight - origTcH;
 
