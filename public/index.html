@@ -4448,7 +4448,7 @@ function syncExecScroll() {
     tc.scrollTop = Math.round(ratio * maxTc);
   } else {
     // タスクが少ない場合: 最大12pxまでスペースを広げ、それを維持
-    const MAX_SPACE = 12;
+    const MAX_SPACE = 30;
     tc.style.marginTop = Math.min(MAX_SPACE, Math.round(ratio * 200)) + 'px';
     tc.scrollTop = 0;
   }
