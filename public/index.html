@@ -4385,18 +4385,18 @@ function _syncExecPanelPos() {
   inner.style.left   = rect.left + 'px';
   inner.style.width  = rect.width + 'px';
 
-  // ヘッダー: スケジュール列のヘッダー下端が消えた分だけ縮める
-  const headerEl      = inner.querySelector('.section-header');
+  // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
+  const headerEl       = inner.querySelector('.section-header');
   const scheduleHeader = document.querySelector('.schedule-col > .section-header');
   if (headerEl) {
     const naturalH = inner._headerNaturalH || 38;
-    // shBottom: スケジュールヘッダーの下端のビューポート内 y 座標
-    //   naturalH → 0 の範囲で追従、そのまま今日やることヘッダーの高さにする
     const shBottom = scheduleHeader
       ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
       : Math.max(0, naturalH + rect.top);
-    headerEl.style.height   = shBottom + 'px';
-    headerEl.style.overflow = 'hidden';
+    // min-height:0 必須 → flex アイテムの min-height:auto を上書きしないと height:0 が効かない
+    headerEl.style.height    = shBottom + 'px';
+    headerEl.style.minHeight = '0px';
+    headerEl.style.overflow  = 'hidden';
   }
 
   syncExecScroll(); // ヘッダー高変化に合わせてカード位置を再計算
@@ -4415,7 +4415,7 @@ function resetExecFixed() {
   board.removeAttribute('style');
   if (inner) {
     const headerEl = inner.querySelector('.section-header');
-    if (headerEl) { headerEl.style.height = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
+    if (headerEl) { headerEl.style.height = ''; headerEl.style.minHeight = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
     inner.removeAttribute('style');
   }
   const tc = document.getElementById('today-tasks');
