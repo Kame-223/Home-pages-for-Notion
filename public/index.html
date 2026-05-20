@@ -4393,10 +4393,17 @@ function _syncExecPanelPos() {
     const shBottom = scheduleHeader
       ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
       : Math.max(0, naturalH + rect.top);
-    // min-height:0 必須 → flex アイテムの min-height:auto を上書きしないと height:0 が効かない
-    headerEl.style.height    = shBottom + 'px';
-    headerEl.style.minHeight = '0px';
-    headerEl.style.overflow  = 'hidden';
+    if (shBottom <= 0) {
+      // 完全に消す（display:none で padding も含め確実に非表示）
+      headerEl.style.display = 'none';
+    } else {
+      // 部分表示: border-box でパディング込みの高さを制御
+      headerEl.style.display   = '';
+      headerEl.style.height    = shBottom + 'px';
+      headerEl.style.minHeight = '0px';
+      headerEl.style.boxSizing = 'border-box';
+      headerEl.style.overflow  = 'hidden';
+    }
   }
 
   syncExecScroll(); // ヘッダー高変化に合わせてカード位置を再計算
@@ -4415,7 +4422,7 @@ function resetExecFixed() {
   board.removeAttribute('style');
   if (inner) {
     const headerEl = inner.querySelector('.section-header');
-    if (headerEl) { headerEl.style.height = ''; headerEl.style.minHeight = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
+    if (headerEl) { headerEl.style.display = ''; headerEl.style.height = ''; headerEl.style.minHeight = ''; headerEl.style.boxSizing = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
     inner.removeAttribute('style');
   }
   const tc = document.getElementById('today-tasks');
