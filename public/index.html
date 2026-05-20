@@ -4447,22 +4447,21 @@ let _tbResizeObs = null;
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const tc    = document.getElementById('today-tasks');
-  const board = document.querySelector('.today-board');
-  if (!tc || !board) return;
+  const inner = document.getElementById('today-board-inner');
+  const sc    = document.querySelector('.schedule-col');
+  if (!tc || !inner || !sc) return;
 
-  // today-board のスクロール範囲を基準に ratio を計算する
-  // → カレンダー末尾に達したとき ratio=1 になりカードが今日やることエリアの底まで移動する
-  const boardH      = board.offsetHeight;
-  const scrollRange = boardH - window.innerHeight;
-  let ratio;
-  if (scrollRange > 0) {
-    const boardTop = board.getBoundingClientRect().top + window.scrollY;
-    ratio = Math.min(1, Math.max(0, (window.scrollY - boardTop) / scrollRange));
-  } else {
-    // ボードがビューポートより短い場合はページ全体比率にフォールバック
-    const maxPage = Math.max(1, document.body.scrollHeight - window.innerHeight);
-    ratio = Math.min(1, Math.max(0, window.scrollY / maxPage));
-  }
+  // schedule-col（カレンダー列）の viewport 基準 bottom を使ってスクロール進捗を求める。
+  // today-board と同じグリッド行なので sc.offsetHeight = 行高さ = 今日やることエリアの高さ。
+  // scBottom が scH（行が画面に入り始め）→ stickyH（行が画面から出きる直前）へ変化する
+  // 区間で ratio 0→1 にすることで、カードがエリア末尾まで正確に追従する。
+  const stickyH     = inner.offsetHeight;
+  const scH         = sc.offsetHeight;
+  const scBottom    = sc.getBoundingClientRect().bottom;
+  const scrollRange = scH - stickyH;
+  const ratio = scrollRange > 0
+    ? Math.min(1, Math.max(0, (scH - scBottom) / scrollRange))
+    : 0;
 
   // tc は flex:1 のため marginTop 分だけ clientHeight が縮む
   // → 現在の marginTop を足して「marginTop=0 のときの高さ」を復元する
