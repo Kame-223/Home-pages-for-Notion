@@ -4295,38 +4295,13 @@ function completeFocus() {
 // ===== モード切替 =====
 let currentMode = 'select';
 
-// B モード：overflow時にカーソルがパネル上にある場合のみ独立スクロールを有効化
-function _todayMouseEnter() {
-  const tc = document.getElementById('today-tasks');
-  if (tc && tc.scrollHeight > tc.clientHeight) {
-    tc.style.overflowY = 'auto';
-  }
-}
-function _todayMouseLeave() {
-  const tc = document.getElementById('today-tasks');
-  if (tc) tc.style.overflowY = 'hidden';
-}
-let _todayMouseBound = false;
-
-// sticky + overflow:hidden の組み合わせで Chrome がホイールイベントを消費する問題を回避
-// パネル上のホイールを明示的に window.scrollBy に転送する
-let _todayWheelBound = false;
-function _todayWheelHandler(e) {
-  if (currentMode !== 'exec') return;
-  // B モード中（タスクが溢れていてtcが独立スクロール中）は tc に任せる
-  const tc = document.getElementById('today-tasks');
-  if (tc && tc.style.overflowY === 'auto') return;
-  e.preventDefault();
-  window.scrollBy({ top: e.deltaY, left: 0, behavior: 'auto' });
-}
-
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: overflow:visible → sticky が viewport を scroll container にする
+  // board: overflow:visible にして sticky の制約を外す
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
@@ -4334,21 +4309,17 @@ function applyExecFixed() {
     overflow  : 'visible',
   });
 
-  // body に移動していた場合は元に戻す
   if (inner.parentElement === document.body) {
     board.insertBefore(inner, board.firstChild);
   }
 
-  // inner: position:sticky でカレンダーと同位置に固定
-  // top=0: board.top>0 の間は自然位置に追随、board.top<=0 でビューポート上端に吸着
-  // top>0 を使うと「スクロール前の board.top 値」でパネルが固定されギャップが生じる
-  const stickyTop = 0;
+  // inner: position:sticky でビューポートに固定
   Object.assign(inner.style, {
     position     : 'sticky',
-    top          : stickyTop + 'px',
+    top          : '0px',
     width        : '100%',
-    height       : 'calc(100vh - 10px)',  // JS 計算なし、CSS で常に正確
-    alignSelf    : 'flex-start',          // flex の stretch を無効化
+    height       : 'calc(100vh - 10px)',
+    alignSelf    : 'flex-start',
     flex         : 'none',
     display      : 'flex',
     flexDirection: 'column',
@@ -4360,38 +4331,25 @@ function applyExecFixed() {
     boxSizing    : 'border-box',
   });
 
-  // ヘッダーの自然な高さと sticky の基準 top を記録
   const headerEl = inner.querySelector('.section-header');
   if (headerEl) {
     inner._headerNaturalH = headerEl.offsetHeight || 38;
     headerEl.style.flexShrink = '0';
   }
-  inner._stickyBaseTop = stickyTop; // スクロール連動の基準値
+  inner._stickyBaseTop = 0;
 
+  // tc: justify-content:flex-end でカードを常にパネル下端に固定する
+  // overflow-y:auto でタスクが多い場合は内部スクロール可能
   Object.assign(tc.style, {
-    flex      : '1',
-    overflowY : 'hidden',
-    minHeight : '0',
-    // marginTop は syncExecScroll が管理する（ここでリセットすると flash の原因になる）
-    // transition は使わない（アニメーション中の clientHeight と style.marginTop の不一致が
-    // origTcH の誤計算を招き、カードがパネル底まで届かない原因になるため）
+    flex          : '1',
+    minHeight     : '0',
+    overflowY     : 'auto',
+    display       : 'flex',
+    flexDirection : 'column',
+    justifyContent: 'flex-end',
   });
 
-  if (!_todayMouseBound) {
-    inner.addEventListener('mouseenter', _todayMouseEnter);
-    inner.addEventListener('mouseleave', _todayMouseLeave);
-    _todayMouseBound = true;
-  }
-
-  // fixed 要素上のホイールを window に転送（固定要素がイベントを消費する場合の対策）
-  if (!_todayWheelBound) {
-    inner.addEventListener('wheel', _todayWheelHandler, { passive: false });
-    _todayWheelBound = true;
-  }
-
-  _refreshExecScrollCache(); // boardTop / scrollRange を確定
   _syncExecPanelPos();
-  syncExecScroll();
 }
 
 // スクロール時: sticky の top をカレンダーヘッダーと連動させてヘッダーを自然に消す
@@ -4411,10 +4369,8 @@ function _syncExecPanelPos() {
 
   // カレンダーヘッダーが消えた分だけパネル全体を上にずらす
   // → 「今日やること」ヘッダーもカレンダーと完全に同じ速度・タイミングで消える
-  const headerGone = naturalH - shVisible; // 消えた量（0〜naturalH）
+  const headerGone = naturalH - shVisible;
   inner.style.top  = (stickyBaseTop - headerGone) + 'px';
-
-  syncExecScroll();
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
@@ -4422,15 +4378,6 @@ function resetExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   if (!board) return;
-  if (inner && _todayMouseBound) {
-    inner.removeEventListener('mouseenter', _todayMouseEnter);
-    inner.removeEventListener('mouseleave', _todayMouseLeave);
-    _todayMouseBound = false;
-  }
-  if (inner && _todayWheelBound) {
-    inner.removeEventListener('wheel', _todayWheelHandler);
-    _todayWheelBound = false;
-  }
   board.removeAttribute('style');
   if (inner) {
     if (inner.parentElement === document.body) {
@@ -4445,62 +4392,6 @@ function resetExecFixed() {
 }
 
 let _tbResizeObs = null;
-
-// ===== exec scroll キャッシュ =====
-// boardTop と scrollRange はドキュメント座標で固定値（スクロール中に変わらない）。
-// スクロールのたびに再計算せず、exec モード開始時に1回だけキャッシュする。
-let _execBoardTop    = 0;
-let _execScrollRange = 0;
-
-function _refreshExecScrollCache() {
-  const sc    = document.querySelector('.schedule-col');
-  const inner = document.getElementById('today-board-inner');
-  if (!sc || !inner) return;
-  const scH     = sc.offsetHeight;
-  const stickyH = inner.offsetHeight;   // calc(100vh - 10px) が適用済みの実高さ
-  if (scH < 100 || stickyH < 100) return; // レンダリング未完了なら無視
-  _execBoardTop    = sc.getBoundingClientRect().top + window.scrollY;
-  _execScrollRange = Math.max(0, scH - stickyH);
-}
-
-window.addEventListener('resize', () => {
-  if (currentMode === 'exec') _refreshExecScrollCache();
-}, { passive: true });
-
-function syncExecScroll() {
-  if (currentMode !== 'exec') return;
-  const tc = document.getElementById('today-tasks');
-  if (!tc) return;
-
-  // キャッシュがなければ取得試行
-  if (_execScrollRange <= 0) _refreshExecScrollCache();
-  if (_execScrollRange <= 0) return;
-
-  // ratio: 0 = カレンダー先頭（カード TOP）、1 = カレンダー末尾（カード BOTTOM）
-  const ratio = Math.min(1, Math.max(0,
-    (window.scrollY - _execBoardTop) / _execScrollRange
-  ));
-
-  // tc は flex:1 のため marginTop 分だけ clientHeight が縮む
-  // → 実際に描画されている marginTop（getComputedStyle）+ clientHeight で元の高さを復元する
-  // tc.style.marginTop（目標値）ではなく getComputedStyle（実描画値）を使う理由:
-  // transition がある場合にアニメーション途中の clientHeight と不一致になるのを防ぐため
-  const currentMargin = parseFloat(getComputedStyle(tc).marginTop) || 0;
-  const origTcH       = tc.clientHeight + currentMargin;
-  const maxTc         = tc.scrollHeight - origTcH;
-
-  if (maxTc > 0) {
-    // タスクが溢れる: scrollTop でスクロール
-    tc.style.marginTop = '0';
-    tc.scrollTop = Math.round(ratio * maxTc);
-  } else {
-    // タスクが少ない: 空きスペースを使って上下に移動
-    const maxMargin = Math.max(0, origTcH - tc.scrollHeight);
-    tc.style.marginTop = Math.round(ratio * maxMargin) + 'px';
-    tc.scrollTop = 0;
-  }
-}
-window.addEventListener('scroll', syncExecScroll, { passive: true });
 
 function setMode(mode) {
   currentMode = mode;
@@ -4544,9 +4435,6 @@ function setMode(mode) {
       // scrollend イベント（Chrome 114+）+ 1.2秒フォールバック
       window.addEventListener('scrollend', _doApply, { once: true });
       setTimeout(_doApply, 1200);
-      // FullCalendar の遅延描画が完了した後にキャッシュを再確定
-      setTimeout(() => { if (currentMode === 'exec') _refreshExecScrollCache(); }, 300);
-      setTimeout(() => { if (currentMode === 'exec') _refreshExecScrollCache(); }, 1500);
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
