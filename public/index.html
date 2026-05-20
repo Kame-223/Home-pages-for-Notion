@@ -4321,14 +4321,14 @@ function applyExecFixed() {
     minHeight : '0',
   });
 
-  // inner: position:fixed でビューポートの右列に固定
+  // inner: position:fixed でビューポートの右列に固定（高さは _syncExecPanelPos が動的に計算）
   const rect = board.getBoundingClientRect();
   Object.assign(inner.style, {
     position     : 'fixed',
     top          : '10px',
     left         : rect.left + 'px',
     width        : rect.width + 'px',
-    height       : 'calc(100vh - 20px)',
+    height       : (window.innerHeight - 20) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4351,22 +4351,34 @@ function applyExecFixed() {
     _todayMouseBound = true;
   }
 
+  _syncExecPanelPos(); // 位置・高さを正確に反映してから
   syncExecScroll();
 }
 
-// スクロール・リサイズ時にパネルの位置と表示状態を同期
+// スクロール・リサイズ時にパネルの位置・高さ・表示状態を同期
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   if (!board || !inner || inner.style.position !== 'fixed') return;
   const rect = board.getBoundingClientRect();
-  // カレンダー列が画面外に出たらパネルを非表示（振り返り等への重複防止）
-  const visible = rect.bottom > 20 && rect.top < window.innerHeight - 20;
-  inner.style.display = visible ? 'flex' : 'none';
-  // ウィンドウ幅変化に追従
-  inner.style.left  = rect.left + 'px';
-  inner.style.width = rect.width + 'px';
+
+  const pTop    = 10;
+  // パネル下端 = today-board の下端 と ビューポート下端10px手前 の小さい方
+  const pBottom = Math.min(rect.bottom, window.innerHeight - 10);
+  const pHeight = pBottom - pTop;
+
+  // board が完全に画面外、またはパネル高さが細すぎる → 非表示
+  if (pHeight < 80 || rect.bottom < pTop || rect.top > window.innerHeight) {
+    inner.style.display = 'none';
+    return;
+  }
+
+  inner.style.display = 'flex';
+  inner.style.top    = pTop + 'px';
+  inner.style.height = pHeight + 'px';
+  inner.style.left   = rect.left + 'px';
+  inner.style.width  = rect.width + 'px';
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
