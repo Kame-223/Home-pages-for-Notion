@@ -4321,14 +4321,12 @@ function applyExecFixed() {
     minHeight : '0',
   });
 
-  // inner: position:fixed でビューポートの右列に固定（高さは _syncExecPanelPos が動的に計算）
+  // inner: position:fixed の骨格だけ設定（top/height/left/width は _syncExecPanelPos が計算）
   const rect = board.getBoundingClientRect();
   Object.assign(inner.style, {
     position     : 'fixed',
-    top          : '10px',
     left         : rect.left + 'px',
     width        : rect.width + 'px',
-    height       : (window.innerHeight - 20) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4363,7 +4361,8 @@ function _syncExecPanelPos() {
   if (!board || !inner || inner.style.position !== 'fixed') return;
   const rect = board.getBoundingClientRect();
 
-  const pTop    = 10;
+  // パネル上端 = today-board の上端に合わせ、最低 10px（スクロールで上にスライド）
+  const pTop    = Math.max(10, rect.top);
   // パネル下端 = today-board の下端 と ビューポート下端10px手前 の小さい方
   const pBottom = Math.min(rect.bottom, window.innerHeight - 10);
   const pHeight = pBottom - pTop;
