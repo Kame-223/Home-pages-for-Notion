@@ -4314,18 +4314,20 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: グリッドで高さを決める（カレンダーと同じ高さになる）
-  // overflow は CSS デフォルト 'hidden' のまま → sticky の containing block になる
+  // board: グリッド内に残してレイアウト（高さ）を維持、見た目だけ消す
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
     minHeight : '0',
   });
 
-  // inner: sticky でビューポートに貼り付く
+  // inner: position:fixed でビューポートの右列に固定
+  const rect = board.getBoundingClientRect();
   Object.assign(inner.style, {
-    position     : 'sticky',
+    position     : 'fixed',
     top          : '10px',
+    left         : rect.left + 'px',
+    width        : rect.width + 'px',
     height       : 'calc(100vh - 20px)',
     display      : 'flex',
     flexDirection: 'column',
@@ -4337,7 +4339,7 @@ function applyExecFixed() {
     boxSizing    : 'border-box',
   });
 
-  // A モード：デフォルトは overflow-y:hidden → ホイールがページへ → syncExecScroll が動く
+  // A モード：overflow-y:hidden → ホイールがページへバブル → syncExecScroll が動く
   Object.assign(tc.style, {
     flex: '1', overflowY: 'hidden', minHeight: '0', marginTop: '0',
   });
@@ -4351,6 +4353,22 @@ function applyExecFixed() {
 
   syncExecScroll();
 }
+
+// スクロール・リサイズ時にパネルの位置と表示状態を同期
+function _syncExecPanelPos() {
+  if (currentMode !== 'exec') return;
+  const board = document.querySelector('.today-board');
+  const inner = document.getElementById('today-board-inner');
+  if (!board || !inner || inner.style.position !== 'fixed') return;
+  const rect = board.getBoundingClientRect();
+  // カレンダー列が画面外に出たらパネルを非表示（振り返り等への重複防止）
+  const visible = rect.bottom > 20 && rect.top < window.innerHeight - 20;
+  inner.style.display = visible ? 'flex' : 'none';
+  // ウィンドウ幅変化に追従
+  inner.style.left  = rect.left + 'px';
+  inner.style.width = rect.width + 'px';
+}
+window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
 function resetExecFixed() {
   const board = document.querySelector('.today-board');
@@ -4418,7 +4436,7 @@ function setMode(mode) {
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       applyExecFixed();
       if (_tbResizeObs) _tbResizeObs.disconnect();
-      _tbResizeObs = new ResizeObserver(applyExecFixed);
+      _tbResizeObs = new ResizeObserver(_syncExecPanelPos);
       const sc = document.querySelector('.schedule-col');
       if (sc) _tbResizeObs.observe(sc);
     });
