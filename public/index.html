@@ -4343,6 +4343,8 @@ function applyExecFixed() {
     left         : rect.left + 'px',
     width        : rect.width + 'px',
     height       : (window.innerHeight - 10) + 'px',
+    // flex:none で body{display:flex} がこの要素の高さを制御しないようにする
+    flex         : 'none',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4350,7 +4352,7 @@ function applyExecFixed() {
     background   : 'rgba(13,13,26,0.72)',
     border       : '0.5px solid rgba(255,255,255,0.12)',
     borderRadius : '10px',
-    boxSizing    : 'border-box',
+    boxSizing     : 'border-box',
   });
 
   // ヘッダーの自然な高さを記録
