@@ -4308,6 +4308,15 @@ function _todayMouseLeave() {
 }
 let _todayMouseBound = false;
 
+// sticky + overflow:hidden の組み合わせで Chrome がホイールイベントを消費する問題を回避
+// パネル上のホイールを明示的に window.scrollBy に転送する
+let _todayWheelBound = false;
+function _todayWheelHandler(e) {
+  if (currentMode !== 'exec') return;
+  e.preventDefault();
+  window.scrollBy({ top: e.deltaY, left: 0, behavior: 'auto' });
+}
+
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
@@ -4365,6 +4374,12 @@ function applyExecFixed() {
     _todayMouseBound = true;
   }
 
+  // ホイールイベントを window に転送（sticky+overflow:hidden がイベントを消費するのを回避）
+  if (!_todayWheelBound) {
+    inner.addEventListener('wheel', _todayWheelHandler, { passive: false });
+    _todayWheelBound = true;
+  }
+
   _syncExecPanelPos();
   syncExecScroll();
 }
@@ -4406,6 +4421,10 @@ function resetExecFixed() {
     inner.removeEventListener('mouseenter', _todayMouseEnter);
     inner.removeEventListener('mouseleave', _todayMouseLeave);
     _todayMouseBound = false;
+  }
+  if (inner && _todayWheelBound) {
+    inner.removeEventListener('wheel', _todayWheelHandler);
+    _todayWheelBound = false;
   }
   board.removeAttribute('style');
   if (inner) {
