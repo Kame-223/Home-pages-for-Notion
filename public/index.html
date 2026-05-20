@@ -4321,15 +4321,14 @@ function applyExecFixed() {
     minHeight : '0',
   });
 
-  // inner: position:fixed で配置（top は今この瞬間の board 位置に固定、スクロールで動かさない）
+  // inner: position:fixed、top=0 で固定（動的計算なし）
   const rect = board.getBoundingClientRect();
-  const initTop = Math.max(0, rect.top);
   Object.assign(inner.style, {
     position     : 'fixed',
-    top          : initTop + 'px',
+    top          : '0px',
     left         : rect.left + 'px',
     width        : rect.width + 'px',
-    height       : (window.innerHeight - 10 - initTop) + 'px',
+    height       : (window.innerHeight - 10) + 'px',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4478,10 +4477,17 @@ function setMode(mode) {
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       applyExecFixed();
       if (_tbResizeObs) _tbResizeObs.disconnect();
-      // 二重 rAF でレイアウト安定後に applyExecFixed（FC 再レンダリング中の一時縮小を無視）
-      _tbResizeObs = new ResizeObserver(() =>
-        requestAnimationFrame(() => requestAnimationFrame(applyExecFixed))
-      );
+      // リサイズ時は left/width/height のみ更新（top=0 は不変）
+      _tbResizeObs = new ResizeObserver(() => requestAnimationFrame(() => {
+        if (currentMode !== 'exec') return;
+        const b = document.querySelector('.today-board');
+        const i = document.getElementById('today-board-inner');
+        if (!b || !i || i.style.position !== 'fixed') return;
+        const r = b.getBoundingClientRect();
+        i.style.left   = r.left + 'px';
+        i.style.width  = r.width + 'px';
+        i.style.height = (window.innerHeight - 10) + 'px';
+      }));
       const sc = document.querySelector('.schedule-col');
       if (sc) _tbResizeObs.observe(sc);
     });
