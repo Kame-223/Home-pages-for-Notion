@@ -4430,17 +4430,18 @@ function syncExecScroll() {
   const tc = document.getElementById('today-tasks');
   if (!tc) return;
 
-  const delta    = Math.max(0, window.scrollY - _execBaseScrollY);
-  const maxDelta = Math.max(1, document.body.scrollHeight - window.innerHeight - _execBaseScrollY);
-  const ratio    = Math.min(1, delta / maxDelta);
-  const maxTc    = tc.scrollHeight - tc.clientHeight;
+  // Eモード開始位置からのスクロール量（px）
+  const delta = Math.max(0, window.scrollY - _execBaseScrollY);
+  const maxTc = tc.scrollHeight - tc.clientHeight;
 
   if (maxTc > 0) {
+    // タスクが溢れる場合: scrollTop でタスク一覧をスクロール
+    const ratio = Math.min(1, delta / Math.max(1, document.body.scrollHeight - window.innerHeight - _execBaseScrollY));
     tc.style.marginTop = '0';
     tc.scrollTop = Math.round(ratio * maxTc);
   } else {
-    const MAX_SPACE = 30;
-    tc.style.marginTop = Math.min(MAX_SPACE, Math.round(ratio * 200)) + 'px';
+    // タスクが少ない場合: 1px スクロール = 1px 移動、最大 100px
+    tc.style.marginTop = Math.min(100, delta) + 'px';
     tc.scrollTop = 0;
   }
 }
