@@ -4315,8 +4315,8 @@ function applyExecFixed() {
   if (!board || !inner || !tc) return;
 
   // board: グリッドで高さを決める（カレンダーと同じ高さになる）
+  // overflow は CSS デフォルト 'hidden' のまま → sticky の containing block になる
   Object.assign(board.style, {
-    overflow  : 'visible',
     background: 'transparent',
     border    : 'none',
     minHeight : '0',
