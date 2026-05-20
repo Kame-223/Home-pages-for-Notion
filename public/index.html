@@ -4323,27 +4323,29 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: グリッドに残してレイアウト維持、見た目だけ消す
+  // board: overflow:visible → sticky が viewport を scroll container にする
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
     minHeight : '0',
+    overflow  : 'visible',
   });
 
-  // inner を document.body 直下に移動（全ての CSS 制約・overflow clipping から解放）
-  if (inner.parentElement !== document.body) {
-    document.body.appendChild(inner);
+  // body に移動していた場合は元に戻す
+  if (inner.parentElement === document.body) {
+    board.insertBefore(inner, board.firstChild);
   }
 
-  // position:fixed でビューポートに固定（top:0, height:フルビューポート）
-  const rect = board.getBoundingClientRect();
+  // inner: position:sticky でカレンダーと同位置に固定
+  // scrollend 後に呼ばれるため board.top は最終スクロール位置を反映
+  const rect      = board.getBoundingClientRect();
+  const stickyTop = Math.max(0, Math.round(rect.top));
   Object.assign(inner.style, {
-    position     : 'fixed',
-    top          : '0',
-    left         : rect.left + 'px',
-    width        : rect.width + 'px',
-    height       : (window.innerHeight - 10) + 'px',
-    // flex:none で body{display:flex} がこの要素の高さを制御しないようにする
+    position     : 'sticky',
+    top          : stickyTop + 'px',
+    width        : '100%',
+    height       : 'calc(100vh - 10px)',  // JS 計算なし、CSS で常に正確
+    alignSelf    : 'flex-start',          // flex の stretch を無効化
     flex         : 'none',
     display      : 'flex',
     flexDirection: 'column',
@@ -4352,7 +4354,7 @@ function applyExecFixed() {
     background   : 'rgba(13,13,26,0.72)',
     border       : '0.5px solid rgba(255,255,255,0.12)',
     borderRadius : '10px',
-    boxSizing     : 'border-box',
+    boxSizing    : 'border-box',
   });
 
   // ヘッダーの自然な高さを記録
@@ -4386,23 +4388,11 @@ function applyExecFixed() {
   syncExecScroll();
 }
 
-// スクロール時: left/width 更新 + ヘッダー collapse + カード sync
+// スクロール時: ヘッダー collapse + カード sync（sticky が位置を自動管理）
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const inner = document.getElementById('today-board-inner');
-  if (!inner || inner.style.position !== 'fixed') return;
-  const board = document.querySelector('.today-board');
-
-  // left/width: リサイズ対応（height は触らない）
-  if (board) {
-    const rect = board.getBoundingClientRect();
-    inner.style.left  = rect.left + 'px';
-    inner.style.width = rect.width + 'px';
-    // board が完全に画面外なら非表示
-    const offScreen = rect.bottom < 0 || rect.top > window.innerHeight;
-    inner.style.display = offScreen ? 'none' : 'flex';
-    if (offScreen) { syncExecScroll(); return; }
-  }
+  if (!inner || inner.style.position !== 'sticky') return;
 
   // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
   const headerEl       = inner.querySelector('.section-header');
@@ -4489,7 +4479,6 @@ function setMode(mode) {
   updateExecHint();
   if (!isSelect) {
     requestAnimationFrame(() => {
-      // ページを現在時刻付近にスクロール → 落ち着いたら固定パネル配置
       const now = new Date();
       const minH = _calEarly ? 3 : 6;
       const hoursFromStart = Math.max(0, now.getHours() + now.getMinutes() / 60 - minH);
@@ -4497,22 +4486,29 @@ function setMode(mode) {
       const fcEl = document.getElementById('fc-el');
       if (!fcEl) return;
       const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
-      const target = calTop + hoursFromStart * pxPerHour - window.innerHeight / 2;
-      window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-      applyExecFixed();
-      if (_tbResizeObs) _tbResizeObs.disconnect();
-      // リサイズ時は left/width のみ更新（height は触らない）
-      _tbResizeObs = new ResizeObserver(() => requestAnimationFrame(() => {
-        if (currentMode !== 'exec') return;
-        const b = document.querySelector('.today-board');
-        const i = document.getElementById('today-board-inner');
-        if (!b || !i || i.style.position !== 'fixed') return;
-        const r = b.getBoundingClientRect();
-        i.style.left  = r.left + 'px';
-        i.style.width = r.width + 'px';
-      }));
-      const sc = document.querySelector('.schedule-col');
-      if (sc) _tbResizeObs.observe(sc);
+      const target = Math.max(0, calTop + hoursFromStart * pxPerHour - window.innerHeight / 2);
+      window.scrollTo({ top: target, behavior: 'smooth' });
+
+      // スクロール完了後に applyExecFixed を呼ぶ（board.top が最終位置を反映するため）
+      let _applied = false;
+      const _doApply = () => {
+        if (_applied) return;
+        _applied = true;
+        window.removeEventListener('scrollend', _doApply);
+        applyExecFixed();
+        if (_tbResizeObs) _tbResizeObs.disconnect();
+        _tbResizeObs = new ResizeObserver(() => requestAnimationFrame(() => {
+          if (currentMode !== 'exec') return;
+          const i = document.getElementById('today-board-inner');
+          if (!i || i.style.position !== 'sticky') return;
+          // sticky は width:100% で自動追従、height も calc(100vh) で固定
+        }));
+        const sc = document.querySelector('.schedule-col');
+        if (sc) _tbResizeObs.observe(sc);
+      };
+      // scrollend イベント（Chrome 114+）+ 1秒フォールバック
+      window.addEventListener('scrollend', _doApply, { once: true });
+      setTimeout(_doApply, 1000);
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
