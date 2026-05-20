@@ -4314,14 +4314,19 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board: グリッド内に残してレイアウト（高さ）を維持、見た目だけ消す
+  // board: グリッドに残して列幅を維持、見た目だけ消す
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
     minHeight : '0',
   });
 
-  // inner: position:fixed、top=0 で固定（動的計算なし）
+  // inner を document.body 直下に移動（祖先の overflow:hidden や transform による
+  // position:fixed のクリッピング・含有ブロック変更を完全回避するポータルパターン）
+  if (inner.parentElement !== document.body) {
+    document.body.appendChild(inner);
+  }
+
   const rect = board.getBoundingClientRect();
   Object.assign(inner.style, {
     position     : 'fixed',
@@ -4418,6 +4423,10 @@ function resetExecFixed() {
   }
   board.removeAttribute('style');
   if (inner) {
+    // inner を today-board の先頭に戻す（ポータルから元に戻す）
+    if (inner.parentElement === document.body) {
+      board.insertBefore(inner, board.firstChild);
+    }
     const headerEl = inner.querySelector('.section-header');
     if (headerEl) { headerEl.style.display = ''; headerEl.style.height = ''; headerEl.style.minHeight = ''; headerEl.style.boxSizing = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
     inner.removeAttribute('style');
