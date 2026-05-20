@@ -4294,10 +4294,20 @@ function completeFocus() {
 
 // ===== モード切替 =====
 let currentMode = 'select';
-// 実行モード：today-board を body 直下に移動 → position:fixed 確実に適用
-// ※ 位置はpage-wrapperの幾何から計算（DOM操作後も変わらない安定値）
-// 実行モード：stickyでヘッダー固定＋振り返りへの被り防止
-// position:sticky はコンテナ(today-board)の外に出られないので振り返りへの被りが CSS レベルで不可能
+
+// B モード：overflow時にカーソルがパネル上にある場合のみ独立スクロールを有効化
+function _todayMouseEnter() {
+  const tc = document.getElementById('today-tasks');
+  if (tc && tc.scrollHeight > tc.clientHeight) {
+    tc.style.overflowY = 'auto';
+  }
+}
+function _todayMouseLeave() {
+  const tc = document.getElementById('today-tasks');
+  if (tc) tc.style.overflowY = 'hidden';
+}
+let _todayMouseBound = false;
+
 function applyExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
@@ -4305,7 +4315,6 @@ function applyExecFixed() {
   if (!board || !inner || !tc) return;
 
   // board: グリッドで高さを決める（カレンダーと同じ高さになる）
-  // overflow:visible が必須 - これがないとstickyが親にクリップされて動かない
   Object.assign(board.style, {
     overflow  : 'visible',
     background: 'transparent',
@@ -4313,7 +4322,7 @@ function applyExecFixed() {
     minHeight : '0',
   });
 
-  // inner: sticky でビューポートに貼り付く（boardの下端で自動的に止まる）
+  // inner: sticky でビューポートに貼り付く
   Object.assign(inner.style, {
     position     : 'sticky',
     top          : '10px',
@@ -4328,10 +4337,18 @@ function applyExecFixed() {
     boxSizing    : 'border-box',
   });
 
-  // today-content: overflow:autoでA（ページスクロール連動）＋B（パネル内手動）両対応
+  // A モード：デフォルトは overflow-y:hidden → ホイールがページへ → syncExecScroll が動く
   Object.assign(tc.style, {
-    flex: '1', overflowY: 'auto', minHeight: '0',
+    flex: '1', overflowY: 'hidden', minHeight: '0',
   });
+
+  // B モード：mouseenter/leave で overflow を切り替え（1回だけ登録）
+  if (!_todayMouseBound) {
+    inner.addEventListener('mouseenter', _todayMouseEnter);
+    inner.addEventListener('mouseleave', _todayMouseLeave);
+    _todayMouseBound = true;
+  }
+
   syncExecScroll();
 }
 
@@ -4339,6 +4356,11 @@ function resetExecFixed() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   if (!board) return;
+  if (inner && _todayMouseBound) {
+    inner.removeEventListener('mouseenter', _todayMouseEnter);
+    inner.removeEventListener('mouseleave', _todayMouseLeave);
+    _todayMouseBound = false;
+  }
   board.removeAttribute('style');
   if (inner) inner.removeAttribute('style');
   const tc = document.getElementById('today-tasks');
@@ -4347,9 +4369,8 @@ function resetExecFixed() {
 
 let _tbResizeObs = null;
 
-// ページスクロールと today-content を連動
-// ページスクロールに合わせてタスクカードをスクロール（A モード）
-// 高さ制限は position:sticky が CSS レベルで自動処理するので不要
+// A モード：ページスクロールに比例して today-tasks.scrollTop を更新
+// overflow-y:hidden でも scrollTop は JS で変更可能 → カードがエリア内を移動
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const tc = document.getElementById('today-tasks');
