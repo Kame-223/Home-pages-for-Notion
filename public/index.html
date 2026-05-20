@@ -4451,7 +4451,12 @@ function syncExecScroll() {
 
   const maxPage = Math.max(1, document.body.scrollHeight - window.innerHeight);
   const ratio   = Math.min(1, Math.max(0, window.scrollY / maxPage));
-  const maxTc   = tc.scrollHeight - tc.clientHeight;
+
+  // tc は flex:1 のため marginTop 分だけ clientHeight が縮む
+  // → 現在の marginTop を足して「marginTop=0 のときの高さ」を復元する
+  const currentMargin = parseFloat(tc.style.marginTop) || 0;
+  const origTcH       = tc.clientHeight + currentMargin;
+  const maxTc         = tc.scrollHeight - origTcH;
 
   if (maxTc > 0) {
     // タスクが溢れる: scrollTop でスクロール（先頭〜末尾まで）
@@ -4459,8 +4464,7 @@ function syncExecScroll() {
     tc.scrollTop = Math.round(ratio * maxTc);
   } else {
     // タスクが少ない: タスクエリアの空きスペース全体を使って上下に移動
-    // maxMargin = エリアの高さ - コンテンツの高さ = カードが動ける最大量
-    const maxMargin = Math.max(0, tc.clientHeight - tc.scrollHeight);
+    const maxMargin = Math.max(0, origTcH - tc.scrollHeight);
     tc.style.marginTop = Math.round(ratio * maxMargin) + 'px';
     tc.scrollTop = 0;
   }
