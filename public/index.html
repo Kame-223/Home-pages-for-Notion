@@ -4378,18 +4378,10 @@ function _syncExecPanelPos() {
   }
   inner.style.display = 'flex';
 
-  // left/width のみ更新（リサイズ対応）、top は動かさない
+  // left/width のみ更新（リサイズ対応）
+  // top・height はスクロールで触らない → applyExecFixed でのみ設定
   inner.style.left  = rect.left + 'px';
   inner.style.width = rect.width + 'px';
-
-  // height: board が実際に画面下から消えるときだけクリップ（再レンダリング中の一時縮小は無視）
-  const fixedTop   = parseFloat(inner.style.top) || 0;
-  const fullHeight = window.innerHeight - 10 - fixedTop;
-  const isNearBottom = rect.bottom < window.innerHeight - 10 && rect.top < 0;
-  const pHeight = isNearBottom
-    ? Math.max(20, rect.bottom - fixedTop)
-    : Math.max(20, fullHeight);
-  inner.style.height = pHeight + 'px';
 
   // ヘッダー: スケジュール列のヘッダー下端に合わせて縮める
   const headerEl       = inner.querySelector('.section-header');
@@ -4486,7 +4478,10 @@ function setMode(mode) {
       window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       applyExecFixed();
       if (_tbResizeObs) _tbResizeObs.disconnect();
-      _tbResizeObs = new ResizeObserver(applyExecFixed);
+      // 二重 rAF でレイアウト安定後に applyExecFixed（FC 再レンダリング中の一時縮小を無視）
+      _tbResizeObs = new ResizeObserver(() =>
+        requestAnimationFrame(() => requestAnimationFrame(applyExecFixed))
+      );
       const sc = document.querySelector('.schedule-col');
       if (sc) _tbResizeObs.observe(sc);
     });
