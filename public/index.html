@@ -4418,82 +4418,14 @@ function _syncExecPanelPos() {
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
-// ===== DEBUG OVERLAY (一時的) =====
-function _updateDebug(vals) {
-  let el = document.getElementById('_exec_dbg');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = '_exec_dbg';
-    el.style.cssText = [
-      'position:fixed', 'bottom:60px', 'right:12px', 'z-index:9999',
-      'background:rgba(0,0,0,0.85)', 'color:#0f0', 'font-size:11px',
-      'font-family:monospace', 'padding:8px 10px', 'border-radius:6px',
-      'pointer-events:none', 'line-height:1.7', 'min-width:220px',
-    ].join(';');
-    document.body.appendChild(el);
-  }
-  el.innerHTML = vals.map(([k,v]) => `<b>${k}</b>: ${v}`).join('<br>');
-  el.style.display = '';
-}
-function _hideDebug() {
-  const el = document.getElementById('_exec_dbg');
-  if (el) el.style.display = 'none';
-}
 
-// ページスクロールに連動して tc 内のカードを上→下へ移動させる
-// tc.scrollHeight は flex:1+overflow:hidden 時に clientHeight に切り上がるため使わない
-// → today-tasks-wrap.offsetHeight で実際のコンテンツ高さを取得し
-//    transform:translateY でラッパーを移動する（レイアウト非破壊）
-function syncExecScroll() {
-  if (currentMode !== 'exec') return;
-  const tc    = document.getElementById('today-tasks');
-  const board = document.querySelector('.today-board');
-  const inner = document.getElementById('today-board-inner');
-  const wrap  = document.getElementById('today-tasks-wrap');
-  if (!tc || !board || !inner || !wrap) return;
-
-  const boardH      = board.offsetHeight;
-  const stickyH     = inner.offsetHeight;
-  const boardBottom = board.getBoundingClientRect().bottom;
-  const scrollRange = boardH - stickyH;
-
-  const ratio = scrollRange > 0
-    ? Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange))
-    : 0;
-
-  // contentH = 実際のコンテンツ高さ（wrap.offsetHeight は overflow:hidden に影響されない）
-  const contentH  = wrap.offsetHeight;
-  // translateY: 正 = 下へ（コンテンツが収まる場合）、負 = 上へ（コンテンツが溢れる場合）
-  const translateY = Math.round(ratio * (tc.clientHeight - contentH));
-  wrap.style.transform = `translateY(${translateY}px)`;
-
-  _updateDebug([
-    ['scrollY',     Math.round(window.scrollY)],
-    ['board.h',     boardH],
-    ['board.bot',   Math.round(boardBottom)],
-    ['scrollRange', scrollRange],
-    ['ratio',       ratio.toFixed(3)],
-    ['tc.ch',       tc.clientHeight],
-    ['contentH',    contentH],
-    ['translateY',  translateY],
-  ]);
-}
+function syncExecScroll() {}
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
-// rAF ループ：スクロールイベントを補完（取りこぼし防止）
 let _execRafId = null;
-function _startExecRaf() {
-  if (_execRafId) return;
-  const loop = () => {
-    if (currentMode !== 'exec') { _execRafId = null; _hideDebug(); return; }
-    syncExecScroll();
-    _execRafId = requestAnimationFrame(loop);
-  };
-  _execRafId = requestAnimationFrame(loop);
-}
+function _startExecRaf() {}
 function _stopExecRaf() {
   if (_execRafId) { cancelAnimationFrame(_execRafId); _execRafId = null; }
-  _hideDebug();
 }
 
 function resetExecFixed() {
