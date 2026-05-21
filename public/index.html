@@ -347,9 +347,8 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-/* 整時: laneとlabel両方にborder-top。それ以外のlabelはborder除去 */
-.fc-timegrid-slot-label { border: none !important; overflow: visible !important; }
-.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-top: 1px solid rgba(255,255,255,0.3) !important; }
+/* labelの水平線は除去し、右境界線のみ残す。laneのみ整時border-top */
+.fc-timegrid-slot-label { border-top: none !important; border-bottom: none !important; border-left: none !important; border-right: 1px solid rgba(255,255,255,0.2) !important; overflow: visible !important; }
 .fc-timegrid-slot:not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.3) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
@@ -2268,7 +2267,6 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
-      // cushionをabsolute+top:0で線の位置に固定し、translateY(-50%)で上下中央揃え
       arg.el.style.overflow = 'visible';
       arg.el.style.position = 'relative';
       cushion.style.position = 'absolute';
