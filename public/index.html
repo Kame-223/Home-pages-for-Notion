@@ -1541,6 +1541,7 @@ body::before {
 </style>
 </head>
 <body>
+<div id="_execDbg" style="position:fixed!important;bottom:10px!important;left:10px!important;z-index:999999!important;background:rgba(0,0,0,0.9)!important;color:#0f0!important;font-family:monospace!important;font-size:12px!important;padding:8px 10px!important;border-radius:6px!important;line-height:1.6!important;pointer-events:none!important;white-space:pre!important;display:block!important">LOADING...</div>
 <div class="page-wrapper">
 
 <!-- サイドバー -->
@@ -4445,20 +4446,10 @@ function syncExecScroll() {
   wrap.style.transform = `translateY(${ty}px)`;
 }
 
-// 常時表示デバッグパネル（常に左下に出る）
+// 常時表示デバッグパネル
 setInterval(() => {
-  let dbg = document.getElementById('_execDbg');
-  if (!dbg) {
-    dbg = document.createElement('div');
-    dbg.id = '_execDbg';
-    Object.assign(dbg.style, {
-      position:'fixed', bottom:'10px', left:'10px', zIndex:'9999',
-      background:'rgba(0,0,0,0.85)', color:'#0f0', fontFamily:'monospace',
-      fontSize:'11px', padding:'8px', borderRadius:'6px', lineHeight:'1.5',
-      pointerEvents:'none', whiteSpace:'pre',
-    });
-    document.body.appendChild(dbg);
-  }
+  const dbg = document.getElementById('_execDbg');
+  if (!dbg) return;
   const tc    = document.getElementById('today-tasks');
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
