@@ -3193,15 +3193,6 @@ function renderAll() {
     </div>`;
   }
   todayEl.innerHTML = todayHtml;
-  // exec モードではコンテンツをラッパーdivで包む
-  // → tc.scrollHeight が flex:1+overflow:hidden 時に clientHeight に切り上げられる問題を回避
-  // → ラッパーの offsetHeight で実際のコンテンツ高さを正確に取得できる
-  if (currentMode === 'exec') {
-    const wrap = document.createElement('div');
-    wrap.id = 'today-tasks-wrap';
-    while (todayEl.firstChild) wrap.appendChild(todayEl.firstChild);
-    todayEl.appendChild(wrap);
-  }
   requestAnimationFrame(initTodayDrag);
 
   // やり残し（1日の切り替わりは3:01基準）
@@ -4316,24 +4307,14 @@ function _todayWheelHandler(e) {
   window.scrollBy({ top: e.deltaY, behavior: 'auto' });
 }
 
-// exec スクロール同期のキャッシュ
-// boardTop と scrollRange はドキュメント座標で固定値なので exec 開始時に 1 回だけ計算する
-let _execBoardTop    = 0;
-let _execScrollRange = 0;
-
-function _cacheExecScrollRange() {
-  const sc    = document.querySelector('.schedule-col');
-  const inner = document.getElementById('today-board-inner');
-  if (!sc || !inner) return;
-  const scH     = sc.offsetHeight;
-  const stickyH = inner.offsetHeight; // calc(100vh-10px) が適用済みの実高さ
-  if (scH < 200 || stickyH < 200) return;
-  _execBoardTop    = sc.getBoundingClientRect().top + window.scrollY;
-  _execScrollRange = Math.max(1, scH - stickyH);
-}
-
 window.addEventListener('resize', () => {
-  if (currentMode === 'exec') _cacheExecScrollRange();
+  if (currentMode !== 'exec') return;
+  const board = document.querySelector('.today-board');
+  const inner = document.getElementById('today-board-inner');
+  if (!board || !inner) return;
+  const rect = board.getBoundingClientRect();
+  inner.style.left  = rect.left + 'px';
+  inner.style.width = rect.width + 'px';
 }, { passive: true });
 
 function applyExecFixed() {
@@ -4342,6 +4323,9 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
+  const rect = board.getBoundingClientRect();
+
+  // board はグリッド内の透明なスペーサーになる
   Object.assign(board.style, {
     background: 'transparent',
     border    : 'none',
@@ -4349,17 +4333,13 @@ function applyExecFixed() {
     overflow  : 'visible',
   });
 
-  if (inner.parentElement === document.body) {
-    board.insertBefore(inner, board.firstChild);
-  }
-
+  // inner を position:fixed でビューポートに固定
   Object.assign(inner.style, {
-    position     : 'sticky',
+    position     : 'fixed',
     top          : '0px',
-    width        : '100%',
+    left         : rect.left + 'px',
+    width        : rect.width + 'px',
     height       : 'calc(100vh - 10px)',
-    alignSelf    : 'flex-start',
-    flex         : 'none',
     display      : 'flex',
     flexDirection: 'column',
     overflow     : 'hidden',
@@ -4378,31 +4358,24 @@ function applyExecFixed() {
   inner._stickyBaseTop = 0;
 
   Object.assign(tc.style, {
-    flex    : '1',
+    flex     : '1',
     minHeight: '0',
-    overflow: 'hidden',  // wrap の transform による overflow を隠す
+    overflow : 'hidden',
   });
-  // wrap があれば transform をリセット
-  const wrap0 = document.getElementById('today-tasks-wrap');
-  if (wrap0) wrap0.style.transform = 'translateY(0)';
 
-  // ホイール転送リスナー（重複登録防止）
   if (!_todayWheelBound) {
     inner.addEventListener('wheel', _todayWheelHandler, { passive: false });
     _todayWheelBound = true;
   }
 
-  _cacheExecScrollRange();
   _syncExecPanelPos();
-  syncExecScroll();
-  _startExecRaf();
 }
 
-// スクロール時: sticky の top をカレンダーヘッダーと連動させてヘッダーを自然に消す
+// スクロール時: fixed パネルの top をカレンダーヘッダーと連動させてヘッダーを自然に消す
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const inner = document.getElementById('today-board-inner');
-  if (!inner || inner.style.position !== 'sticky') return;
+  if (!inner || inner.style.position !== 'fixed') return;
 
   const scheduleHeader = document.querySelector('.schedule-col > .section-header');
   const naturalH       = inner._headerNaturalH || 38;
@@ -4417,52 +4390,10 @@ function _syncExecPanelPos() {
   // → 「今日やること」ヘッダーもカレンダーと完全に同じ速度・タイミングで消える
   const headerGone = naturalH - shVisible;
   inner.style.top  = (stickyBaseTop - headerGone) + 'px';
-  syncExecScroll();
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
-
-// ページスクロールに連動して tc のコンテンツを上へスクロールさせる
-// scrollTop 方式: カードが上に流れる（下の空白はそのまま、上に空白は生まれない）
-function syncExecScroll() {
-  if (currentMode !== 'exec') return;
-  const tc    = document.getElementById('today-tasks');
-  const board = document.querySelector('.today-board');
-  const inner = document.getElementById('today-board-inner');
-  const wrap  = document.getElementById('today-tasks-wrap');
-  if (!tc || !board || !inner || !wrap) return;
-
-  const boardH      = board.offsetHeight;
-  const stickyH     = inner.offsetHeight;
-  const scrollRange = Math.max(1, boardH - stickyH);
-  const boardBottom = board.getBoundingClientRect().bottom;
-  const ratio = Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange));
-
-  const contentH   = wrap.offsetHeight;
-  const maxDown    = Math.max(0, tc.clientHeight - contentH);
-  const ty         = Math.round(ratio * maxDown);
-
-  wrap.style.transform = `translateY(${ty}px)`;
-}
-
-window.addEventListener('scroll', syncExecScroll, { passive: true });
-
-let _execRafId = null;
-function _startExecRaf() {
-  if (_execRafId) return;
-  const loop = () => {
-    if (currentMode !== 'exec') { _execRafId = null; return; }
-    syncExecScroll();
-    _execRafId = requestAnimationFrame(loop);
-  };
-  _execRafId = requestAnimationFrame(loop);
-}
-function _stopExecRaf() {
-  if (_execRafId) { cancelAnimationFrame(_execRafId); _execRafId = null; }
-}
-
 function resetExecFixed() {
-  _stopExecRaf();
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   if (!board) return;
@@ -4472,21 +4403,12 @@ function resetExecFixed() {
   }
   board.removeAttribute('style');
   if (inner) {
-    if (inner.parentElement === document.body) {
-      board.insertBefore(inner, board.firstChild);
-    }
     const headerEl = inner.querySelector('.section-header');
-    if (headerEl) { headerEl.style.display = ''; headerEl.style.height = ''; headerEl.style.minHeight = ''; headerEl.style.boxSizing = ''; headerEl.style.overflow = ''; headerEl.style.flexShrink = ''; }
+    if (headerEl) headerEl.style.flexShrink = '';
     inner.removeAttribute('style');
   }
   const tc = document.getElementById('today-tasks');
   if (tc) {
-    // ラッパーを解除してコンテンツを元に戻す
-    const wrap = document.getElementById('today-tasks-wrap');
-    if (wrap) {
-      while (wrap.firstChild) tc.insertBefore(wrap.firstChild, wrap);
-      wrap.remove();
-    }
     tc.removeAttribute('style');
     tc.scrollTop = 0;
   }
@@ -4536,8 +4458,7 @@ function setMode(mode) {
       // scrollend イベント（Chrome 114+）+ 1.2秒フォールバック
       window.addEventListener('scrollend', _doApply, { once: true });
       setTimeout(_doApply, 1200);
-      // スクロール完了後に boardTop/scrollRange を再確定（カレンダーが遅延描画される場合も考慮）
-      setTimeout(() => { if (currentMode === 'exec') { _cacheExecScrollRange(); syncExecScroll(); } }, 1500);
+      setTimeout(() => { if (currentMode === 'exec') _syncExecPanelPos(); }, 1500);
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
