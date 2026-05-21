@@ -2223,7 +2223,9 @@ function renderFullCalendar() {
     slotLabelInterval: '01:00:00',
     snapDuration: '00:05:00',
     slotLabelContent: (arg) => {
-      if (arg.date.getHours() === 0 && arg.date.getMinutes() === 0) return '24:00';
+      const h = arg.date.getHours();
+      if (h === 0) return '24:00';
+      return String(h).padStart(2, '0') + ':00';
     },
     slotLabelDidMount: (arg) => {
       const h = arg.date.getHours();
