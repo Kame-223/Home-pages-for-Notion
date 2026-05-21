@@ -327,10 +327,8 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 22px !important; }
-.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; display: inline-block; line-height: 1; transform: translateY(-50%); }
-.fc-timegrid-slot-label .fc-timegrid-slot-label-frame,
-.fc-timegrid-slot-label .fc-scrollgrid-shrink-frame { align-items: flex-start !important; overflow: visible !important; }
-.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
+.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1; }
+.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; position: relative !important; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
 .fc-toolbar-chunk:nth-child(2) { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; pointer-events: none; }
@@ -2186,10 +2184,15 @@ function reapplyCalLabelStyles() {
   fcEl.querySelectorAll('.fc-timegrid-slot-label').forEach(el => {
     const cushion = el.querySelector('.fc-timegrid-slot-label-cushion');
     if (!cushion) return;
-    el.style.setProperty('border', 'none', 'important');
     el.style.overflow = 'visible';
-    const frame = el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || el.firstElementChild;
-    if (frame) { frame.style.setProperty('align-items','flex-start','important'); frame.style.overflow = 'visible'; }
+    el.style.position = 'relative';
+    cushion.style.position = 'absolute';
+    cushion.style.top = '0';
+    cushion.style.right = '4px';
+    cushion.style.left = '0';
+    cushion.style.textAlign = 'right';
+    cushion.style.lineHeight = '1';
+    cushion.style.transform = 'translateY(-50%)';
     const text = cushion.textContent?.trim();
     const h = text ? parseInt(text) : NaN;
     cushion.style.removeProperty('color');
@@ -2265,11 +2268,16 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
-      // ラベルセルのborderは除去し、lane側のborder-topのみで線を引く
-      arg.el.style.setProperty('border', 'none', 'important');
+      // cushionをabsolute+top:0で線の位置に固定し、translateY(-50%)で上下中央揃え
       arg.el.style.overflow = 'visible';
-      const frame = arg.el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || arg.el.firstElementChild;
-      if (frame) { frame.style.setProperty('align-items','flex-start','important'); frame.style.overflow = 'visible'; }
+      arg.el.style.position = 'relative';
+      cushion.style.position = 'absolute';
+      cushion.style.top = '0';
+      cushion.style.right = '4px';
+      cushion.style.left = '0';
+      cushion.style.textAlign = 'right';
+      cushion.style.lineHeight = '1';
+      cushion.style.transform = 'translateY(-50%)';
       if (h === 13 || h === 19) {
         cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
