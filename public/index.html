@@ -4337,11 +4337,14 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
+  // board の背景を inner と同色にする
+  // → clip-path でクリップされた部分も同じ色で埋まり、縮小が見えなくなる
   Object.assign(board.style, {
-    background: 'transparent',
-    border    : 'none',
-    minHeight : '0',
-    overflow  : 'visible',
+    background  : 'rgba(13,13,26,0.72)',
+    border      : 'none',
+    borderRadius: '0',
+    minHeight   : '0',
+    overflow    : 'visible',
   });
 
   Object.assign(inner.style, {
