@@ -349,9 +349,9 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-/* 整時スロットに下線 */
-.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-bottom: 1px solid rgba(255,255,255,0.45) !important; }
-.fc-timegrid-slot:not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.35) !important; }
+/* 整時はlane側border-topのみで線を引く（label側は除去） */
+.fc-timegrid-slot-label { border: none !important; }
+.fc-timegrid-slot:not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.3) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
@@ -2185,6 +2185,10 @@ function reapplyCalLabelStyles() {
   fcEl.querySelectorAll('.fc-timegrid-slot-label').forEach(el => {
     const cushion = el.querySelector('.fc-timegrid-slot-label-cushion');
     if (!cushion) return;
+    el.style.setProperty('border', 'none', 'important');
+    el.style.overflow = 'visible';
+    const frame = el.firstElementChild;
+    if (frame) { frame.style.alignItems = 'flex-start'; frame.style.overflow = 'visible'; }
     const text = cushion.textContent?.trim();
     const h = text ? parseInt(text) : NaN;
     cushion.style.removeProperty('color');
@@ -2260,7 +2264,12 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
-      arg.el.style.setProperty('border-bottom', '1px solid rgba(255,255,255,0.45)', 'important');
+      // ラベルセルのborderは除去し、lane側のborder-topのみで線を引く
+      arg.el.style.setProperty('border', 'none', 'important');
+      arg.el.style.overflow = 'visible';
+      // frameのalign-itemsをJSで直接設定（CSSセレクタがFCの内部CSSに負けるため）
+      const frame = arg.el.firstElementChild;
+      if (frame) { frame.style.alignItems = 'flex-start'; frame.style.overflow = 'visible'; }
       if (h === 13 || h === 19) {
         cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
