@@ -4389,9 +4389,17 @@ function _syncExecPanelPos() {
   const headerGone = naturalH - shVisible;
   const stickyTop  = -headerGone; // sticky の top 値（0〜-38px）
 
-  const boardTop = board ? board.getBoundingClientRect().top : stickyTop;
-  // board がまだ viewport 内にあるなら追従、超えたら stickyTop で固定
-  inner.style.top = Math.max(stickyTop, boardTop) + 'px';
+  const boardRect   = board ? board.getBoundingClientRect() : null;
+  const boardTop    = boardRect ? boardRect.top    : stickyTop;
+  const boardBottom = boardRect ? boardRect.bottom : window.innerHeight;
+
+  // top: sticky 相当（board を追うか stickyTop で止まる）
+  const top = Math.max(stickyTop, boardTop);
+  inner.style.top = top + 'px';
+
+  // height: board の下端を超えないよう制限（振り返りへのめり込み防止）
+  const maxH = Math.max(0, boardBottom - top);
+  inner.style.height = Math.min(window.innerHeight - 10, maxH) + 'px';
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
