@@ -328,7 +328,9 @@ body::before {
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 22px !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; display: inline-block; transform: translateY(-50%); }
-.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; }
+.fc-timegrid-slot-label .fc-timegrid-slot-label-frame,
+.fc-timegrid-slot-label .fc-scrollgrid-shrink-frame { align-items: flex-start !important; overflow: visible !important; }
+.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
 .fc-toolbar-chunk:nth-child(2) { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; pointer-events: none; }
@@ -348,7 +350,8 @@ body::before {
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
 /* 整時スロットに下線 */
-.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-bottom: 1px solid rgba(255,255,255,0.22) !important; }
+.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-bottom: 1px solid rgba(255,255,255,0.45) !important; }
+.fc-timegrid-slot:not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.35) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
@@ -2257,7 +2260,7 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
-      arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
+      arg.el.style.setProperty('border-bottom', '1px solid rgba(255,255,255,0.45)', 'important');
       if (h === 13 || h === 19) {
         cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
