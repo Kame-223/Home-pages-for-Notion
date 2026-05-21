@@ -347,9 +347,9 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-/* labelの水平線は除去し、右境界線のみ残す。laneのみ整時border-top */
-.fc-timegrid-slot-label { border-top: none !important; border-bottom: none !important; border-left: none !important; border-right: 1px solid rgba(255,255,255,0.2) !important; overflow: visible !important; }
-.fc-timegrid-slot:not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.3) !important; }
+/* labelは全ボーダー除去。laneのみ整時border-top */
+.fc-timegrid-slot-label { border: none !important; overflow: visible !important; }
+.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.3) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
