@@ -4325,12 +4325,13 @@ function applyExecFixed() {
 
   const rect = board.getBoundingClientRect();
 
-  // board はグリッド内の透明なスペーサーになる
+  // board: ボーダーなし・角丸なしの背景フィルとしてグリッドセルを維持
+  // → スクロール時に右カラムが宇宙背景を透かさないようにする
   Object.assign(board.style, {
-    background: 'transparent',
-    border    : 'none',
-    minHeight : '0',
-    overflow  : 'visible',
+    border      : 'none',
+    borderRadius: '0',
+    minHeight   : '0',
+    overflow    : 'visible',
   });
 
   // inner を position:fixed でビューポートに固定
