@@ -4430,8 +4430,23 @@ function syncExecScroll() {
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   const wrap  = document.getElementById('today-tasks-wrap');
+  if (!tc || !board || !inner || !wrap) return;
 
-  // デバッグ表示
+  const boardH      = board.offsetHeight;
+  const stickyH     = inner.offsetHeight;
+  const scrollRange = Math.max(1, boardH - stickyH);
+  const boardBottom = board.getBoundingClientRect().bottom;
+  const ratio = Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange));
+
+  const contentH   = wrap.offsetHeight;
+  const maxDown    = Math.max(0, tc.clientHeight - contentH);
+  const ty         = Math.round(ratio * maxDown);
+
+  wrap.style.transform = `translateY(${ty}px)`;
+}
+
+// 常時表示デバッグパネル（常に左下に出る）
+setInterval(() => {
   let dbg = document.getElementById('_execDbg');
   if (!dbg) {
     dbg = document.createElement('div');
@@ -4444,26 +4459,24 @@ function syncExecScroll() {
     });
     document.body.appendChild(dbg);
   }
-
-  if (!tc || !board || !inner || !wrap) {
-    dbg.textContent = `wrap:${!!wrap} tc:${!!tc} board:${!!board} inner:${!!inner}\nmode:${currentMode}`;
+  const tc    = document.getElementById('today-tasks');
+  const board = document.querySelector('.today-board');
+  const inner = document.getElementById('today-board-inner');
+  const wrap  = document.getElementById('today-tasks-wrap');
+  if (!tc || !board || !inner) {
+    dbg.textContent = `mode:${currentMode}\nwrap:${!!wrap} tc:${!!tc} board:${!!board} inner:${!!inner}`;
     return;
   }
-
   const boardH      = board.offsetHeight;
   const stickyH     = inner.offsetHeight;
   const scrollRange = Math.max(1, boardH - stickyH);
   const boardBottom = board.getBoundingClientRect().bottom;
   const ratio = Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange));
-
-  const contentH   = wrap.offsetHeight;
-  const maxDown    = Math.max(0, tc.clientHeight - contentH);
-  const ty         = Math.round(ratio * maxDown);
-
-  dbg.textContent = `boardH:${boardH} stickyH:${stickyH}\nscrollRange:${scrollRange} boardBot:${Math.round(boardBottom)}\nratio:${ratio.toFixed(3)} contentH:${contentH}\ntc.ch:${tc.clientHeight} maxDown:${maxDown}\ntranslateY:${ty}px`;
-
-  wrap.style.transform = `translateY(${ty}px)`;
-}
+  const contentH = wrap ? wrap.offsetHeight : -1;
+  const maxDown  = wrap ? Math.max(0, tc.clientHeight - contentH) : -1;
+  const ty       = wrap ? Math.round(ratio * maxDown) : -1;
+  dbg.textContent = `mode:${currentMode} scrollY:${Math.round(window.scrollY)}\nboardH:${boardH} stickyH:${stickyH}\nscrollRange:${scrollRange} boardBot:${Math.round(boardBottom)}\nratio:${ratio.toFixed(3)} wrap:${!!wrap}\ncontentH:${contentH} tc.ch:${tc.clientHeight}\nmaxDown:${maxDown} ty:${ty}`;
+}, 200);
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
 let _execRafId = null;
