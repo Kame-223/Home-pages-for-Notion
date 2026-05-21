@@ -3193,6 +3193,15 @@ function renderAll() {
     </div>`;
   }
   todayEl.innerHTML = todayHtml;
+  // exec モードではコンテンツをラッパーdivで包む
+  // → tc.scrollHeight が flex:1+overflow:hidden 時に clientHeight に切り上げられる問題を回避
+  // → ラッパーの offsetHeight で実際のコンテンツ高さを正確に取得できる
+  if (currentMode === 'exec') {
+    const wrap = document.createElement('div');
+    wrap.id = 'today-tasks-wrap';
+    while (todayEl.firstChild) wrap.appendChild(todayEl.firstChild);
+    todayEl.appendChild(wrap);
+  }
   requestAnimationFrame(initTodayDrag);
 
   // やり残し（1日の切り替わりは3:01基準）
@@ -4368,14 +4377,10 @@ function applyExecFixed() {
   }
   inner._stickyBaseTop = 0;
 
-  // tc: transition なし・justify-content なし
-  // marginTop を syncExecScroll が直接管理する（transition があると
-  // style.marginTop と clientHeight が一致しなくなり origTcH の計算が崩れる）
   Object.assign(tc.style, {
     flex     : '1',
     minHeight: '0',
     overflowY: 'hidden',
-    marginTop: '0',
   });
 
   // ホイール転送リスナー（重複登録防止）
@@ -4436,14 +4441,17 @@ function _hideDebug() {
 }
 
 // ページスクロールに連動して tc 内のカードを上→下へ移動させる
+// tc.scrollHeight は flex:1+overflow:hidden 時に clientHeight に切り上がるため使わない
+// → today-tasks-wrap.offsetHeight で実際のコンテンツ高さを取得し
+//    transform:translateY でラッパーを移動する（レイアウト非破壊）
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
   const tc    = document.getElementById('today-tasks');
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
-  if (!tc || !board || !inner) return;
+  const wrap  = document.getElementById('today-tasks-wrap');
+  if (!tc || !board || !inner || !wrap) return;
 
-  // 毎回ライブ値を使う（キャッシュ誤差を排除）
   const boardH      = board.offsetHeight;
   const stickyH     = inner.offsetHeight;
   const boardBottom = board.getBoundingClientRect().bottom;
@@ -4453,31 +4461,21 @@ function syncExecScroll() {
     ? Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange))
     : 0;
 
-  const curMargin = parseFloat(tc.style.marginTop) || 0;
-  const origTcH   = tc.clientHeight + curMargin;
-  const overflow  = tc.scrollHeight - origTcH;
-  const maxMargin = Math.max(0, origTcH - tc.scrollHeight);
+  // contentH = 実際のコンテンツ高さ（wrap.offsetHeight は overflow:hidden に影響されない）
+  const contentH  = wrap.offsetHeight;
+  // translateY: 正 = 下へ（コンテンツが収まる場合）、負 = 上へ（コンテンツが溢れる場合）
+  const translateY = Math.round(ratio * (tc.clientHeight - contentH));
+  wrap.style.transform = `translateY(${translateY}px)`;
 
-  if (overflow > 0) {
-    tc.style.marginTop = '0';
-    tc.scrollTop = Math.round(ratio * overflow);
-  } else {
-    tc.style.marginTop = Math.round(ratio * maxMargin) + 'px';
-    tc.scrollTop = 0;
-  }
-
-  // デバッグ表示
   _updateDebug([
     ['scrollY',     Math.round(window.scrollY)],
     ['board.h',     boardH],
-    ['inner.h',     stickyH],
     ['board.bot',   Math.round(boardBottom)],
     ['scrollRange', scrollRange],
     ['ratio',       ratio.toFixed(3)],
     ['tc.ch',       tc.clientHeight],
-    ['tc.sh',       tc.scrollHeight],
-    ['curMargin',   curMargin],
-    ['maxMargin',   maxMargin],
+    ['contentH',    contentH],
+    ['translateY',  translateY],
   ]);
 }
 window.addEventListener('scroll', syncExecScroll, { passive: true });
@@ -4517,7 +4515,16 @@ function resetExecFixed() {
     inner.removeAttribute('style');
   }
   const tc = document.getElementById('today-tasks');
-  if (tc) { tc.removeAttribute('style'); tc.scrollTop = 0; }
+  if (tc) {
+    // ラッパーを解除してコンテンツを元に戻す
+    const wrap = document.getElementById('today-tasks-wrap');
+    if (wrap) {
+      while (wrap.firstChild) tc.insertBefore(wrap.firstChild, wrap);
+      wrap.remove();
+    }
+    tc.removeAttribute('style');
+    tc.scrollTop = 0;
+  }
 }
 
 let _tbResizeObs = null;
