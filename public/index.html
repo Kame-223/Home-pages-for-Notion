@@ -4387,6 +4387,7 @@ function applyExecFixed() {
   _cacheExecScrollRange();
   _syncExecPanelPos();
   syncExecScroll();
+  _startExecRaf();
 }
 
 // スクロール時: sticky の top をカレンダーヘッダーと連動させてヘッダーを自然に消す
@@ -4412,42 +4413,93 @@ function _syncExecPanelPos() {
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
+// ===== DEBUG OVERLAY (一時的) =====
+function _updateDebug(vals) {
+  let el = document.getElementById('_exec_dbg');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_exec_dbg';
+    el.style.cssText = [
+      'position:fixed', 'bottom:60px', 'right:12px', 'z-index:9999',
+      'background:rgba(0,0,0,0.85)', 'color:#0f0', 'font-size:11px',
+      'font-family:monospace', 'padding:8px 10px', 'border-radius:6px',
+      'pointer-events:none', 'line-height:1.7', 'min-width:220px',
+    ].join(';');
+    document.body.appendChild(el);
+  }
+  el.innerHTML = vals.map(([k,v]) => `<b>${k}</b>: ${v}`).join('<br>');
+  el.style.display = '';
+}
+function _hideDebug() {
+  const el = document.getElementById('_exec_dbg');
+  if (el) el.style.display = 'none';
+}
+
 // ページスクロールに連動して tc 内のカードを上→下へ移動させる
-// transition なしで計算するため style.marginTop と clientHeight が常に一致する
 function syncExecScroll() {
   if (currentMode !== 'exec') return;
-  const tc = document.getElementById('today-tasks');
-  if (!tc) return;
+  const tc    = document.getElementById('today-tasks');
+  const board = document.querySelector('.today-board');
+  const inner = document.getElementById('today-board-inner');
+  if (!tc || !board || !inner) return;
 
-  if (_execScrollRange <= 0) {
-    _cacheExecScrollRange();
-    if (_execScrollRange <= 0) return;
-  }
+  // 毎回ライブ値を使う（キャッシュ誤差を排除）
+  const boardH      = board.offsetHeight;
+  const stickyH     = inner.offsetHeight;
+  const boardBottom = board.getBoundingClientRect().bottom;
+  const scrollRange = boardH - stickyH;
 
-  // ratio: 0 = カレンダー先頭（カード上端）、1 = カレンダー末尾（カード下端）
-  const ratio = Math.min(1, Math.max(0,
-    (window.scrollY - _execBoardTop) / _execScrollRange
-  ));
+  const ratio = scrollRange > 0
+    ? Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange))
+    : 0;
 
-  // origTcH = tc の「marginTop=0 時の高さ」（flex:1 なので marginTop 分だけ縮む）
-  // transition がないので style.marginTop は即時反映済み → clientHeight と一致する
   const curMargin = parseFloat(tc.style.marginTop) || 0;
   const origTcH   = tc.clientHeight + curMargin;
   const overflow  = tc.scrollHeight - origTcH;
+  const maxMargin = Math.max(0, origTcH - tc.scrollHeight);
 
   if (overflow > 0) {
-    // タスクが溢れる → scrollTop でリスト内をスクロール
     tc.style.marginTop = '0';
     tc.scrollTop = Math.round(ratio * overflow);
   } else {
-    // タスクが収まる → marginTop でカードを下へ移動
-    tc.style.marginTop = Math.round(ratio * Math.max(0, origTcH - tc.scrollHeight)) + 'px';
+    tc.style.marginTop = Math.round(ratio * maxMargin) + 'px';
     tc.scrollTop = 0;
   }
+
+  // デバッグ表示
+  _updateDebug([
+    ['scrollY',     Math.round(window.scrollY)],
+    ['board.h',     boardH],
+    ['inner.h',     stickyH],
+    ['board.bot',   Math.round(boardBottom)],
+    ['scrollRange', scrollRange],
+    ['ratio',       ratio.toFixed(3)],
+    ['tc.ch',       tc.clientHeight],
+    ['tc.sh',       tc.scrollHeight],
+    ['curMargin',   curMargin],
+    ['maxMargin',   maxMargin],
+  ]);
 }
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
+// rAF ループ：スクロールイベントを補完（取りこぼし防止）
+let _execRafId = null;
+function _startExecRaf() {
+  if (_execRafId) return;
+  const loop = () => {
+    if (currentMode !== 'exec') { _execRafId = null; _hideDebug(); return; }
+    syncExecScroll();
+    _execRafId = requestAnimationFrame(loop);
+  };
+  _execRafId = requestAnimationFrame(loop);
+}
+function _stopExecRaf() {
+  if (_execRafId) { cancelAnimationFrame(_execRafId); _execRafId = null; }
+  _hideDebug();
+}
+
 function resetExecFixed() {
+  _stopExecRaf();
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   if (!board) return;
