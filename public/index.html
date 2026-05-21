@@ -4356,10 +4356,12 @@ function applyExecFixed() {
     headerEl.style.flexShrink = '0';
   }
 
-  // tc: ヘッダーが流れ去った後に viewport 上端に sticky
+  // tc: header が流れ去った分だけ空白を残して sticky
+  // → スペースが 0→headerH まで徐々に広がり、以降 headerH で固定
+  const headerH = inner._headerNaturalH || 38;
   Object.assign(tc.style, {
     position: 'sticky',
-    top     : '0px',
+    top     : headerH + 'px',
     flex    : 'none',
     overflow: 'hidden',
     zIndex  : '50',
