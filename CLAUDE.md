@@ -28,6 +28,7 @@ ADHDの大学生（ICU）の自分専用ホームページ。NotionをDBとし�
 - 振り返り（気分・体調・自動保存・3時リセット・ドラゴン）
 - Googleカレンダー（個人＋ICU・色分け・時間帯背景）
 - 背景：1日3回切替（6時・12時・18時）
+- **Eモード「今日やること」スクロール追従**（完成）
 
 ## カラー設定
 ### AREAタグ
@@ -45,6 +46,13 @@ ADHDの大学生（ICU）の自分専用ホームページ。NotionをDBとし�
 ## 未完了・継続中
 - カレンダー課題2: Deleteキーでイベント削除（未実装）
 - カレンダー課題3: タスクをドラッグしてカレンダーに追加（未実装）
+
+## Eモード「今日やること」スクロール追従の仕組み
+- `today-board`（board）: CSS そのまま（ダーク背景）、`overflow:visible` のみ追加
+- `today-board-inner`（inner）: sticky **外す**、`height:100%`、`overflow:visible`
+- `.section-header`（ヘッダー）: sticky なし → カレンダーヘッダーと同タイミングで流れる
+- `#today-tasks`（tc）: `position:sticky; top:headerH(≈38px)` → ヘッダーが消えるにつれ 0→38px のスペースが生まれ固定
+- board が page と一緒にスクロールするため「panel の底が自然に流れる」ように見える
 
 ## 重要な実装メモ
 - `taskState`はlocalStorageに保存（done/pinned/important/jikantai/timeIdx/links）
