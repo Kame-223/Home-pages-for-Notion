@@ -2161,7 +2161,7 @@ let _calLatenight = false, _calEarly = false;
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
-  fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:00:00' : '24:15:00');
+  fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:30:00' : '24:15:00');
   const btn = document.getElementById('fc-btn-down');
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
 }
@@ -2169,7 +2169,7 @@ function toggleCalLatenight() {
 function toggleCalEarly() {
   _calEarly = !_calEarly;
   if (!fcCalendar) return;
-  fcCalendar.setOption('slotMinTime', _calEarly ? '03:01:00' : '06:00:00');
+  fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '06:00:00');
   const btn = document.getElementById('fc-btn-up');
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
   requestAnimationFrame(reapplyCalLabelStyles);
@@ -2266,9 +2266,25 @@ function renderFullCalendar() {
     viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
-      if (h >= 6 && h < 12)       arg.el.style.background = 'rgba(255,190,60,0.07)';
-      else if (h >= 12 && h < 18) arg.el.style.background = 'rgba(100,180,255,0.07)';
-      else                         arg.el.style.background = 'rgba(70,60,140,0.12)';
+      const viewDate = fcCalendar?.getDate();
+      const isNextDay = viewDate && arg.date.getDate() !== viewDate.getDate();
+      if (h < 3 || (isNextDay && h === 3)) {
+        arg.el.style.background = 'rgba(10,10,20,0.55)';
+      } else if (h >= 6 && h < 12) {
+        arg.el.style.background = 'rgba(255,190,60,0.07)';
+      } else if (h >= 12 && h < 18) {
+        arg.el.style.background = 'rgba(100,180,255,0.07)';
+      } else {
+        arg.el.style.background = 'rgba(70,60,140,0.12)';
+      }
+    },
+    selectAllow: (sel) => {
+      if (_calEarly && sel.start.getHours() < 3) return false;
+      if (_calLatenight) {
+        const viewDate = fcCalendar?.getDate();
+        if (viewDate && sel.start.getDate() !== viewDate.getDate()) return false;
+      }
+      return true;
     },
     events: fetchGCalEvents,
     select: (info) => openGCalModal(null, info.startStr, info.endStr),
