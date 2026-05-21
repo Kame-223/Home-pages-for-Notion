@@ -4438,18 +4438,14 @@ function syncExecScroll() {
   const boardBottom = board.getBoundingClientRect().bottom;
   const ratio = Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange));
 
-  // コンテンツの高さ（wrap.offsetHeight は overflow:hidden に依存しない実値）
-  const contentH  = wrap.offsetHeight;
-  // スクロール可能な量 = コンテンツが tc より大きい分だけ
-  const maxScroll = Math.max(0, contentH - tc.clientHeight);
+  // contentH = 実際のコンテンツ高さ（wrap.offsetHeight は overflow:hidden に影響されない）
+  const contentH   = wrap.offsetHeight;
+  // 下に移動できる量 = パネル高さ - コンテンツ高さ（コンテンツが収まる場合のみ正）
+  const maxDown    = Math.max(0, tc.clientHeight - contentH);
 
-  if (maxScroll > 0) {
-    // コンテンツが溢れる場合: 上へスクロール（カードが流れていく）
-    wrap.style.transform = `translateY(${-Math.round(ratio * maxScroll)}px)`;
-  } else {
-    // コンテンツが収まる場合: 動かさない（空白は下に自然に残る）
-    wrap.style.transform = 'translateY(0)';
-  }
+  // translateY(+): カードを下へ移動
+  // ratio=0 → 上端（自然位置）、ratio=1 → 下端（パネル最下部）
+  wrap.style.transform = `translateY(${Math.round(ratio * maxDown)}px)`;
 }
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
