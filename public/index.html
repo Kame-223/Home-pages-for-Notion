@@ -5484,7 +5484,7 @@ function _tdStart(id,card,cx,cy){
   const title=task?(getProp(task,'タイトル')||'無題'):'無題';
   _tdGhost=document.createElement('div');
   _tdGhost.className='td-drag-ghost';
-  _tdGhost.textContent='📅 '+title;
+  _tdGhost.textContent=title;
   _tdGhost.style.left=cx+'px';_tdGhost.style.top=cy+'px';
   document.body.appendChild(_tdGhost);
   card.classList.add('td-dragging');
