@@ -321,7 +321,7 @@ body::before {
 .sched-add-btn:hover { color: var(--text); border-color: var(--border2); }
 
 /* FullCalendar ダークテーマ */
-#fc-container { overflow: hidden; }
+#fc-container { overflow: visible; }
 .fc { font-family: 'Noto Sans JP', sans-serif !important; font-size: 11px; }
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
@@ -2224,7 +2224,7 @@ function renderFullCalendar() {
   updateLoginStatus();
   const container = document.getElementById('fc-container');
   if (!container) return;
-  container.innerHTML = '<div id="fc-el" style="height:100%;padding:0 4px 4px"></div>';
+  container.innerHTML = '<div id="fc-el" style="padding:0 4px 4px"></div>';
 
   fcCalendar = new FullCalendar.Calendar(document.getElementById('fc-el'), {
     initialView: 'timeGridDay',
