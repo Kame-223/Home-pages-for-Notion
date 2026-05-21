@@ -2172,6 +2172,28 @@ function toggleCalEarly() {
   fcCalendar.setOption('slotMinTime', _calEarly ? '03:01:00' : '06:00:00');
   const btn = document.getElementById('fc-btn-up');
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
+  requestAnimationFrame(reapplyCalLabelStyles);
+}
+
+function reapplyCalLabelStyles() {
+  const fcEl = document.getElementById('fc-el');
+  if (!fcEl) return;
+  fcEl.querySelectorAll('.fc-timegrid-slot-label').forEach(el => {
+    const cushion = el.querySelector('.fc-timegrid-slot-label-cushion');
+    if (!cushion) return;
+    const text = cushion.textContent?.trim();
+    const h = text ? parseInt(text) : NaN;
+    cushion.style.removeProperty('color');
+    cushion.style.removeProperty('font-weight');
+    cushion.style.removeProperty('font-size');
+    cushion.style.removeProperty('letter-spacing');
+    if (h === 13 || h === 19) {
+      cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
+      cushion.style.setProperty('font-weight', '900', 'important');
+      cushion.style.setProperty('font-size', '13px', 'important');
+      cushion.style.setProperty('letter-spacing', '0', 'important');
+    }
+  });
 }
 
 function addFcExpandBtns() {
