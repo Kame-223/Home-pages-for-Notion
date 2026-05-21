@@ -3193,12 +3193,6 @@ function renderAll() {
     </div>`;
   }
   todayEl.innerHTML = todayHtml;
-  if (currentMode === 'exec') {
-    const wrap = document.createElement('div');
-    wrap.id = 'today-tasks-wrap';
-    while (todayEl.firstChild) wrap.appendChild(todayEl.firstChild);
-    todayEl.appendChild(wrap);
-  }
   requestAnimationFrame(initTodayDrag);
 
   // やり残し（1日の切り替わりは3:01基準）
@@ -4337,127 +4331,65 @@ function applyExecFixed() {
   const tc    = document.getElementById('today-tasks');
   if (!board || !inner || !tc) return;
 
-  // board の背景を inner と同色にする
-  // → clip-path でクリップされた部分も同じ色で埋まり、縮小が見えなくなる
+  // board: sticky 子要素がはみ出せるよう overflow:visible（背景は CSS のまま保持）
   Object.assign(board.style, {
-    background  : 'rgba(13,13,26,0.72)',
-    border      : 'none',
-    borderRadius: '0',
-    minHeight   : '0',
-    overflow    : 'visible',
+    overflow : 'visible',
+    minHeight: '0',
   });
 
+  // inner: sticky を外し高さ 100% に。tc の sticky がスクロール全域で有効になる
   Object.assign(inner.style, {
-    position     : 'sticky',
-    top          : '0px',
-    width        : '100%',
-    height       : 'calc(100vh - 10px)',
-    alignSelf    : 'flex-start',
-    flex         : 'none',
+    position     : 'relative',
+    height       : '100%',
     display      : 'flex',
     flexDirection: 'column',
-    overflow     : 'hidden',
-    zIndex       : '50',
-    background   : 'rgba(13,13,26,0.72)',
-    border       : '0.5px solid rgba(255,255,255,0.12)',
-    borderRadius : '10px',
-    boxSizing    : 'border-box',
+    overflow     : 'visible',
+    background   : 'none',
+    border       : 'none',
+    borderRadius : '0',
   });
 
+  // header: ビューポート上端に sticky
   const headerEl = inner.querySelector('.section-header');
   if (headerEl) {
     inner._headerNaturalH = headerEl.offsetHeight || 38;
-    headerEl.style.flexShrink = '0';
+    Object.assign(headerEl.style, {
+      position  : 'sticky',
+      top       : '0px',
+      zIndex    : '51',
+      flexShrink: '0',
+    });
   }
-  inner._stickyBaseTop = 0;
 
+  // tc: header の直下に sticky → カードが常に右上に表示
+  const headerH = inner._headerNaturalH || 38;
   Object.assign(tc.style, {
-    flex     : '1',
-    minHeight: '0',
-    overflow : 'hidden',
+    position: 'sticky',
+    top     : headerH + 'px',
+    flex    : 'none',
+    overflow: 'hidden',
+    zIndex  : '50',
   });
-
-  const wrap0 = document.getElementById('today-tasks-wrap');
-  if (wrap0) wrap0.style.transform = 'translateY(0)';
 
   if (!_todayWheelBound) {
     inner.addEventListener('wheel', _todayWheelHandler, { passive: false });
     _todayWheelBound = true;
   }
-
-  _cacheExecScrollRange();
-  _syncExecPanelPos();
-  syncExecScroll();
-  _startExecRaf();
 }
 
-// カレンダーヘッダーと連動して sticky パネルの top を動かす
-function _syncExecPanelPos() {
-  if (currentMode !== 'exec') return;
-  const inner = document.getElementById('today-board-inner');
-  if (!inner || inner.style.position !== 'sticky') return;
-
-  const scheduleHeader = document.querySelector('.schedule-col > .section-header');
-  const naturalH       = inner._headerNaturalH || 38;
-  const stickyBaseTop  = inner._stickyBaseTop  || 0;
-
-  const shVisible = scheduleHeader
-    ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
-    : 0;
-  const headerGone = naturalH - shVisible;
-  inner.style.top  = (stickyBaseTop - headerGone) + 'px';
-}
+function _syncExecPanelPos() { /* 新方式では不要 */ }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
-// スクロールに応じてパネル下端を clip-path で縮める
-// カードは常に上端固定（translateY なし）→ 空白が上に生まれない
-// パネル下端がカード下端に達したら止まる
-function syncExecScroll() {
-  if (currentMode !== 'exec') return;
-  const tc    = document.getElementById('today-tasks');
-  const board = document.querySelector('.today-board');
-  const inner = document.getElementById('today-board-inner');
-  const wrap  = document.getElementById('today-tasks-wrap');
-  if (!tc || !board || !inner || !wrap) return;
-
-  const fullH    = window.innerHeight - 10;
-  const contentH = wrap.offsetHeight;
-  const headerH  = inner._headerNaturalH || 38;
-  const minH     = Math.max(80, headerH + 20 + contentH);
-  const maxClip  = Math.max(0, fullH - minH);
-
-  // 1:1 レート：sticky 開始後のスクロール量 = clipBottom
-  // → パネル下端がページスクロールと同速で縮む → 視覚的に変化を認識できない
-  const innerTop   = parseFloat(inner.style.top) || 0;
-  const boardTop   = board.getBoundingClientRect().top;
-  const scrollPast = Math.max(0, innerTop - boardTop);
-
-  const clipBottom = Math.min(maxClip, Math.round(scrollPast));
-  inner.style.clipPath = clipBottom > 0
-    ? `inset(0 0 ${clipBottom}px 0 round 10px)`
-    : '';
-
-  wrap.style.transform = 'translateY(0)';
-}
+function syncExecScroll() { /* 新方式では不要: tc が sticky で自動追従 */ }
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
 let _execRafId = null;
-function _startExecRaf() {
-  if (_execRafId) return;
-  const loop = () => {
-    if (currentMode !== 'exec') { _execRafId = null; return; }
-    syncExecScroll();
-    _syncExecPanelPos();
-    _execRafId = requestAnimationFrame(loop);
-  };
-  _execRafId = requestAnimationFrame(loop);
-}
+function _startExecRaf() {}
 function _stopExecRaf() {
   if (_execRafId) { cancelAnimationFrame(_execRafId); _execRafId = null; }
 }
 
 function resetExecFixed() {
-  _stopExecRaf();
   const board = document.querySelector('.today-board');
   const inner = document.getElementById('today-board-inner');
   if (!board) return;
@@ -4468,17 +4400,16 @@ function resetExecFixed() {
   board.removeAttribute('style');
   if (inner) {
     const headerEl = inner.querySelector('.section-header');
-    if (headerEl) headerEl.style.flexShrink = '';
-    inner.style.clipPath = '';
+    if (headerEl) {
+      headerEl.style.position = '';
+      headerEl.style.top = '';
+      headerEl.style.zIndex = '';
+      headerEl.style.flexShrink = '';
+    }
     inner.removeAttribute('style');
   }
   const tc = document.getElementById('today-tasks');
   if (tc) {
-    const wrap = document.getElementById('today-tasks-wrap');
-    if (wrap) {
-      while (wrap.firstChild) tc.insertBefore(wrap.firstChild, wrap);
-      wrap.remove();
-    }
     tc.removeAttribute('style');
     tc.scrollTop = 0;
   }
@@ -4528,7 +4459,7 @@ function setMode(mode) {
       // scrollend イベント（Chrome 114+）+ 1.2秒フォールバック
       window.addEventListener('scrollend', _doApply, { once: true });
       setTimeout(_doApply, 1200);
-      setTimeout(() => { if (currentMode === 'exec') { _cacheExecScrollRange(); syncExecScroll(); } }, 1500);
+      // 新方式では追加処理不要
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
