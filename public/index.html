@@ -4378,10 +4378,13 @@ function applyExecFixed() {
   inner._stickyBaseTop = 0;
 
   Object.assign(tc.style, {
-    flex     : '1',
+    flex    : '1',
     minHeight: '0',
-    overflowY: 'hidden',
+    overflow: 'hidden',  // wrap の transform による overflow を隠す
   });
+  // wrap があれば transform をリセット
+  const wrap0 = document.getElementById('today-tasks-wrap');
+  if (wrap0) wrap0.style.transform = 'translateY(0)';
 
   // ホイール転送リスナー（重複登録防止）
   if (!_todayWheelBound) {
@@ -4419,11 +4422,47 @@ function _syncExecPanelPos() {
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
 
-function syncExecScroll() {}
+// ページスクロールに連動して tc のコンテンツを上へスクロールさせる
+// scrollTop 方式: カードが上に流れる（下の空白はそのまま、上に空白は生まれない）
+function syncExecScroll() {
+  if (currentMode !== 'exec') return;
+  const tc    = document.getElementById('today-tasks');
+  const board = document.querySelector('.today-board');
+  const inner = document.getElementById('today-board-inner');
+  const wrap  = document.getElementById('today-tasks-wrap');
+  if (!tc || !board || !inner || !wrap) return;
+
+  const boardH      = board.offsetHeight;
+  const stickyH     = inner.offsetHeight;
+  const scrollRange = Math.max(1, boardH - stickyH);
+  const boardBottom = board.getBoundingClientRect().bottom;
+  const ratio = Math.min(1, Math.max(0, (boardH - boardBottom) / scrollRange));
+
+  // コンテンツの高さ（wrap.offsetHeight は overflow:hidden に依存しない実値）
+  const contentH  = wrap.offsetHeight;
+  // スクロール可能な量 = コンテンツが tc より大きい分だけ
+  const maxScroll = Math.max(0, contentH - tc.clientHeight);
+
+  if (maxScroll > 0) {
+    // コンテンツが溢れる場合: 上へスクロール（カードが流れていく）
+    wrap.style.transform = `translateY(${-Math.round(ratio * maxScroll)}px)`;
+  } else {
+    // コンテンツが収まる場合: 動かさない（空白は下に自然に残る）
+    wrap.style.transform = 'translateY(0)';
+  }
+}
 window.addEventListener('scroll', syncExecScroll, { passive: true });
 
 let _execRafId = null;
-function _startExecRaf() {}
+function _startExecRaf() {
+  if (_execRafId) return;
+  const loop = () => {
+    if (currentMode !== 'exec') { _execRafId = null; return; }
+    syncExecScroll();
+    _execRafId = requestAnimationFrame(loop);
+  };
+  _execRafId = requestAnimationFrame(loop);
+}
 function _stopExecRaf() {
   if (_execRafId) { cancelAnimationFrame(_execRafId); _execRafId = null; }
 }
