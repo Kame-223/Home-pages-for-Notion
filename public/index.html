@@ -4355,8 +4355,6 @@ function applyExecFixed() {
     inner._headerNaturalH = headerEl.offsetHeight || 38;
     headerEl.style.flexShrink = '0';
   }
-  inner._stickyBaseTop = 0;
-
   Object.assign(tc.style, {
     flex     : '1',
     minHeight: '0',
@@ -4371,25 +4369,28 @@ function applyExecFixed() {
   _syncExecPanelPos();
 }
 
-// スクロール時: fixed パネルの top をカレンダーヘッダーと連動させてヘッダーを自然に消す
+// スクロール時: position:fixed パネルの top を sticky と同じ挙動で追跡する
+// sticky at top:-headerGone を position:fixed で再現:
+//   boardTop > -headerGone → 自然位置（boardTop に追従）
+//   boardTop <= -headerGone → 固定（-headerGone で止まる）
 function _syncExecPanelPos() {
   if (currentMode !== 'exec') return;
   const inner = document.getElementById('today-board-inner');
   if (!inner || inner.style.position !== 'fixed') return;
 
+  const board          = document.querySelector('.today-board');
   const scheduleHeader = document.querySelector('.schedule-col > .section-header');
   const naturalH       = inner._headerNaturalH || 38;
-  const stickyBaseTop  = inner._stickyBaseTop  || 0;
 
-  // カレンダーヘッダーが何px見えているか（0〜naturalH）
   const shVisible = scheduleHeader
     ? Math.min(naturalH, Math.max(0, scheduleHeader.getBoundingClientRect().bottom))
     : 0;
-
-  // カレンダーヘッダーが消えた分だけパネル全体を上にずらす
-  // → 「今日やること」ヘッダーもカレンダーと完全に同じ速度・タイミングで消える
   const headerGone = naturalH - shVisible;
-  inner.style.top  = (stickyBaseTop - headerGone) + 'px';
+  const stickyTop  = -headerGone; // sticky の top 値（0〜-38px）
+
+  const boardTop = board ? board.getBoundingClientRect().top : stickyTop;
+  // board がまだ viewport 内にあるなら追従、超えたら stickyTop で固定
+  inner.style.top = Math.max(stickyTop, boardTop) + 'px';
 }
 window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
 
