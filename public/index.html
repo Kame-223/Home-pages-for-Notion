@@ -327,7 +327,7 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 22px !important; }
-.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; display: inline-block; transform: translateY(-50%); }
+.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; display: inline-block; line-height: 1; transform: translateY(-50%); }
 .fc-timegrid-slot-label .fc-timegrid-slot-label-frame,
 .fc-timegrid-slot-label .fc-scrollgrid-shrink-frame { align-items: flex-start !important; overflow: visible !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
@@ -349,8 +349,9 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-/* 整時はlane側border-topのみで線を引く（label側は除去） */
-.fc-timegrid-slot-label { border: none !important; }
+/* 整時: laneとlabel両方にborder-top。それ以外のlabelはborder除去 */
+.fc-timegrid-slot-label { border: none !important; overflow: visible !important; }
+.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-top: 1px solid rgba(255,255,255,0.3) !important; }
 .fc-timegrid-slot:not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.3) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
@@ -2187,8 +2188,8 @@ function reapplyCalLabelStyles() {
     if (!cushion) return;
     el.style.setProperty('border', 'none', 'important');
     el.style.overflow = 'visible';
-    const frame = el.firstElementChild;
-    if (frame) { frame.style.alignItems = 'flex-start'; frame.style.overflow = 'visible'; }
+    const frame = el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || el.firstElementChild;
+    if (frame) { frame.style.setProperty('align-items','flex-start','important'); frame.style.overflow = 'visible'; }
     const text = cushion.textContent?.trim();
     const h = text ? parseInt(text) : NaN;
     cushion.style.removeProperty('color');
@@ -2267,9 +2268,8 @@ function renderFullCalendar() {
       // ラベルセルのborderは除去し、lane側のborder-topのみで線を引く
       arg.el.style.setProperty('border', 'none', 'important');
       arg.el.style.overflow = 'visible';
-      // frameのalign-itemsをJSで直接設定（CSSセレクタがFCの内部CSSに負けるため）
-      const frame = arg.el.firstElementChild;
-      if (frame) { frame.style.alignItems = 'flex-start'; frame.style.overflow = 'visible'; }
+      const frame = arg.el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || arg.el.firstElementChild;
+      if (frame) { frame.style.setProperty('align-items','flex-start','important'); frame.style.overflow = 'visible'; }
       if (h === 13 || h === 19) {
         cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
