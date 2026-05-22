@@ -327,8 +327,9 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 22px !important; }
-.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; }
-.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; }
+.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1; margin-top: -11px; }
+.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
+.fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
 .fc-toolbar-chunk:nth-child(2) { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; pointer-events: none; }
@@ -2263,6 +2264,7 @@ function renderFullCalendar() {
         cushion.style.setProperty('font-weight', '900', 'important');
         cushion.style.setProperty('font-size', '13px', 'important');
         cushion.style.setProperty('letter-spacing', '0', 'important');
+        cushion.style.setProperty('line-height', '1', 'important');
       }
     },
     viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
