@@ -327,8 +327,8 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 22px !important; }
-.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1; }
-.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
+.fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; }
+.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
 .fc-toolbar-chunk:nth-child(2) { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; pointer-events: none; }
@@ -347,9 +347,8 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-/* labelは全ボーダー除去。laneのみ整時border-top */
-.fc-timegrid-slot-label { border: none !important; overflow: visible !important; }
-.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.3) !important; }
+/* 整時スロットに下線 */
+.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-bottom: 1px solid rgba(255,255,255,0.22) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
@@ -2183,16 +2182,6 @@ function reapplyCalLabelStyles() {
   fcEl.querySelectorAll('.fc-timegrid-slot-label').forEach(el => {
     const cushion = el.querySelector('.fc-timegrid-slot-label-cushion');
     if (!cushion) return;
-    el.style.overflow = 'visible';
-    const frame2 = el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || el.firstElementChild;
-    if (frame2) { frame2.style.position = 'relative'; frame2.style.overflow = 'visible'; }
-    cushion.style.position = 'absolute';
-    cushion.style.top = '0';
-    cushion.style.right = '4px';
-    cushion.style.left = '0';
-    cushion.style.textAlign = 'right';
-    cushion.style.lineHeight = '1';
-    cushion.style.transform = 'translateY(-50%)';
     const text = cushion.textContent?.trim();
     const h = text ? parseInt(text) : NaN;
     cushion.style.removeProperty('color');
@@ -2268,20 +2257,7 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
-      arg.el.style.overflow = 'visible';
-      // TDではなくframeをposition:relativeにしてTDのレイアウトを保護
-      const frame = arg.el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || arg.el.firstElementChild;
-      if (frame) {
-        frame.style.position = 'relative';
-        frame.style.overflow = 'visible';
-      }
-      cushion.style.position = 'absolute';
-      cushion.style.top = '0';
-      cushion.style.right = '4px';
-      cushion.style.left = '0';
-      cushion.style.textAlign = 'right';
-      cushion.style.lineHeight = '1';
-      cushion.style.transform = 'translateY(-50%)';
+      arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
       if (h === 13 || h === 19) {
         cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
