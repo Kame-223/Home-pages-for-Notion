@@ -348,8 +348,8 @@ body::before {
 .fc-scrollgrid-section-body td { background: var(--surface) !important; }
 .fc-day-today { background: rgba(127,119,221,0.04) !important; }
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-/* 整時スロットに下線 */
-.fc-timegrid-slot-label:not(.fc-timegrid-slot-minor) { border-bottom: 1px solid rgba(255,255,255,0.22) !important; }
+/* ラベルエリアの線はborder除去（laneのborder-topのみで表示） */
+.fc-timegrid-slot-label { border-bottom: none !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
