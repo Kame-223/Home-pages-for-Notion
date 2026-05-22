@@ -328,7 +328,7 @@ body::before {
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 22px !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1; }
-.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; position: relative !important; }
+.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
 .fc-toolbar-chunk:nth-child(2) { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; pointer-events: none; }
@@ -2184,7 +2184,8 @@ function reapplyCalLabelStyles() {
     const cushion = el.querySelector('.fc-timegrid-slot-label-cushion');
     if (!cushion) return;
     el.style.overflow = 'visible';
-    el.style.position = 'relative';
+    const frame2 = el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || el.firstElementChild;
+    if (frame2) { frame2.style.position = 'relative'; frame2.style.overflow = 'visible'; }
     cushion.style.position = 'absolute';
     cushion.style.top = '0';
     cushion.style.right = '4px';
@@ -2268,7 +2269,12 @@ function renderFullCalendar() {
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
       arg.el.style.overflow = 'visible';
-      arg.el.style.position = 'relative';
+      // TDではなくframeをposition:relativeにしてTDのレイアウトを保護
+      const frame = arg.el.querySelector('.fc-timegrid-slot-label-frame,.fc-scrollgrid-shrink-frame') || arg.el.firstElementChild;
+      if (frame) {
+        frame.style.position = 'relative';
+        frame.style.overflow = 'visible';
+      }
       cushion.style.position = 'absolute';
       cushion.style.top = '0';
       cushion.style.right = '4px';
