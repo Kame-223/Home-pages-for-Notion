@@ -2183,6 +2183,9 @@ function reapplyCalLabelStyles() {
   fcEl.querySelectorAll('.fc-timegrid-slot-label').forEach(el => {
     const cushion = el.querySelector('.fc-timegrid-slot-label-cushion');
     if (!cushion) return;
+    el.style.overflow = 'visible';
+    const frame = el.firstElementChild;
+    if (frame) frame.style.overflow = 'visible';
     const text = cushion.textContent?.trim();
     const h = text ? parseInt(text) : NaN;
     cushion.style.removeProperty('color');
@@ -2195,6 +2198,10 @@ function reapplyCalLabelStyles() {
       cushion.style.setProperty('font-size', '13px', 'important');
       cushion.style.setProperty('letter-spacing', '0', 'important');
     }
+    const tdTop = el.getBoundingClientRect().top;
+    const cr = cushion.getBoundingClientRect();
+    const delta = tdTop - (cr.top + cr.bottom) / 2;
+    cushion.style.setProperty('transform', `translateY(${delta}px)`, 'important');
   });
   fcCalendar?.updateSize();
 }
@@ -2258,14 +2265,23 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const cushion = arg.el.querySelector('.fc-timegrid-slot-label-cushion');
       if (!cushion || m !== 0) return;
-      arg.el.style.setProperty('border-bottom', '0.5px solid rgba(255,255,255,0.2)', 'important');
+      arg.el.style.overflow = 'visible';
+      const frame = arg.el.firstElementChild;
+      if (frame) frame.style.overflow = 'visible';
       if (h === 13 || h === 19) {
         cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
         cushion.style.setProperty('font-size', '13px', 'important');
         cushion.style.setProperty('letter-spacing', '0', 'important');
-        cushion.style.setProperty('line-height', '1', 'important');
       }
+      // 実測値でcushion中心をTD上端（=線）に合わせる
+      requestAnimationFrame(() => {
+        const tdTop = arg.el.getBoundingClientRect().top;
+        const cr = cushion.getBoundingClientRect();
+        const cushionCenter = (cr.top + cr.bottom) / 2;
+        const delta = tdTop - cushionCenter;
+        cushion.style.setProperty('transform', `translateY(${delta}px)`, 'important');
+      });
     },
     viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
     slotLaneDidMount: (arg) => {
