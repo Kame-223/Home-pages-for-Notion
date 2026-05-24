@@ -1500,6 +1500,72 @@ body::before {
 .task-section-body.collapsed { display: none; }
 .task-count { font-size: 9px; color: var(--text-dim); margin-left: 5px; font-weight: 400; letter-spacing: 0; text-transform: none; }
 
+/* タスクページ GTDエリア（ドラッグ受け取り） */
+.task-gtd-area {
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(13,13,26,0.72);
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .15s, background .15s;
+}
+.task-gtd-area.gtd-drop-active {
+  border-color: rgba(127,119,221,0.7);
+  background: rgba(127,119,221,0.08);
+}
+.gtd-reveal-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+}
+.gtd-reveal-btn {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 0.5px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-sub);
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.gtd-reveal-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.28); }
+.gtd-section-open { display: flex; flex-direction: column; }
+.gtd-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
+  color: var(--text-sub);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  background: rgba(13,13,26,0.5);
+  text-transform: uppercase;
+  cursor: pointer; user-select: none; flex-shrink: 0;
+}
+.gtd-section-header:hover { background: rgba(255,255,255,0.03); }
+/* INBOXカラムもドロップ受け取り */
+.task-inbox-col.gtd-drop-active {
+  border-color: rgba(127,119,221,0.7);
+  background: rgba(127,119,221,0.08);
+}
+/* GTDドラッグゴースト */
+.gtd-drag-ghost {
+  position: fixed; z-index: 9999; pointer-events: none;
+  background: rgba(30,30,50,0.96); color: var(--text);
+  padding: 8px 14px; border-radius: 9px; font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  border: 0.5px solid rgba(127,119,221,0.5);
+  transform: translate(-50%, -50%);
+  white-space: nowrap; max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.task-card.gtd-dragging { opacity: 0.3; transition: opacity .15s; }
+
 /* GTDボタン */
 .gtd-btn-wrap { position: relative; }
 .btn-gtd {
@@ -1711,7 +1777,7 @@ body::before {
     <div class="task-page-grid">
 
       <!-- 左：INBOX -->
-      <div class="task-inbox-col">
+      <div class="task-inbox-col" id="task-inbox-col-wrap">
         <div class="task-toggle-header" onclick="toggleTaskSection('inbox')">
           <span>📥 INBOX<span class="task-count" id="task-inbox-count"></span></span>
           <span class="task-toggle-arrow open" id="inbox-arrow">▶</span>
@@ -1722,31 +1788,46 @@ body::before {
       <!-- 右：GTD分類 -->
       <div class="task-gtd-col">
 
-        <!-- 次やる（トグル・デフォルト開） -->
-        <div class="task-section">
-          <div class="task-toggle-header" onclick="toggleTaskSection('next')">
-            <span>▶️ 次やる<span class="task-count" id="task-next-count"></span></span>
-            <span class="task-toggle-arrow open" id="next-arrow">▶</span>
+        <!-- 次やる -->
+        <div class="task-gtd-area" id="gtd-area-next" data-gtd="▶️ 次やる">
+          <div class="gtd-reveal-wrap" id="gtd-reveal-next">
+            <button class="gtd-reveal-btn" onclick="toggleGtdArea('next')">▶️ 次やるを表示<span class="task-count" id="task-next-count"></span></button>
           </div>
-          <div class="task-section-body" id="task-next-list"><div class="loading">読み込み中...</div></div>
+          <div id="gtd-section-next" style="display:none" class="gtd-section-open">
+            <div class="gtd-section-header" onclick="toggleGtdArea('next')">
+              <span>▶️ 次やる<span class="task-count" id="task-next-count2"></span></span>
+              <span style="font-size:9px;color:var(--text-dim)">▼</span>
+            </div>
+            <div class="task-section-body" id="task-next-list"></div>
+          </div>
         </div>
 
-        <!-- 待ち（トグル） -->
-        <div class="task-section">
-          <div class="task-toggle-header" onclick="toggleTaskSection('wait')">
-            <span>📧 待ち<span class="task-count" id="task-wait-count"></span></span>
-            <span class="task-toggle-arrow" id="wait-arrow">▶</span>
+        <!-- 待ち -->
+        <div class="task-gtd-area" id="gtd-area-wait" data-gtd="📧 待ち">
+          <div class="gtd-reveal-wrap" id="gtd-reveal-wait">
+            <button class="gtd-reveal-btn" onclick="toggleGtdArea('wait')">📧 待ちを表示<span class="task-count" id="task-wait-count"></span></button>
           </div>
-          <div class="task-section-body collapsed" id="task-wait-list"></div>
+          <div id="gtd-section-wait" style="display:none" class="gtd-section-open">
+            <div class="gtd-section-header" onclick="toggleGtdArea('wait')">
+              <span>📧 待ち<span class="task-count" id="task-wait-count2"></span></span>
+              <span style="font-size:9px;color:var(--text-dim)">▼</span>
+            </div>
+            <div class="task-section-body" id="task-wait-list"></div>
+          </div>
         </div>
 
-        <!-- 今じゃない（トグル） -->
-        <div class="task-section">
-          <div class="task-toggle-header" onclick="toggleTaskSection('someday')">
-            <span>💫 今じゃない<span class="task-count" id="task-someday-count"></span></span>
-            <span class="task-toggle-arrow" id="someday-arrow">▶</span>
+        <!-- 今じゃない -->
+        <div class="task-gtd-area" id="gtd-area-someday" data-gtd="💫今じゃない">
+          <div class="gtd-reveal-wrap" id="gtd-reveal-someday">
+            <button class="gtd-reveal-btn" onclick="toggleGtdArea('someday')">💫 今じゃないを表示<span class="task-count" id="task-someday-count"></span></button>
           </div>
-          <div class="task-section-body collapsed" id="task-someday-list"></div>
+          <div id="gtd-section-someday" style="display:none" class="gtd-section-open">
+            <div class="gtd-section-header" onclick="toggleGtdArea('someday')">
+              <span>💫 今じゃない<span class="task-count" id="task-someday-count2"></span></span>
+              <span style="font-size:9px;color:var(--text-dim)">▼</span>
+            </div>
+            <div class="task-section-body" id="task-someday-list"></div>
+          </div>
         </div>
 
       </div>
@@ -5327,8 +5408,17 @@ function showPage(page) {
   if (page === 'task') renderTaskPage();
 }
 
-// ===== タスクページ トグル =====
+// ===== タスクページ GTDエリア開閉 =====
+let taskGtdVisible = { next: false, wait: false, someday: false };
+
+function toggleGtdArea(key) {
+  taskGtdVisible[key] = !taskGtdVisible[key];
+  renderTaskPage();
+}
+
+// 旧API互換（他から呼ばれている場合のフォールバック）
 function toggleTaskSection(key) {
+  if (key in taskGtdVisible) { toggleGtdArea(key); return; }
   const body = document.getElementById(`task-${key}-list`);
   const arrow = document.getElementById(`${key}-arrow`);
   if (!body) return;
@@ -5513,27 +5603,146 @@ function renderTaskPage() {
     el.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : `<div class="section-empty">${emptyMsg}</div>`;
   };
 
+  // INBOX は常時表示
   const inboxEl = document.getElementById('task-inbox-list');
   render(inboxEl, inboxTasks, 'INBOXは空です 🎉');
   applyTaskListLimit(inboxEl, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
 
-  const nextEl = document.getElementById('task-next-list');
-  if (nextEl) nextEl.innerHTML = nextTasks.length ? groupByArea(nextTasks, renderGtdCard) : '<div class="section-empty">なし</div>';
-  applyTaskListLimit(nextEl, taskNextExpanded, 'expandTaskNext', 'collapseTaskNext');
+  // GTDエリア：表示状態に応じてセクション切替
+  const gtdDefs = [
+    { key: 'next',    tasks: nextTasks,    emptyMsg: 'なし',
+      countId: 'task-next-count', count2Id: 'task-next-count2', listId: 'task-next-list' },
+    { key: 'wait',    tasks: waitTasks,    emptyMsg: 'なし',
+      countId: 'task-wait-count', count2Id: 'task-wait-count2', listId: 'task-wait-list' },
+    { key: 'someday', tasks: somedayTasks, emptyMsg: 'なし',
+      countId: 'task-someday-count', count2Id: 'task-someday-count2', listId: 'task-someday-list' },
+  ];
 
-  render(document.getElementById('task-wait-list'),  waitTasks,  'なし');
-  render(document.getElementById('task-someday-list'), somedayTasks, 'なし');
+  gtdDefs.forEach(({ key, tasks, emptyMsg, countId, count2Id, listId }) => {
+    const revealWrap  = document.getElementById(`gtd-reveal-${key}`);
+    const sectionDiv  = document.getElementById(`gtd-section-${key}`);
+    const listEl      = document.getElementById(listId);
+    const countEl     = document.getElementById(countId);
+    const count2El    = document.getElementById(count2Id);
+    const n = tasks.length;
+    const label = n ? `(${n})` : '';
+    if (countEl)  countEl.textContent  = label;
+    if (count2El) count2El.textContent = label;
 
-  const counts = {
-    'task-inbox-count':   inboxTasks.length,
-    'task-next-count':    nextTasks.length,
-    'task-wait-count':    waitTasks.length,
-    'task-someday-count': somedayTasks.length,
-  };
-  Object.entries(counts).forEach(([id, n]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = n ? `(${n})` : '';
+    if (taskGtdVisible[key]) {
+      if (revealWrap) revealWrap.style.display = 'none';
+      if (sectionDiv) sectionDiv.style.display = '';
+      if (key === 'next') {
+        if (listEl) listEl.innerHTML = tasks.length ? groupByArea(tasks, renderGtdCard) : `<div class="section-empty">${emptyMsg}</div>`;
+        applyTaskListLimit(listEl, taskNextExpanded, 'expandTaskNext', 'collapseTaskNext');
+      } else {
+        render(listEl, tasks, emptyMsg);
+      }
+    } else {
+      if (revealWrap) revealWrap.style.display = '';
+      if (sectionDiv) sectionDiv.style.display = 'none';
+    }
   });
+
+  // ドラッグ初期化（描画後）
+  requestAnimationFrame(initGtdDrag);
+}
+
+// ===== タスクページ ドラッグ&ドロップ =====
+let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragActive = false;
+
+const GTD_DROP_AREAS = [
+  { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
+  { elId: 'gtd-area-next',    gtdVal: '▶️ 次やる' },
+  { elId: 'gtd-area-wait',    gtdVal: '📧 待ち' },
+  { elId: 'gtd-area-someday', gtdVal: '💫今じゃない' },
+];
+
+function initGtdDrag() {
+  const content = document.getElementById('task-content');
+  if (!content || content.dataset.gtdDragInit) return;
+  content.dataset.gtdDragInit = '1';
+
+  content.addEventListener('pointerdown', e => {
+    const card = e.target.closest('.task-card');
+    if (!card) return;
+    // GTDボタン・タイムボタン等は除外
+    if (e.target.closest('.btn-gtd,.time-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable')) return;
+
+    const id = card.id?.replace(/^gtc-/, '');
+    if (!id) return;
+
+    const task = allTasks.find(t => t.id === id);
+    if (!task) return;
+    const title = getProp(task,'タイトル') || '無題';
+
+    let moved = false;
+    const startX = e.clientX, startY = e.clientY;
+
+    function onMove(ev) {
+      if (!moved) {
+        if (Math.abs(ev.clientX - startX) < 5 && Math.abs(ev.clientY - startY) < 5) return;
+        moved = true;
+        gtdDragId = id;
+        gtdDragEl = card;
+        card.classList.add('gtd-dragging');
+        gtdDragGhost = document.createElement('div');
+        gtdDragGhost.className = 'gtd-drag-ghost';
+        gtdDragGhost.textContent = title;
+        document.body.appendChild(gtdDragGhost);
+        gtdDragActive = true;
+      }
+      if (!gtdDragActive) return;
+      gtdDragGhost.style.left = ev.clientX + 'px';
+      gtdDragGhost.style.top  = ev.clientY + 'px';
+      updateGtdDropHighlight(ev.clientX, ev.clientY);
+    }
+
+    function onUp(ev) {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (!gtdDragActive) return;
+      finishGtdDrag(ev.clientX, ev.clientY);
+    }
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+}
+
+function updateGtdDropHighlight(cx, cy) {
+  GTD_DROP_AREAS.forEach(({ elId }) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const over = cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+    el.classList.toggle('gtd-drop-active', over);
+  });
+}
+
+function finishGtdDrag(cx, cy) {
+  gtdDragEl?.classList.remove('gtd-dragging');
+  gtdDragGhost?.remove();
+  gtdDragGhost = null;
+  GTD_DROP_AREAS.forEach(({ elId }) => document.getElementById(elId)?.classList.remove('gtd-drop-active'));
+
+  const savedId = gtdDragId;
+  gtdDragId = null; gtdDragEl = null; gtdDragActive = false;
+
+  const target = GTD_DROP_AREAS.find(({ elId }) => {
+    const el = document.getElementById(elId);
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  });
+  if (!target) return;
+
+  const task = allTasks.find(t => t.id === savedId);
+  if (!task) return;
+  const currentGtd = getProp(task, 'GTD 種別') || '📥 INBOX';
+  if (target.gtdVal === currentGtd) return;
+
+  setGtdKind(savedId, target.gtdVal);
 }
 
 // GTDドロップダウンをクリック外で閉じる
