@@ -836,7 +836,7 @@ body::before {
   transition: all .15s; letter-spacing: 0.05em;
 }
 .btn-set-prop:hover { background: rgba(255,255,255,0.08); color: var(--text); }
-.task-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
+.task-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.5; user-select: none; -webkit-user-select: none; }
 .task-bottom { display: flex; align-items: center; gap: 6px; }
 .time-wrap { display: flex; align-items: center; gap: 4px; }
 .time-btn {
@@ -911,6 +911,7 @@ body::before {
   flex: 1; font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.55;
   padding: 2px 0; min-height: 30px;
   display: flex; align-items: center;
+  user-select: none; -webkit-user-select: none;
 }
 .card-side {
   display: flex; flex-direction: column; gap: 6px;
@@ -5693,9 +5694,12 @@ function renderTaskPage() {
     if (countEl)  countEl.textContent  = label;
     if (count2El) count2El.textContent = label;
 
+    if (revealWrap) revealWrap.style.display = 'none';
+    if (sectionDiv) sectionDiv.style.display = '';
+    const arrowEl = sectionDiv?.querySelector('.gtd-section-header span:last-child');
+    if (arrowEl) arrowEl.textContent = taskGtdVisible[key] ? '▼' : '▶';
     if (taskGtdVisible[key]) {
-      if (revealWrap) revealWrap.style.display = 'none';
-      if (sectionDiv) sectionDiv.style.display = '';
+      if (listEl) listEl.style.display = '';
       if (key === 'next') {
         if (listEl) listEl.innerHTML = tasks.length ? groupByArea(tasks, renderGtdCard) : `<div class="section-empty">${emptyMsg}</div>`;
         applyTaskListLimit(listEl, taskNextExpanded, 'expandTaskNext', 'collapseTaskNext');
@@ -5703,8 +5707,7 @@ function renderTaskPage() {
         render(listEl, tasks, emptyMsg);
       }
     } else {
-      if (revealWrap) revealWrap.style.display = '';
-      if (sectionDiv) sectionDiv.style.display = 'none';
+      if (listEl) { listEl.style.display = 'none'; listEl.innerHTML = ''; }
     }
   });
 
