@@ -1475,7 +1475,7 @@ body::before {
   overflow: hidden;
   background: rgba(13,13,26,0.72);
 }
-.task-gtd-col { display: flex; flex-direction: column; gap: 12px; }
+.task-gtd-col { display: flex; flex-direction: column; gap: 12px; height: 100%; }
 .task-section {
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
@@ -1511,6 +1511,8 @@ body::before {
   display: flex;
   flex-direction: column;
   transition: border-color .15s, background .15s;
+  flex: 1;
+  min-height: 0;
 }
 .task-gtd-area.gtd-drop-active {
   border-color: rgba(127,119,221,0.7);
@@ -1536,7 +1538,8 @@ body::before {
   white-space: nowrap;
 }
 .gtd-reveal-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.28); }
-.gtd-section-open { display: flex; flex-direction: column; }
+.gtd-section-open { display: flex; flex-direction: column; min-height: 0; }
+.gtd-section-open .task-section-body { flex: 1; overflow-y: auto; min-height: 0; }
 .gtd-section-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 12px;
@@ -1791,43 +1794,43 @@ body::before {
 
         <!-- 次やる -->
         <div class="task-gtd-area" id="gtd-area-next" data-gtd="▶️ 次やる">
-          <div class="gtd-reveal-wrap" id="gtd-reveal-next">
-            <button class="gtd-reveal-btn" onclick="toggleGtdArea('next')">▶️ 次やるを表示<span class="task-count" id="task-next-count"></span></button>
-          </div>
           <div id="gtd-section-next" style="display:none" class="gtd-section-open">
             <div class="gtd-section-header" onclick="toggleGtdArea('next')">
               <span>▶️ 次やる<span class="task-count" id="task-next-count2"></span></span>
-              <span style="font-size:9px;color:var(--text-dim)">▼</span>
+              <span class="gtd-arrow" style="font-size:9px;color:var(--text-dim)">▶</span>
             </div>
-            <div class="task-section-body" id="task-next-list"></div>
+            <div class="task-section-body" id="task-next-list" style="display:none"></div>
+          </div>
+          <div class="gtd-reveal-wrap" id="gtd-reveal-next">
+            <button class="gtd-reveal-btn" onclick="toggleGtdArea('next')">▶️ 次やるを表示<span class="task-count" id="task-next-count"></span></button>
           </div>
         </div>
 
         <!-- 待ち -->
         <div class="task-gtd-area" id="gtd-area-wait" data-gtd="📧 待ち">
-          <div class="gtd-reveal-wrap" id="gtd-reveal-wait">
-            <button class="gtd-reveal-btn" onclick="toggleGtdArea('wait')">📧 待ちを表示<span class="task-count" id="task-wait-count"></span></button>
-          </div>
           <div id="gtd-section-wait" style="display:none" class="gtd-section-open">
             <div class="gtd-section-header" onclick="toggleGtdArea('wait')">
               <span>📧 待ち<span class="task-count" id="task-wait-count2"></span></span>
-              <span style="font-size:9px;color:var(--text-dim)">▼</span>
+              <span class="gtd-arrow" style="font-size:9px;color:var(--text-dim)">▶</span>
             </div>
-            <div class="task-section-body" id="task-wait-list"></div>
+            <div class="task-section-body" id="task-wait-list" style="display:none"></div>
+          </div>
+          <div class="gtd-reveal-wrap" id="gtd-reveal-wait">
+            <button class="gtd-reveal-btn" onclick="toggleGtdArea('wait')">📧 待ちを表示<span class="task-count" id="task-wait-count"></span></button>
           </div>
         </div>
 
         <!-- 今じゃない -->
         <div class="task-gtd-area" id="gtd-area-someday" data-gtd="💫今じゃない">
-          <div class="gtd-reveal-wrap" id="gtd-reveal-someday">
-            <button class="gtd-reveal-btn" onclick="toggleGtdArea('someday')">💫 今じゃないを表示<span class="task-count" id="task-someday-count"></span></button>
-          </div>
           <div id="gtd-section-someday" style="display:none" class="gtd-section-open">
             <div class="gtd-section-header" onclick="toggleGtdArea('someday')">
               <span>💫 今じゃない<span class="task-count" id="task-someday-count2"></span></span>
-              <span style="font-size:9px;color:var(--text-dim)">▼</span>
+              <span class="gtd-arrow" style="font-size:9px;color:var(--text-dim)">▶</span>
             </div>
-            <div class="task-section-body" id="task-someday-list"></div>
+            <div class="task-section-body" id="task-someday-list" style="display:none"></div>
+          </div>
+          <div class="gtd-reveal-wrap" id="gtd-reveal-someday">
+            <button class="gtd-reveal-btn" onclick="toggleGtdArea('someday')">💫 今じゃないを表示<span class="task-count" id="task-someday-count"></span></button>
           </div>
         </div>
 
@@ -5694,11 +5697,12 @@ function renderTaskPage() {
     if (countEl)  countEl.textContent  = label;
     if (count2El) count2El.textContent = label;
 
-    if (revealWrap) revealWrap.style.display = 'none';
-    if (sectionDiv) sectionDiv.style.display = '';
-    const arrowEl = sectionDiv?.querySelector('.gtd-section-header span:last-child');
-    if (arrowEl) arrowEl.textContent = taskGtdVisible[key] ? '▼' : '▶';
-    if (taskGtdVisible[key]) {
+    const open = taskGtdVisible[key];
+    if (sectionDiv) { sectionDiv.style.display = ''; sectionDiv.style.flex = open ? '1' : '0 0 auto'; }
+    if (revealWrap) revealWrap.style.display = open ? 'none' : '';
+    const arrowEl = sectionDiv?.querySelector('.gtd-arrow');
+    if (arrowEl) arrowEl.textContent = open ? '▼' : '▶';
+    if (open) {
       if (listEl) listEl.style.display = '';
       if (key === 'next') {
         if (listEl) listEl.innerHTML = tasks.length ? groupByArea(tasks, renderGtdCard) : `<div class="section-empty">${emptyMsg}</div>`;
