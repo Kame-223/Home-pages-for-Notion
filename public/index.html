@@ -2318,13 +2318,21 @@ function renderFullCalendar() {
       const h = sel.start.getHours();
       const m = sel.start.getMinutes();
       const isNextDay = sel.start.getDate() !== viewDate.getDate();
-      // 前日展開: 当日2:30〜3:00はブロック
       if (_calEarly && !isNextDay && h < 3) return false;
-      // 翌日展開: 翌日3:00以降のみブロック（24:00〜3:00は選択可）
       if (_calLatenight && isNextDay && h >= 3) return false;
-      // デフォルト: 5:30〜6:00バッファはブロック
       if (!_calEarly && !isNextDay && h === 5 && m >= 30) return false;
-      // デフォルト: 24:00〜24:30バッファはブロック（翌日0:00〜0:30）
+      if (!_calLatenight && isNextDay && h === 0) return false;
+      return true;
+    },
+    eventAllow: (dropInfo) => {
+      const viewDate = fcCalendar?.getDate();
+      if (!viewDate) return true;
+      const h = dropInfo.start.getHours();
+      const m = dropInfo.start.getMinutes();
+      const isNextDay = dropInfo.start.getDate() !== viewDate.getDate();
+      if (_calEarly && !isNextDay && h < 3) return false;
+      if (_calLatenight && isNextDay && h >= 3) return false;
+      if (!_calEarly && !isNextDay && h === 5 && m >= 30) return false;
       if (!_calLatenight && isNextDay && h === 0) return false;
       return true;
     },
