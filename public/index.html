@@ -2171,7 +2171,7 @@ function calIsRestrictedStart(d) {
   if (!vd) return false;
   const h = d.getHours(), m = d.getMinutes();
   const nd = d.getDate() !== vd.getDate();
-  if (_calEarly  && !nd && h < 3) return true;
+  if (_calEarly  && !nd && (h < 3 || (h === 3 && m === 0))) return true;
   if (_calLatenight && nd && h >= 3) return true;
   if (!_calEarly  && !nd && h === 5 && m >= 30) return true;
   if (!_calLatenight && nd) return true;
