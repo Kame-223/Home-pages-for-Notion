@@ -350,8 +350,10 @@ body::before {
 .fc-toolbar { padding: 6px 8px !important; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
 /* ラベルエリアの線はborder除去（laneのborder-topのみで表示） */
 .fc-timegrid-slot-label { border-bottom: none !important; }
-/* 整時の線だけ強調 */
-.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor) { border-top-color: rgba(255,255,255,0.17) !important; }
+/* 整時（:00）の線 */
+.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":00:00"] { border-top-color: rgba(255,255,255,0.2) !important; }
+/* 半整時（:30）の線 */
+.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top-color: rgba(255,255,255,0.16) !important; }
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
