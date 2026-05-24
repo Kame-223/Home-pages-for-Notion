@@ -2187,6 +2187,38 @@ function calIsRestrictedEnd(d) {
   return false;
 }
 
+function calClampStart(d) {
+  if (!calIsRestrictedStart(d)) return d;
+  const vd = fcCalendar?.getDate();
+  if (!vd) return d;
+  const h = d.getHours(), m = d.getMinutes();
+  const nd = d.getDate() !== vd.getDate();
+  if (_calEarly && !nd && (h < 3 || (h === 3 && m === 0))) {
+    const c = new Date(d); c.setHours(3, 5, 0, 0); return c;
+  }
+  if (!_calEarly && !nd && h === 5 && m >= 30) {
+    const c = new Date(d); c.setHours(6, 0, 0, 0); return c;
+  }
+  return d;
+}
+function calClampEnd(d) {
+  if (!calIsRestrictedEnd(d)) return d;
+  const vd = fcCalendar?.getDate();
+  if (!vd) return d;
+  const nd = d.getDate() !== vd.getDate();
+  if (_calLatenight && nd) {
+    const c = new Date(vd); c.setDate(c.getDate() + 1); c.setHours(3, 0, 0, 0); return c;
+  }
+  if (!_calLatenight && nd) {
+    const c = new Date(vd); c.setDate(c.getDate() + 1); c.setHours(0, 0, 0, 0); return c;
+  }
+  return d;
+}
+function calToDateStr(d) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
+}
+
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
@@ -2338,9 +2370,9 @@ function renderFullCalendar() {
       }
     },
     selectAllow: (sel) => {
-      if (calIsRestrictedStart(sel.start)) return false;
-      if (sel.end && calIsRestrictedEnd(sel.end)) return false;
-      return true;
+      const s = calClampStart(sel.start);
+      const e = sel.end ? calClampEnd(sel.end) : sel.start;
+      return s < e;
     },
     eventAllow: (dropInfo) => {
       if (calIsRestrictedStart(dropInfo.start)) return false;
@@ -2348,7 +2380,12 @@ function renderFullCalendar() {
       return true;
     },
     events: fetchGCalEvents,
-    select: (info) => openGCalModal(null, info.startStr, info.endStr),
+    select: (info) => {
+      const start = calClampStart(info.start);
+      const end = info.end ? calClampEnd(info.end) : info.start;
+      if (start >= end) { fcCalendar?.unselect(); return; }
+      openGCalModal(null, calToDateStr(start), calToDateStr(end));
+    },
     eventClick: (info) => openGCalModal(info.event, null, null),
     eventDrop: (info) => {
       if (calIsRestrictedStart(info.event.start) || (info.event.end && calIsRestrictedEnd(info.event.end))) {
