@@ -326,7 +326,7 @@ body::before {
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
-.fc-timegrid-slot { height: 22px !important; }
+.fc-timegrid-slot { height: 7px !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
@@ -2300,6 +2300,66 @@ function calToDateStr(d) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
 }
 
+let _calRcBusy = false, _calHighlightObserver = null;
+
+function getCalRestrictRanges(colBg) {
+  const slotsTable = document.querySelector('.fc-timegrid-slots');
+  if (!slotsTable) return [];
+  const colBgRect = colBg.getBoundingClientRect();
+  const ranges = [];
+  let cur = null;
+  slotsTable.querySelectorAll('td.fc-timegrid-slot:not(.fc-timegrid-slot-label)').forEach(td => {
+    const timeAttr = td.getAttribute('data-time');
+    if (!timeAttr) return;
+    const [hStr, mStr] = timeAttr.split(':');
+    const h = parseInt(hStr), m = parseInt(mStr);
+    const viewDate = fcCalendar?.getDate();
+    if (!viewDate) return;
+    const d = new Date(viewDate);
+    if (h >= 24) { d.setDate(d.getDate() + 1); d.setHours(h - 24, m, 0, 0); }
+    else { d.setHours(h, m, 0, 0); }
+    if (calIsRestrictedStart(d)) {
+      const r = td.getBoundingClientRect();
+      const top = r.top - colBgRect.top;
+      if (!cur) { cur = { top, h: r.height }; }
+      else { cur.h += r.height; }
+    } else {
+      if (cur) { ranges.push(cur); cur = null; }
+    }
+  });
+  if (cur) ranges.push(cur);
+  return ranges;
+}
+
+function updateCalRC(colBg) {
+  colBg.querySelectorAll('.cal-rc').forEach(el => el.remove());
+  if (!colBg.querySelector('.fc-highlight')) return;
+  getCalRestrictRanges(colBg).forEach(r => {
+    const cover = document.createElement('div');
+    cover.className = 'cal-rc';
+    cover.style.cssText = `position:absolute;left:0;right:0;top:${r.top}px;height:${r.h}px;background:rgba(0,0,0,0.3);pointer-events:none;`;
+    colBg.appendChild(cover);
+  });
+}
+
+function setupCalHighlightObserver() {
+  if (_calHighlightObserver) _calHighlightObserver.disconnect();
+  const colBg = document.querySelector('.fc-timegrid-col-bg');
+  if (!colBg) return;
+  _calHighlightObserver = new MutationObserver(mutations => {
+    if (_calRcBusy) return;
+    const relevant = mutations.some(m =>
+      [...(m.addedNodes || [])].some(n => !n.classList?.contains('cal-rc')) ||
+      [...(m.removedNodes || [])].some(n => !n.classList?.contains('cal-rc')) ||
+      (m.type === 'attributes' && !m.target.classList?.contains('cal-rc'))
+    );
+    if (!relevant) return;
+    _calRcBusy = true;
+    requestAnimationFrame(() => { updateCalRC(colBg); _calRcBusy = false; });
+  });
+  _calHighlightObserver.observe(colBg, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+}
+
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
@@ -2395,7 +2455,7 @@ function renderFullCalendar() {
     slotMinTime: '05:30:00',
     slotMaxTime: '24:30:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-    slotDuration: '00:15:00',
+    slotDuration: '00:05:00',
     slotLabelInterval: '00:30:00',
     snapDuration: '00:05:00',
     slotLabelContent: (arg) => {
@@ -2430,24 +2490,28 @@ function renderFullCalendar() {
         }
       });
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(setupCalHighlightObserver); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
       const viewDate = fcCalendar?.getDate();
       const isNextDay = viewDate && arg.date.getDate() !== viewDate.getDate();
+      let bg = 'rgba(70,60,140,0.12)', restricted = false;
       if (h < 3 || (isNextDay && h === 3) || (_calEarly && !isNextDay && h === 3 && m === 0)) {
-        arg.el.style.background = 'rgba(10,10,20,0.65)';
+        bg = 'rgba(0,0,0,0.3)'; restricted = true;
       } else if (!_calEarly && !isNextDay && h === 5 && m >= 30) {
-        arg.el.style.background = 'rgba(10,10,20,0.60)';
+        bg = 'rgba(0,0,0,0.3)'; restricted = true;
       } else if (!_calLatenight && isNextDay && h === 0) {
-        arg.el.style.background = 'rgba(10,10,20,0.60)';
+        bg = 'rgba(0,0,0,0.3)'; restricted = true;
       } else if (h >= 6 && h < 12) {
-        arg.el.style.background = 'rgba(255,190,60,0.07)';
+        bg = 'rgba(255,190,60,0.07)';
       } else if (h >= 12 && h < 18) {
-        arg.el.style.background = 'rgba(100,180,255,0.07)';
-      } else {
-        arg.el.style.background = 'rgba(70,60,140,0.12)';
+        bg = 'rgba(100,180,255,0.07)';
+      }
+      arg.el.style.background = bg;
+      if (restricted) {
+        const labelTd = arg.el.previousElementSibling;
+        if (labelTd) labelTd.style.background = bg;
       }
     },
     selectAllow: (sel) => {
