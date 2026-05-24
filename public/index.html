@@ -2168,6 +2168,7 @@ function toggleCalLatenight() {
   fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:30:00' : '24:15:00');
   const btn = document.getElementById('fc-btn-down');
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
+  requestAnimationFrame(reapplyCalLabelStyles);
 }
 
 function toggleCalEarly() {
@@ -2203,7 +2204,9 @@ function reapplyCalLabelStyles() {
     const tdTop = el.getBoundingClientRect().top;
     const cr = cushion.getBoundingClientRect();
     const delta = tdTop - (cr.top + cr.bottom) / 2;
-    cushion.style.setProperty('transform', `translateY(${delta}px)`, 'important');
+    if (Math.abs(delta) > 0.5) {
+      cushion.style.setProperty('transform', `translateY(${delta}px)`, 'important');
+    }
   });
   fcCalendar?.updateSize();
 }
