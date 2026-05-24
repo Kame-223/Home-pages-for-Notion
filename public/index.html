@@ -2164,6 +2164,27 @@ function updateLoginStatus() {
 
 let _calLatenight = false, _calEarly = false;
 
+function calIsRestrictedStart(d) {
+  const vd = fcCalendar?.getDate();
+  if (!vd) return false;
+  const h = d.getHours(), m = d.getMinutes();
+  const nd = d.getDate() !== vd.getDate();
+  if (_calEarly  && !nd && h < 3) return true;
+  if (_calLatenight && nd && h >= 3) return true;
+  if (!_calEarly  && !nd && h === 5 && m >= 30) return true;
+  if (!_calLatenight && nd) return true;
+  return false;
+}
+function calIsRestrictedEnd(d) {
+  const vd = fcCalendar?.getDate();
+  if (!vd) return false;
+  const h = d.getHours(), m = d.getMinutes();
+  const nd = d.getDate() !== vd.getDate();
+  if (_calLatenight && nd && (h > 3 || (h === 3 && m > 0))) return true;
+  if (!_calLatenight && nd && (h > 0 || m > 0)) return true;
+  return false;
+}
+
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
@@ -2315,34 +2336,30 @@ function renderFullCalendar() {
       }
     },
     selectAllow: (sel) => {
-      const viewDate = fcCalendar?.getDate();
-      if (!viewDate) return true;
-      const h = sel.start.getHours();
-      const m = sel.start.getMinutes();
-      const isNextDay = sel.start.getDate() !== viewDate.getDate();
-      if (_calEarly && !isNextDay && h < 3) return false;
-      if (_calLatenight && isNextDay && h >= 3) return false;
-      if (!_calEarly && !isNextDay && h === 5 && m >= 30) return false;
-      if (!_calLatenight && isNextDay && h === 0) return false;
+      if (calIsRestrictedStart(sel.start)) return false;
+      if (sel.end && calIsRestrictedEnd(sel.end)) return false;
       return true;
     },
     eventAllow: (dropInfo) => {
-      const viewDate = fcCalendar?.getDate();
-      if (!viewDate) return true;
-      const h = dropInfo.start.getHours();
-      const m = dropInfo.start.getMinutes();
-      const isNextDay = dropInfo.start.getDate() !== viewDate.getDate();
-      if (_calEarly && !isNextDay && h < 3) return false;
-      if (_calLatenight && isNextDay && h >= 3) return false;
-      if (!_calEarly && !isNextDay && h === 5 && m >= 30) return false;
-      if (!_calLatenight && isNextDay && h === 0) return false;
+      if (calIsRestrictedStart(dropInfo.start)) return false;
+      if (dropInfo.end && calIsRestrictedEnd(dropInfo.end)) return false;
       return true;
     },
     events: fetchGCalEvents,
     select: (info) => openGCalModal(null, info.startStr, info.endStr),
     eventClick: (info) => openGCalModal(info.event, null, null),
-    eventDrop: (info) => moveGCalEvent(info.event),
-    eventResize: (info) => moveGCalEvent(info.event),
+    eventDrop: (info) => {
+      if (calIsRestrictedStart(info.event.start) || (info.event.end && calIsRestrictedEnd(info.event.end))) {
+        info.revert(); return;
+      }
+      moveGCalEvent(info.event);
+    },
+    eventResize: (info) => {
+      if (calIsRestrictedStart(info.event.start) || (info.event.end && calIsRestrictedEnd(info.event.end))) {
+        info.revert(); return;
+      }
+      moveGCalEvent(info.event);
+    },
   });
   fcCalendar.render();
 }
