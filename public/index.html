@@ -2997,6 +2997,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       closeGCalPanel(true);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (gcalEditingId) {
+        e.preventDefault();
+        deleteGCalEvent();
+      }
     }
   });
 });
