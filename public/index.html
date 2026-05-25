@@ -2335,33 +2335,36 @@ function getCalRestrictRanges(colBg) {
   return ranges;
 }
 
-function updateCalRC(colBg) {
+function updateCalRC() {
+  const colBg = document.querySelector('.fc-timegrid-col-bg');
+  if (!colBg) return;
   colBg.querySelectorAll('.cal-rc').forEach(el => el.remove());
   if (!colBg.querySelector('.fc-highlight')) return;
   getCalRestrictRanges(colBg).forEach(r => {
     const cover = document.createElement('div');
     cover.className = 'cal-rc';
-    cover.style.cssText = `position:absolute;left:0;right:0;top:${r.top}px;height:${r.h}px;background:rgba(0,0,0,0.3);pointer-events:none;`;
+    cover.style.cssText = `position:absolute;left:0;right:0;top:${r.top}px;height:${r.h}px;background:rgba(13,13,26,0.97);pointer-events:none;`;
     colBg.appendChild(cover);
   });
 }
 
 function setupCalHighlightObserver() {
   if (_calHighlightObserver) _calHighlightObserver.disconnect();
-  const colBg = document.querySelector('.fc-timegrid-col-bg');
-  if (!colBg) return;
+  const root = document.getElementById('fc-el');
+  if (!root) return;
   _calHighlightObserver = new MutationObserver(mutations => {
     if (_calRcBusy) return;
-    const relevant = mutations.some(m =>
-      [...(m.addedNodes || [])].some(n => !n.classList?.contains('cal-rc')) ||
-      [...(m.removedNodes || [])].some(n => !n.classList?.contains('cal-rc')) ||
-      (m.type === 'attributes' && !m.target.classList?.contains('cal-rc'))
-    );
+    const relevant = mutations.some(m => {
+      if (m.type === 'childList')
+        return [...(m.addedNodes||[])].some(n => n.classList?.contains('fc-highlight')) ||
+               [...(m.removedNodes||[])].some(n => n.classList?.contains('fc-highlight'));
+      return m.type === 'attributes' && m.target.classList?.contains('fc-highlight');
+    });
     if (!relevant) return;
     _calRcBusy = true;
-    requestAnimationFrame(() => { updateCalRC(colBg); _calRcBusy = false; });
+    requestAnimationFrame(() => { updateCalRC(); _calRcBusy = false; });
   });
-  _calHighlightObserver.observe(colBg, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+  _calHighlightObserver.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
 }
 
 function toggleCalLatenight() {
