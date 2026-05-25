@@ -359,18 +359,35 @@ body::before {
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 
-/* Googleログインボタン */
-/* GCalモーダル拡張 */
-.gcal-modal { width: 460px; max-width: 95vw; }
-.gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-.gcal-time-adj { display: flex; gap: 4px; flex-wrap: wrap; }
-.gcal-time-btn {
-  font-size: 10px; padding: 3px 9px; border-radius: 5px;
-  border: 0.5px solid var(--border2); background: var(--surface2);
-  color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s; white-space: nowrap;
+/* GCalフロートパネル */
+#gcal-panel {
+  position: fixed; z-index: 600;
+  background: #1a1a28;
+  border: 0.5px solid rgba(255,255,255,0.18);
+  border-radius: 12px; padding: 14px;
+  width: 270px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  display: none;
+  max-height: 90vh; overflow-y: auto;
 }
-.gcal-time-btn:hover { border-color: var(--purple); color: var(--purple); }
+.gcal-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.gcal-panel-title-text { font-size: 11px; font-weight: 600; color: var(--text-sub); letter-spacing: 0.06em; }
+.gcal-panel-close {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 16px; cursor: pointer; line-height: 1; padding: 0 2px;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.gcal-panel-close:hover { color: var(--text); }
+/* 選択範囲ドラッグハンドル */
+.cal-sel-handle {
+  position: fixed; height: 10px; cursor: ns-resize; z-index: 250;
+  background: rgba(66,133,244,0.75); border-radius: 3px;
+  touch-action: none;
+}
+.gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
 .gcal-kind-chip {
   font-size: 11px; padding: 4px 12px; border-radius: 20px;
@@ -1921,43 +1938,36 @@ body::before {
 </div>
 
 <!-- Googleカレンダー イベントモーダル -->
-<div class="modal-bg modal-bg-center" id="modal-gcal" onclick="closeModal('gcal')">
-  <div class="modal gcal-modal" onclick="event.stopPropagation()">
-    <div class="modal-title" id="gcal-modal-title">📅 予定を追加</div>
-    <input class="modal-input" id="gcal-ev-title" placeholder="タイトル" autocomplete="off"
-      onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();submitGCalEvent()}"/>
-    <div class="gcal-time-row">
-      <input class="modal-input" id="gcal-ev-start" type="datetime-local" style="flex:1" onchange="gcalSyncEndTime()"/>
-      <span style="color:var(--text-dim);font-size:12px">→</span>
-      <input class="modal-input" id="gcal-ev-end" type="datetime-local" style="flex:1"/>
+<div id="gcal-panel">
+  <div class="gcal-panel-header">
+    <span class="gcal-panel-title-text" id="gcal-panel-title">📅 予定を追加</span>
+    <button class="gcal-panel-close" onclick="closeGCalPanel(false)">×</button>
+  </div>
+  <input class="modal-input" id="gcal-ev-title" placeholder="タイトル" autocomplete="off"
+    onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();closeGCalPanel(true)}"/>
+  <div class="gcal-time-row">
+    <input class="modal-input" id="gcal-ev-start" type="datetime-local" style="flex:1" onchange="gcalSyncEndTime()"/>
+    <span style="color:var(--text-dim);font-size:12px">→</span>
+    <input class="modal-input" id="gcal-ev-end" type="datetime-local" style="flex:1"/>
+  </div>
+  <div class="edit-field" style="margin-top:10px">
+    <span class="edit-field-label">LOCATION</span>
+    <input class="modal-input" id="gcal-ev-location" placeholder="場所（任意）" style="margin-top:4px"/>
+  </div>
+  <div class="edit-field" style="margin-top:10px">
+    <span class="edit-field-label">KIND</span>
+    <div class="gcal-kind-chips" id="gcal-kind-chips">
+      <button class="gcal-kind-chip" data-kind="当日行動" onclick="toggleGCalKind(this)">当日行動</button>
     </div>
-    <div class="gcal-time-adj" style="margin-top:6px">
-      <span style="font-size:10px;color:var(--text-dim);align-self:center">終了を</span>
-      <button class="gcal-time-btn" onclick="gcalAdjEnd(15)">+15分</button>
-      <button class="gcal-time-btn" onclick="gcalAdjEnd(30)">+30分</button>
-      <button class="gcal-time-btn" onclick="gcalAdjEnd(60)">+1時間</button>
-      <button class="gcal-time-btn" onclick="gcalAdjEnd(90)">+1.5時間</button>
-      <button class="gcal-time-btn" onclick="gcalAdjEnd(120)">+2時間</button>
-    </div>
-    <div class="edit-field" style="margin-top:10px">
-      <span class="edit-field-label">LOCATION</span>
-      <input class="modal-input" id="gcal-ev-location" placeholder="場所（任意）" style="margin-top:4px"/>
-    </div>
-    <div class="edit-field" style="margin-top:10px">
-      <span class="edit-field-label">KIND</span>
-      <div class="gcal-kind-chips" id="gcal-kind-chips">
-        <button class="gcal-kind-chip" data-kind="当日行動" onclick="toggleGCalKind(this)">当日行動</button>
-      </div>
-    </div>
-    <div class="edit-field" style="margin-top:10px">
-      <span class="edit-field-label">DESCRIPTION</span>
-      <textarea class="gcal-textarea" id="gcal-ev-desc" placeholder="説明・メモ（任意）" style="margin-top:4px"></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-cancel" id="gcal-delete-btn" style="color:var(--red);display:none" onclick="deleteGCalEvent()">削除</button>
-      <button class="btn-cancel" onclick="closeModal('gcal')">キャンセル</button>
-      <button class="btn-save" onclick="submitGCalEvent()">保存</button>
-    </div>
+  </div>
+  <div class="edit-field" style="margin-top:10px">
+    <span class="edit-field-label">DESCRIPTION</span>
+    <textarea class="gcal-textarea" id="gcal-ev-desc" placeholder="説明・メモ（任意）" style="margin-top:4px"></textarea>
+  </div>
+  <div class="modal-btns">
+    <button class="btn-cancel" id="gcal-delete-btn" style="color:var(--red);display:none" onclick="deleteGCalEvent()">削除</button>
+    <button class="btn-cancel" onclick="closeGCalPanel(false)">キャンセル</button>
+    <button class="btn-save" onclick="closeGCalPanel(true)">保存</button>
   </div>
 </div>
 
@@ -2479,6 +2489,7 @@ function renderFullCalendar() {
     nowIndicator: true,
     editable: true,
     selectable: true,
+    unselectAuto: false,
     allDaySlot: false,
     slotMinTime: '05:30:00',
     slotMaxTime: '24:30:00',
@@ -2554,12 +2565,13 @@ function renderFullCalendar() {
     },
     events: fetchGCalEvents,
     select: (info) => {
+      if (_calDraggingHandles) return;
       const start = calClampStart(info.start);
       const end = info.end ? calClampEnd(info.end) : info.start;
       if (start >= end) { fcCalendar?.unselect(); return; }
-      openGCalModal(null, calToDateStr(start), calToDateStr(end));
+      openGCalPanel(null, calToDateStr(start), calToDateStr(end), null);
     },
-    eventClick: (info) => openGCalModal(info.event, null, null),
+    eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
     eventDrop: (info) => {
       if (calIsRestrictedStart(info.event.start) || (info.event.end && calIsRestrictedEnd(info.event.end))) {
         info.revert(); return;
@@ -2691,25 +2703,186 @@ function parseGCalKindFromDesc(desc) {
   return m ? m[1] : null;
 }
 
-function openGCalModal(event, startStr, endStr) {
-  gcalEditingId = event ? (event.extendedProps?.eventId || event.id) : null;
-  gcalCalendarId = event ? (event.extendedProps?.calendarId || 'primary') : 'primary';
-  gcalUseToken2 = event ? !!(event.extendedProps?.useToken2) : false;
-  document.getElementById('gcal-modal-title').textContent = event ? '📅 予定を編集' : '📅 予定を追加';
-  document.getElementById('gcal-ev-title').value = event ? event.title : '';
-  document.getElementById('gcal-ev-start').value = toLocalDatetimeInput(event ? event.startStr : startStr);
-  document.getElementById('gcal-ev-end').value = toLocalDatetimeInput(event ? event.endStr : endStr);
-  document.getElementById('gcal-ev-location').value = event?.extendedProps?.location || '';
-  const rawDesc = event?.extendedProps?.description || '';
+// ===== GCalフロートパネル =====
+let _calDraggingHandles = false;
+let _calHandleTop = null, _calHandleBottom = null;
+let _calHandleStartMs = 0, _calHandleEndMs = 0;
+
+function openGCalPanel(fcEvent, startStr, endStr, anchorEl) {
+  gcalEditingId = fcEvent ? (fcEvent.extendedProps?.eventId || fcEvent.id) : null;
+  gcalCalendarId = fcEvent ? (fcEvent.extendedProps?.calendarId || 'primary') : 'primary';
+  gcalUseToken2 = fcEvent ? !!(fcEvent.extendedProps?.useToken2) : false;
+
+  document.getElementById('gcal-panel-title').textContent = fcEvent ? '📅 予定を編集' : '📅 予定を追加';
+  document.getElementById('gcal-ev-title').value = fcEvent ? fcEvent.title : '';
+  document.getElementById('gcal-ev-start').value = toLocalDatetimeInput(fcEvent ? fcEvent.startStr : startStr);
+  document.getElementById('gcal-ev-end').value = toLocalDatetimeInput(fcEvent ? fcEvent.endStr : endStr);
+  document.getElementById('gcal-ev-location').value = fcEvent?.extendedProps?.location || '';
+  const rawDesc = fcEvent?.extendedProps?.description || '';
   const kind = parseGCalKindFromDesc(rawDesc);
   document.getElementById('gcal-ev-desc').value = rawDesc.replace(/\[KIND:[^\]]+\]\n?/, '');
   document.querySelectorAll('#gcal-kind-chips .gcal-kind-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.kind === kind);
   });
-  document.getElementById('gcal-delete-btn').style.display = event ? 'block' : 'none';
-  openModal('gcal');
-  setTimeout(() => document.getElementById('gcal-ev-title')?.focus(), 50);
+  document.getElementById('gcal-delete-btn').style.display = fcEvent ? 'block' : 'none';
+
+  const panel = document.getElementById('gcal-panel');
+  panel.style.display = 'block';
+
+  // 新規選択なら選択ハンドルを表示
+  if (!fcEvent && startStr && endStr) {
+    const sMs = new Date(startStr).getTime();
+    const eMs = new Date(endStr).getTime();
+    requestAnimationFrame(() => {
+      showCalSelHandles(sMs, eMs);
+      positionGCalPanel(anchorEl || document.querySelector('.fc-highlight'));
+    });
+  } else {
+    positionGCalPanel(anchorEl);
+  }
+
+  setTimeout(() => document.getElementById('gcal-ev-title')?.focus(), 80);
 }
+
+// 旧名互換（_tdEnd から呼ばれる）
+function openGCalModal(event, startStr, endStr) { openGCalPanel(event, startStr, endStr, null); }
+
+function positionGCalPanel(anchorEl) {
+  const panel = document.getElementById('gcal-panel');
+  if (!anchorEl) {
+    panel.style.left = '50%'; panel.style.top = '50%';
+    panel.style.transform = 'translate(-50%,-50%)';
+    return;
+  }
+  panel.style.transform = '';
+  const r = anchorEl.getBoundingClientRect();
+  const pw = 270, margin = 8;
+  let left = r.right + margin;
+  if (left + pw > window.innerWidth - 8) left = r.left - pw - margin;
+  if (left < 8) left = 8;
+  const ph = panel.offsetHeight || 360;
+  let top = r.top;
+  if (top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
+  if (top < 8) top = 8;
+  panel.style.left = left + 'px';
+  panel.style.top  = top  + 'px';
+}
+
+function closeGCalPanel(save) {
+  const panel = document.getElementById('gcal-panel');
+  if (panel.style.display === 'none') return;
+  panel.style.display = 'none';
+  removeCalSelHandles();
+  fcCalendar?.unselect();
+  if (save) submitGCalEvent();
+}
+
+// ===== 選択ハンドル =====
+function getCalPxPerMs() {
+  const slot = document.querySelector('.fc-timegrid-slot-lane');
+  if (!slot) return null;
+  const h = slot.getBoundingClientRect().height;
+  return h > 0 ? h / (15 * 60 * 1000) : null;
+}
+
+function showCalSelHandles(startMs, endMs) {
+  removeCalSelHandles();
+  _calHandleStartMs = startMs;
+  _calHandleEndMs   = endMs;
+  const hi = document.querySelector('.fc-highlight');
+  if (!hi) return;
+  const r = hi.getBoundingClientRect();
+  if (!r.height) return;
+
+  _calHandleTop    = _mkCalHandle();
+  _calHandleBottom = _mkCalHandle();
+  document.body.appendChild(_calHandleTop);
+  document.body.appendChild(_calHandleBottom);
+  _posCalHandles(r);
+
+  initCalHandleDrag(_calHandleTop,    'start');
+  initCalHandleDrag(_calHandleBottom, 'end');
+  window.addEventListener('scroll', repositionCalSelHandles, { passive: true });
+}
+
+function _mkCalHandle() {
+  const el = document.createElement('div');
+  el.className = 'cal-sel-handle';
+  return el;
+}
+function _posCalHandles(r) {
+  if (!_calHandleTop) return;
+  _calHandleTop.style.top    = r.top + 'px';
+  _calHandleTop.style.left   = r.left + 'px';
+  _calHandleTop.style.width  = r.width + 'px';
+  _calHandleBottom.style.top  = (r.bottom - 10) + 'px';
+  _calHandleBottom.style.left = r.left + 'px';
+  _calHandleBottom.style.width = r.width + 'px';
+}
+function repositionCalSelHandles() {
+  const hi = document.querySelector('.fc-highlight');
+  if (hi && _calHandleTop) _posCalHandles(hi.getBoundingClientRect());
+}
+function removeCalSelHandles() {
+  _calHandleTop?.remove();    _calHandleTop    = null;
+  _calHandleBottom?.remove(); _calHandleBottom = null;
+  window.removeEventListener('scroll', repositionCalSelHandles);
+}
+
+function initCalHandleDrag(handleEl, which) {
+  handleEl.addEventListener('pointerdown', e => {
+    e.preventDefault(); e.stopPropagation();
+    handleEl.setPointerCapture(e.pointerId);
+    const ppm = getCalPxPerMs();
+    if (!ppm) return;
+    const startY = e.clientY;
+    const origHandleTop   = parseFloat(handleEl.style.top);
+    const origStartMs = _calHandleStartMs;
+    const origEndMs   = _calHandleEndMs;
+    const SNAP = 5 * 60 * 1000;
+    const MIN_DUR = SNAP;
+
+    function onMove(ev) {
+      const dy = ev.clientY - startY;
+      const dtMs = Math.round((dy / ppm) / SNAP) * SNAP;
+      if (which === 'start') {
+        const nMs = origStartMs + dtMs;
+        if (nMs < origEndMs - MIN_DUR) {
+          _calHandleStartMs = nMs;
+          handleEl.style.top = (origHandleTop + dtMs * ppm) + 'px';
+          document.getElementById('gcal-ev-start').value = toLocalDatetimeInput(new Date(nMs).toISOString());
+        }
+      } else {
+        const nMs = origEndMs + dtMs;
+        if (nMs > origStartMs + MIN_DUR) {
+          _calHandleEndMs = nMs;
+          handleEl.style.top = (origHandleTop + dtMs * ppm) + 'px';
+          document.getElementById('gcal-ev-end').value = toLocalDatetimeInput(new Date(nMs).toISOString());
+        }
+      }
+    }
+    function onUp() {
+      handleEl.removeEventListener('pointermove', onMove);
+      _calDraggingHandles = true;
+      fcCalendar?.select(new Date(_calHandleStartMs), new Date(_calHandleEndMs));
+      _calDraggingHandles = false;
+      requestAnimationFrame(repositionCalSelHandles);
+    }
+    handleEl.addEventListener('pointermove', onMove);
+    handleEl.addEventListener('pointerup', onUp, { once: true });
+  });
+}
+
+// パネル外クリック → タイトルあり保存 / なし破棄
+document.addEventListener('pointerdown', (e) => {
+  const panel = document.getElementById('gcal-panel');
+  if (!panel || panel.style.display === 'none') return;
+  if (panel.contains(e.target)) return;
+  if (_calHandleTop?.contains(e.target) || _calHandleBottom?.contains(e.target)) return;
+  if (e.target.closest('.fc-highlight, .fc-event')) return;
+  const title = document.getElementById('gcal-ev-title')?.value.trim();
+  closeGCalPanel(!!title);
+}, true);
 
 async function submitGCalEvent() {
   const title = document.getElementById('gcal-ev-title').value.trim() || '新しい予定';
@@ -2729,7 +2902,6 @@ async function submitGCalEvent() {
     ? `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`
     : `https://www.googleapis.com/calendar/v3/calendars/primary/events`;
   await fetch(url, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
-  closeModal('gcal');
   if (fcCalendar) fcCalendar.refetchEvents();
 }
 
@@ -2739,7 +2911,7 @@ async function deleteGCalEvent() {
   const calId = encodeURIComponent(gcalCalendarId);
   await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`,
     { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-  closeModal('gcal');
+  closeGCalPanel(false);
   if (fcCalendar) fcCalendar.refetchEvents();
 }
 
