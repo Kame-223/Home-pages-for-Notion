@@ -383,8 +383,8 @@ body::before {
 .gcal-panel-close:hover { color: var(--text); }
 /* 選択範囲ドラッグハンドル */
 .cal-sel-handle {
-  position: fixed; height: 10px; cursor: ns-resize; z-index: 250;
-  background: rgba(66,133,244,0.75); border-radius: 3px;
+  position: fixed; height: 5px; cursor: ns-resize; z-index: 250;
+  background: rgba(66,133,244,0.85); border-radius: 2px;
   touch-action: none;
 }
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
@@ -2564,6 +2564,7 @@ function renderFullCalendar() {
     events: fetchGCalEvents,
     select: (info) => {
       if (_calDraggingHandles) return;
+      if (_calJustClosed) { fcCalendar?.unselect(); return; }
       const start = calClampStart(info.start);
       const end = info.end ? calClampEnd(info.end) : info.start;
       if (start >= end) { fcCalendar?.unselect(); return; }
@@ -2703,6 +2704,9 @@ function parseGCalKindFromDesc(desc) {
 
 // ===== GCalフロートパネル =====
 let _calDraggingHandles = false;
+let _calJustClosed = false;       // 閉直後の再選択を防ぐ
+let _calOptEventId = null;        // ライブプレビューイベントのID
+let _calOrigEventTitle = null;    // 編集キャンセル時に戻すタイトル
 let _calHandleTop = null, _calHandleBottom = null;
 let _calHandleStartMs = 0, _calHandleEndMs = 0;
 
@@ -2727,15 +2731,28 @@ function openGCalPanel(fcEvent, startStr, endStr, anchorEl) {
   const panel = document.getElementById('gcal-panel');
   panel.style.display = 'block';
 
-  // 新規選択なら選択ハンドルを表示
   if (!fcEvent && startStr && endStr) {
+    // 新規: プレビューイベント追加 + ハンドル表示
     const sMs = new Date(startStr).getTime();
     const eMs = new Date(endStr).getTime();
+    const ts = Date.now();
+    _calOptEventId = '_opt_' + ts;
+    _calOrigEventTitle = null;
+    const { bg, border, text } = gcalEventColor('新しい予定', '');
+    fcCalendar?.addEvent({
+      id: _calOptEventId, title: '新しい予定',
+      start: startStr, end: endStr,
+      backgroundColor: bg, borderColor: border, textColor: text,
+      extendedProps: { description:'', location:'', calendarId:'primary', eventId:null, useToken2:false },
+    });
     requestAnimationFrame(() => {
       showCalSelHandles(sMs, eMs);
       positionGCalPanel(anchorEl || document.querySelector('.fc-highlight'));
     });
   } else {
+    // 既存イベント編集: タイトルを保存（キャンセル時に戻す）
+    _calOptEventId = null;
+    _calOrigEventTitle = fcEvent ? fcEvent.title : null;
     positionGCalPanel(anchorEl);
   }
 
@@ -2747,21 +2764,29 @@ function openGCalModal(event, startStr, endStr) { openGCalPanel(event, startStr,
 
 function positionGCalPanel(anchorEl) {
   const panel = document.getElementById('gcal-panel');
-  if (!anchorEl) {
+  panel.style.transform = '';
+  const calCol = document.querySelector('.schedule-col');
+  const cr = calCol ? calCol.getBoundingClientRect() : null;
+  const pw = 270, margin = 8;
+  const ph = panel.offsetHeight || 380;
+
+  if (!anchorEl && !cr) {
     panel.style.left = '50%'; panel.style.top = '50%';
     panel.style.transform = 'translate(-50%,-50%)';
     return;
   }
-  panel.style.transform = '';
-  const r = anchorEl.getBoundingClientRect();
-  const pw = 270, margin = 8;
-  let left = r.right + margin;
-  if (left + pw > window.innerWidth - 8) left = r.left - pw - margin;
-  if (left < 8) left = 8;
-  const ph = panel.offsetHeight || 360;
+
+  // 常にschedule-col右端の内側に寄せる
+  let left = cr ? (cr.right - pw - margin) : (anchorEl ? anchorEl.getBoundingClientRect().right + margin : 8);
+  if (cr) {
+    if (left < cr.left + margin) left = cr.left + margin;
+  }
+
+  const r = (anchorEl || calCol).getBoundingClientRect();
   let top = r.top;
   if (top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
   if (top < 8) top = 8;
+
   panel.style.left = left + 'px';
   panel.style.top  = top  + 'px';
 }
@@ -2772,7 +2797,26 @@ function closeGCalPanel(save) {
   panel.style.display = 'none';
   removeCalSelHandles();
   fcCalendar?.unselect();
-  if (save) submitGCalEvent();
+
+  // 閉直後の再選択を一定時間ブロック
+  _calJustClosed = true;
+  setTimeout(() => { _calJustClosed = false; }, 400);
+
+  if (save) {
+    submitGCalEvent(); // _calOptEventId が有効なうちに呼ぶ
+    _calOptEventId = null;
+    _calOrigEventTitle = null;
+  } else {
+    // キャンセル: プレビューを削除 or 元タイトルに戻す
+    if (_calOptEventId) {
+      fcCalendar?.getEventById(_calOptEventId)?.remove();
+    } else if (gcalEditingId && _calOrigEventTitle !== null) {
+      const fcEv = fcCalendar?.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
+      fcEv?.setProp('title', _calOrigEventTitle);
+    }
+    _calOptEventId = null;
+    _calOrigEventTitle = null;
+  }
 }
 
 // ===== 選択ハンドル =====
@@ -2813,7 +2857,7 @@ function _posCalHandles(r) {
   _calHandleTop.style.top    = r.top + 'px';
   _calHandleTop.style.left   = r.left + 'px';
   _calHandleTop.style.width  = r.width + 'px';
-  _calHandleBottom.style.top  = (r.bottom - 10) + 'px';
+  _calHandleBottom.style.top  = (r.bottom - 5) + 'px';
   _calHandleBottom.style.left = r.left + 'px';
   _calHandleBottom.style.width = r.width + 'px';
 }
@@ -2865,6 +2909,11 @@ function initCalHandleDrag(handleEl, which) {
       fcCalendar?.select(new Date(_calHandleStartMs), new Date(_calHandleEndMs));
       _calDraggingHandles = false;
       requestAnimationFrame(repositionCalSelHandles);
+      // プレビューイベントの時刻も更新
+      if (_calOptEventId) {
+        const fcEv = fcCalendar?.getEventById(_calOptEventId);
+        if (fcEv) { fcEv.setStart(new Date(_calHandleStartMs)); fcEv.setEnd(new Date(_calHandleEndMs)); }
+      }
     }
     handleEl.addEventListener('pointermove', onMove);
     handleEl.addEventListener('pointerup', onUp, { once: true });
@@ -2881,6 +2930,22 @@ document.addEventListener('pointerdown', (e) => {
   const title = document.getElementById('gcal-ev-title')?.value.trim();
   closeGCalPanel(!!title);
 }, true);
+
+// タイトル入力のリアルタイム同期（プレビューイベント・編集中イベントに即時反映）
+document.addEventListener('DOMContentLoaded', () => {
+  const titleInput = document.getElementById('gcal-ev-title');
+  if (!titleInput) return;
+  titleInput.addEventListener('input', () => {
+    if (document.getElementById('gcal-panel')?.style.display === 'none') return;
+    const title = titleInput.value || '新しい予定';
+    if (_calOptEventId) {
+      fcCalendar?.getEventById(_calOptEventId)?.setProp('title', title);
+    } else if (gcalEditingId) {
+      const fcEv = fcCalendar?.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
+      fcEv?.setProp('title', title);
+    }
+  });
+});
 
 function submitGCalEvent() {
   const title = document.getElementById('gcal-ev-title').value.trim() || '新しい予定';
@@ -2902,6 +2967,15 @@ function submitGCalEvent() {
       if (fcEv) {
         fcEv.setProp('title', title);
         fcEv.setStart(start); fcEv.setEnd(end);
+        fcEv.setProp('backgroundColor', bg);
+        fcEv.setProp('borderColor', border);
+        fcEv.setProp('textColor', text);
+      }
+    } else if (_calOptEventId) {
+      // プレビューイベント既存 → 色のみ更新（タイトル・時刻は既にライブ同期済み）
+      const fcEv = fcCalendar.getEventById(_calOptEventId);
+      if (fcEv) {
+        fcEv.setProp('title', title);
         fcEv.setProp('backgroundColor', bg);
         fcEv.setProp('borderColor', border);
         fcEv.setProp('textColor', text);
