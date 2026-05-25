@@ -2314,7 +2314,7 @@ function calToDateStr(d) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
 }
 
-let _calRcBusy = false, _calHighlightObserver = null, _calPointerHandler = null;
+let _calRcLoopId = null, _calHighlightObserver = null;
 
 function getCalRestrictRanges() {
   const viewDate = fcCalendar?.getDate();
@@ -2367,30 +2367,33 @@ function updateCalRC() {
     : '';
 }
 
+function startCalRcLoop() {
+  if (_calRcLoopId) return;
+  const tick = () => {
+    updateCalRC();
+    const hl = document.querySelector('.fc-timegrid-col-bg .fc-highlight');
+    _calRcLoopId = hl ? requestAnimationFrame(tick) : null;
+  };
+  _calRcLoopId = requestAnimationFrame(tick);
+}
+
+function stopCalRcLoop() {
+  if (_calRcLoopId) { cancelAnimationFrame(_calRcLoopId); _calRcLoopId = null; }
+}
+
 function setupCalHighlightObserver() {
   if (_calHighlightObserver) _calHighlightObserver.disconnect();
+  stopCalRcLoop();
   const root = document.getElementById('fc-el');
   if (!root) return;
-
-  let _rafId = null;
-  const run = () => {
-    if (_rafId) return;
-    _rafId = requestAnimationFrame(() => { updateCalRC(); _rafId = null; });
-  };
-
-  // childList のみ監視 — clip-path 変更で自己ループしない
   _calHighlightObserver = new MutationObserver(mutations => {
-    if (mutations.some(m => m.type === 'childList' &&
-        [...m.addedNodes, ...m.removedNodes].some(n => n.classList?.contains('fc-highlight')))) {
-      run();
+    for (const m of mutations) {
+      if (m.type !== 'childList') continue;
+      if ([...m.addedNodes].some(n => n.classList?.contains('fc-highlight'))) startCalRcLoop();
+      if ([...m.removedNodes].some(n => n.classList?.contains('fc-highlight'))) stopCalRcLoop();
     }
   });
   _calHighlightObserver.observe(root, { childList: true, subtree: true });
-
-  // ドラッグ中も毎フレーム同期
-  if (_calPointerHandler) root.removeEventListener('pointermove', _calPointerHandler);
-  _calPointerHandler = run;
-  root.addEventListener('pointermove', _calPointerHandler);
 }
 
 function toggleCalLatenight() {
