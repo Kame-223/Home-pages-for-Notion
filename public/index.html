@@ -2583,6 +2583,19 @@ function renderFullCalendar() {
   fcCalendar.render();
 }
 
+function gcalEventColor(title, description, calName, isIcu) {
+  const kind = description?.match(/\[KIND:([^\]]+)\]/)?.[1];
+  if (kind === '当日行動') return { bg:'rgba(120,120,130,0.22)', border:'rgba(160,160,170,0.7)', text:'rgba(210,210,220,0.9)' };
+  if (calName === '当日行動') return { bg:'rgba(74,160,56,0.22)',  border:'#4A9038', text:'#2A6820' };
+  if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.22)',  border:'#B06A30', text:'#8B4A20' };
+  if (/Constitutional|憲法/.test(title))   return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
+  if (/Sociology|社会学/.test(title))      return { bg:'rgba(180,50,50,0.22)',   border:'#B03030', text:'#901818' };
+  if (/\bPE\b/.test(title))               return { bg:'rgba(0,180,180,0.22)',   border:'#00A8A8', text:'#006868' };
+  if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.22)',  border:'#3C64D2', text:'#2C4AA8' };
+  if (isIcu)  return { bg:'rgba(120,80,210,0.20)', border:'#7850D2', text:'#5830A8' };
+  return      { bg:'rgba(50,160,80,0.20)',  border:'#32A050', text:'#207030' };
+}
+
 async function fetchGCalEvents(info, success, failure) {
   if (!gToken) { success([]); return; }
   try {
@@ -2591,19 +2604,6 @@ async function fetchGCalEvents(info, success, failure) {
     const end = new Date(info.start); end.setHours(23,59,59,999);
     const timeMin = start.toISOString();
     const timeMax = end.toISOString();
-
-    function getEventColor(title, calName, isIcu, description) {
-      const kind = description?.match(/\[KIND:([^\]]+)\]/)?.[1];
-      if (kind === '当日行動') return { bg:'rgba(120,120,130,0.22)', border:'rgba(160,160,170,0.7)', text:'rgba(210,210,220,0.9)' };
-      if (calName === '当日行動') return { bg:'rgba(74,160,56,0.22)',  border:'#4A9038', text:'#2A6820' };
-      if (/教育学|教育原理|教育/.test(title))  return { bg:'rgba(180,110,60,0.22)',  border:'#B06A30', text:'#8B4A20' };
-      if (/Constitutional|憲法/.test(title))   return { bg:'rgba(180,155,40,0.22)',  border:'#A08820', text:'#806800' };
-      if (/Sociology|社会学/.test(title))      return { bg:'rgba(180,50,50,0.22)',   border:'#B03030', text:'#901818' };
-      if (/\bPE\b/.test(title))               return { bg:'rgba(0,180,180,0.22)',   border:'#00A8A8', text:'#006868' };
-      if (/ELA/.test(title))                   return { bg:'rgba(60,100,210,0.22)',  border:'#3C64D2', text:'#2C4AA8' };
-      if (isIcu)  return { bg:'rgba(120,80,210,0.20)', border:'#7850D2', text:'#5830A8' };
-      return      { bg:'rgba(50,160,80,0.20)',  border:'#32A050', text:'#207030' };
-    }
 
     // トークンごとに全カレンダーからイベントを取得
     async function fetchFromToken(token, prefix) {
@@ -2628,7 +2628,7 @@ async function fetchGCalEvents(info, success, failure) {
           return (data.items || []).map(e => {
             const title = e.summary || '(タイトルなし)';
             const description = e.description || '';
-            const { bg, border, text } = getEventColor(title, cal.summary, isIcu, description);
+            const { bg, border, text } = gcalEventColor(title, description, cal.summary, isIcu);
             return {
               id: prefix + cal.id + '_' + e.id,
               title,
@@ -2879,7 +2879,7 @@ document.addEventListener('pointerdown', (e) => {
   closeGCalPanel(!!title);
 }, true);
 
-async function submitGCalEvent() {
+function submitGCalEvent() {
   const title = document.getElementById('gcal-ev-title').value.trim() || '新しい予定';
   const start = new Date(document.getElementById('gcal-ev-start').value).toISOString();
   const end = new Date(document.getElementById('gcal-ev-end').value).toISOString();
@@ -2890,35 +2890,69 @@ async function submitGCalEvent() {
   const eventBody = { summary: title, start: { dateTime: start }, end: { dateTime: end } };
   if (location) eventBody.location = location;
   if (description) eventBody.description = description;
+
+  // ── 楽観的更新: API完了前に即座に表示 ──
+  if (fcCalendar) {
+    const { bg, border, text } = gcalEventColor(title, description);
+    if (gcalEditingId) {
+      const fcEv = fcCalendar.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
+      if (fcEv) {
+        fcEv.setProp('title', title);
+        fcEv.setStart(start); fcEv.setEnd(end);
+        fcEv.setProp('backgroundColor', bg);
+        fcEv.setProp('borderColor', border);
+        fcEv.setProp('textColor', text);
+      }
+    } else {
+      fcCalendar.addEvent({
+        id: '_opt_' + Date.now(),
+        title, start, end,
+        backgroundColor: bg, borderColor: border, textColor: text,
+        extendedProps: { description, location, calendarId: 'primary', eventId: null, useToken2: false },
+      });
+    }
+  }
+
+  // バックグラウンドでAPI保存 → 完了後に正式データで差し替え
   const token = gcalUseToken2 ? gToken2 : gToken;
   const calId = encodeURIComponent(gcalCalendarId);
   const method = gcalEditingId ? 'PUT' : 'POST';
   const url = gcalEditingId
     ? `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`
     : `https://www.googleapis.com/calendar/v3/calendars/primary/events`;
-  await fetch(url, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
-  if (fcCalendar) fcCalendar.refetchEvents();
+  fetch(url, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) })
+    .then(() => { if (fcCalendar) fcCalendar.refetchEvents(); })
+    .catch(e => { console.error('gcal save error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
 }
 
-async function deleteGCalEvent() {
+function deleteGCalEvent() {
   if (!gcalEditingId) return;
+
+  // 楽観的更新: 即座に削除
+  if (fcCalendar) {
+    const fcEv = fcCalendar.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
+    fcEv?.remove();
+  }
+  closeGCalPanel(false);
+
   const token = gcalUseToken2 ? gToken2 : gToken;
   const calId = encodeURIComponent(gcalCalendarId);
-  await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`,
-    { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-  closeGCalPanel(false);
-  if (fcCalendar) fcCalendar.refetchEvents();
+  fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`,
+    { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    .catch(e => { console.error('gcal delete error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
 }
 
-async function moveGCalEvent(event) {
+function moveGCalEvent(event) {
+  // FCがすでに表示を更新済み → バックグラウンドでAPIに保存するだけ
   const eventBody = { summary: event.title, start: { dateTime: event.start.toISOString() }, end: { dateTime: event.end.toISOString() } };
   if (event.extendedProps?.location) eventBody.location = event.extendedProps.location;
   if (event.extendedProps?.description) eventBody.description = event.extendedProps.description;
   const eventId = event.extendedProps?.eventId || event.id;
   const calId = encodeURIComponent(event.extendedProps?.calendarId || 'primary');
   const token = event.extendedProps?.useToken2 ? gToken2 : gToken;
-  await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}`,
-    { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) });
+  fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}`,
+    { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) })
+    .catch(e => { console.error('gcal move error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
 }
 
 // ===== 週間スケジュール設定 =====
