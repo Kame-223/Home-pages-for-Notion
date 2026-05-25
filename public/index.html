@@ -5851,6 +5851,7 @@ async function setGtdKind(id, gtdVal) {
   }
 
   renderTaskPage();
+  try { renderAll(); } catch(e) { console.error('renderAll in setGtdKind:', e); }
 }
 
 const TASK_PAGE_DEFAULT_COUNT = 5;
