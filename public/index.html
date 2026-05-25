@@ -2316,31 +2316,30 @@ function calToDateStr(d) {
 
 let _calRcBusy = false, _calHighlightObserver = null, _calPointerHandler = null;
 
-function getCalRestrictRanges(colBg) {
-  const slotsTable = document.querySelector('.fc-timegrid-slots');
-  if (!slotsTable) return [];
-  const colBgRect = colBg.getBoundingClientRect();
+function getCalRestrictRanges() {
+  const viewDate = fcCalendar?.getDate();
+  if (!viewDate) return [];
+  const parseT = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const minMins = parseT(fcCalendar.getOption('slotMinTime') || '05:30:00');
+  const maxMins = parseT(fcCalendar.getOption('slotMaxTime') || '24:30:00');
+  const durMins = 15;
+  const slotH = document.querySelector('.fc-timegrid-slot:not(.fc-timegrid-slot-label)')?.offsetHeight || 9;
   const ranges = [];
   let cur = null;
-  slotsTable.querySelectorAll('td.fc-timegrid-slot:not(.fc-timegrid-slot-label)').forEach(td => {
-    const timeAttr = td.getAttribute('data-time');
-    if (!timeAttr) return;
-    const [hStr, mStr] = timeAttr.split(':');
-    const h = parseInt(hStr), m = parseInt(mStr);
-    const viewDate = fcCalendar?.getDate();
-    if (!viewDate) return;
+  for (let mins = minMins; mins < maxMins; mins += durMins) {
+    const totalH = Math.floor(mins / 60);
+    const isNextDay = totalH >= 24;
     const d = new Date(viewDate);
-    if (h >= 24) { d.setDate(d.getDate() + 1); d.setHours(h - 24, m, 0, 0); }
-    else { d.setHours(h, m, 0, 0); }
+    d.setDate(d.getDate() + (isNextDay ? 1 : 0));
+    d.setHours(totalH % 24, mins % 60, 0, 0);
+    const top = (mins - minMins) / durMins * slotH;
     if (calIsRestrictedStart(d)) {
-      const r = td.getBoundingClientRect();
-      const top = r.top - colBgRect.top;
-      if (!cur) { cur = { top, h: r.height }; }
-      else { cur.h += r.height; }
+      if (!cur) cur = { top, h: slotH };
+      else cur.h += slotH;
     } else {
       if (cur) { ranges.push(cur); cur = null; }
     }
-  });
+  }
   if (cur) ranges.push(cur);
   return ranges;
 }
@@ -2348,16 +2347,13 @@ function getCalRestrictRanges(colBg) {
 function updateCalRC() {
   const colBg = document.querySelector('.fc-timegrid-col-bg');
   if (!colBg) return;
-  colBg.querySelectorAll('.cal-rc').forEach(el => el.remove());
   const hl = colBg.querySelector('.fc-highlight');
   if (!hl) return;
-
   const hlTop = parseFloat(hl.style.top) || 0;
   const hlH   = parseFloat(hl.style.height) || 0;
-  if (hlH <= 0) return;
+  if (hlH <= 0) { hl.style.clipPath = ''; return; }
   const hlBot = hlTop + hlH;
-
-  const ranges = getCalRestrictRanges(colBg);
+  const ranges = getCalRestrictRanges();
   let clipTop = 0, clipBot = 0;
   for (const r of ranges) {
     const rBot = r.top + r.h;
@@ -2366,10 +2362,9 @@ function updateCalRC() {
     if (rBot >= hlBot && r.top < hlBot)
       clipBot = Math.max(clipBot, Math.min(hlBot - r.top, hlH));
   }
-  const target = (clipTop > 0 || clipBot > 0)
+  hl.style.clipPath = (clipTop > 0 || clipBot > 0)
     ? `inset(${Math.round(clipTop)}px 0 ${Math.round(clipBot)}px 0)`
     : '';
-  if (hl.style.clipPath !== target) hl.style.clipPath = target;
 }
 
 function setupCalHighlightObserver() {
