@@ -387,10 +387,10 @@ body::before {
   background: rgba(66,133,244,0.85); border-radius: 2px;
   touch-action: none;
 }
-.cal-restrict-mask {
-  position: absolute; left: 0; right: 0;
-  pointer-events: none; z-index: 5;
-  background: rgba(0, 0, 0, 0.55);
+.cal-spacer {
+  height: 18px;
+  background: rgba(0,0,0,0.30);
+  margin: 0 4px;
 }
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
@@ -2266,173 +2266,27 @@ function updateLoginStatus() {
 
 let _calLatenight = false, _calEarly = false;
 
-function calIsRestrictedStart(d) {
-  const vd = fcCalendar?.getDate();
-  if (!vd) return false;
-  const h = d.getHours(), m = d.getMinutes();
-  const nd = d.getDate() !== vd.getDate();
-  if (_calEarly  && !nd && (h < 3 || (h === 3 && m === 0))) return true;
-  if (_calLatenight && nd && h >= 3) return true;
-  if (!_calEarly  && !nd && h === 5 && m >= 30) return true;
-  if (!_calLatenight && nd) return true;
-  return false;
-}
-function calIsRestrictedEnd(d) {
-  const vd = fcCalendar?.getDate();
-  if (!vd) return false;
-  const h = d.getHours(), m = d.getMinutes();
-  const nd = d.getDate() !== vd.getDate();
-  if (_calLatenight && nd && (h > 3 || (h === 3 && m > 0))) return true;
-  if (!_calLatenight && nd && (h > 0 || m > 0)) return true;
-  return false;
-}
-
-function calClampStart(d) {
-  if (!calIsRestrictedStart(d)) return d;
-  const vd = fcCalendar?.getDate();
-  if (!vd) return d;
-  const h = d.getHours(), m = d.getMinutes();
-  const nd = d.getDate() !== vd.getDate();
-  if (_calEarly && !nd && (h < 3 || (h === 3 && m === 0))) {
-    const c = new Date(d); c.setHours(3, 5, 0, 0); return c;
-  }
-  if (!_calEarly && !nd && h === 5 && m >= 30) {
-    const c = new Date(d); c.setHours(6, 0, 0, 0); return c;
-  }
-  return d;
-}
-function calClampEnd(d) {
-  if (!calIsRestrictedEnd(d)) return d;
-  const vd = fcCalendar?.getDate();
-  if (!vd) return d;
-  const nd = d.getDate() !== vd.getDate();
-  if (_calLatenight && nd) {
-    const c = new Date(vd); c.setDate(c.getDate() + 1); c.setHours(3, 0, 0, 0); return c;
-  }
-  if (!_calLatenight && nd) {
-    const c = new Date(vd); c.setDate(c.getDate() + 1); c.setHours(0, 0, 0, 0); return c;
-  }
-  return d;
-}
 function calToDateStr(d) {
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
 }
 
-let _calRcLoopId = null, _calHighlightObserver = null;
-
-function getCalRestrictRanges() {
-  const viewDate = fcCalendar?.getDate();
-  if (!viewDate) return [];
-  const parseT = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-  const minMins = parseT(fcCalendar.getOption('slotMinTime') || '05:30:00');
-  const maxMins = parseT(fcCalendar.getOption('slotMaxTime') || '24:30:00');
-  const durMins = 15;
-  const slotH = document.querySelector('.fc-timegrid-slot:not(.fc-timegrid-slot-label)')?.offsetHeight || 9;
-  const ranges = [];
-  let cur = null;
-  for (let mins = minMins; mins < maxMins; mins += durMins) {
-    const totalH = Math.floor(mins / 60);
-    const isNextDay = totalH >= 24;
-    const d = new Date(viewDate);
-    d.setDate(d.getDate() + (isNextDay ? 1 : 0));
-    d.setHours(totalH % 24, mins % 60, 0, 0);
-    const top = (mins - minMins) / durMins * slotH;
-    if (calIsRestrictedStart(d)) {
-      if (!cur) cur = { top, h: slotH };
-      else cur.h += slotH;
-    } else {
-      if (cur) { ranges.push(cur); cur = null; }
-    }
-  }
-  if (cur) ranges.push(cur);
-  return ranges;
-}
-
-function updateCalRC() {
-  const colBg = document.querySelector('.fc-timegrid-col-bg');
-  if (!colBg) return;
-  const hl = colBg.querySelector('.fc-highlight');
-  if (!hl) return;
-  const hlTop = parseFloat(hl.style.top) || 0;
-  const hlH   = parseFloat(hl.style.height) || 0;
-  if (hlH <= 0) { hl.style.clipPath = ''; return; }
-  const hlBot = hlTop + hlH;
-  const ranges = getCalRestrictRanges();
-  let clipTop = 0, clipBot = 0;
-  for (const r of ranges) {
-    const rBot = r.top + r.h;
-    if (r.top <= hlTop && rBot > hlTop)
-      clipTop = Math.max(clipTop, Math.min(rBot - hlTop, hlH));
-    if (rBot >= hlBot && r.top < hlBot)
-      clipBot = Math.max(clipBot, Math.min(hlBot - r.top, hlH));
-  }
-  hl.style.clipPath = (clipTop > 0 || clipBot > 0)
-    ? `inset(${Math.round(clipTop)}px 0 ${Math.round(clipBot)}px 0)`
-    : '';
-}
-
-function startCalRcLoop() {
-  if (_calRcLoopId) return;
-  const tick = () => {
-    updateCalRC();
-    const hl = document.querySelector('.fc-timegrid-col-bg .fc-highlight');
-    _calRcLoopId = hl ? requestAnimationFrame(tick) : null;
-  };
-  _calRcLoopId = requestAnimationFrame(tick);
-}
-
-function stopCalRcLoop() {
-  if (_calRcLoopId) { cancelAnimationFrame(_calRcLoopId); _calRcLoopId = null; }
-}
-
-function setupCalHighlightObserver() {
-  if (_calHighlightObserver) _calHighlightObserver.disconnect();
-  stopCalRcLoop();
-  const root = document.getElementById('fc-el');
-  if (!root) return;
-  _calHighlightObserver = new MutationObserver(mutations => {
-    for (const m of mutations) {
-      if (m.type !== 'childList') continue;
-      if ([...m.addedNodes].some(n => n.classList?.contains('fc-highlight'))) startCalRcLoop();
-      if ([...m.removedNodes].some(n => n.classList?.contains('fc-highlight'))) stopCalRcLoop();
-    }
-  });
-  _calHighlightObserver.observe(root, { childList: true, subtree: true });
-}
-
-function applyCalRestrictMasks() {
-  const colBg = document.querySelector('.fc-timegrid-col-bg');
-  if (!colBg) return;
-  colBg.querySelectorAll('.cal-restrict-mask').forEach(el => el.remove());
-  const ranges = getCalRestrictRanges();
-  for (const r of ranges) {
-    const el = document.createElement('div');
-    el.className = 'cal-restrict-mask';
-    el.style.top = r.top + 'px';
-    el.style.height = r.h + 'px';
-    colBg.appendChild(el);
-  }
-}
-
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
-  fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:30:00' : '24:30:00');
+  fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:15:00' : '24:15:00');
   const btn = document.getElementById('fc-btn-down');
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
   requestAnimationFrame(reapplyCalLabelStyles);
-  requestAnimationFrame(applyCalRestrictMasks);
 }
 
 function toggleCalEarly() {
   _calEarly = !_calEarly;
   if (!fcCalendar) return;
-  fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
+  fcCalendar.setOption('slotMinTime', _calEarly ? '03:00:00' : '06:00:00');
   const btn = document.getElementById('fc-btn-up');
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
   requestAnimationFrame(reapplyCalLabelStyles);
-  requestAnimationFrame(applyCalRestrictMasks);
 }
 
 function reapplyCalLabelStyles() {
@@ -2492,7 +2346,7 @@ function renderFullCalendar() {
   updateLoginStatus();
   const container = document.getElementById('fc-container');
   if (!container) return;
-  container.innerHTML = '<div id="fc-el" style="padding:0 4px 4px"></div>';
+  container.innerHTML = '<div id="cal-spacer-top" class="cal-spacer"></div><div id="fc-el" style="padding:0 4px 4px"></div><div id="cal-spacer-bottom" class="cal-spacer"></div>';
 
   fcCalendar = new FullCalendar.Calendar(document.getElementById('fc-el'), {
     initialView: 'timeGridDay',
@@ -2511,8 +2365,8 @@ function renderFullCalendar() {
     selectable: true,
     unselectAuto: false,
     allDaySlot: false,
-    slotMinTime: '05:30:00',
-    slotMaxTime: '24:30:00',
+    slotMinTime: '06:00:00',
+    slotMaxTime: '24:15:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     slotDuration: '00:15:00',
     slotLabelInterval: '00:30:00',
@@ -2549,62 +2403,30 @@ function renderFullCalendar() {
         }
       });
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(setupCalHighlightObserver); requestAnimationFrame(applyCalRestrictMasks); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
-      const m = arg.date.getMinutes();
       const viewDate = fcCalendar?.getDate();
       const isNextDay = viewDate && arg.date.getDate() !== viewDate.getDate();
-      let bg = 'rgba(70,60,140,0.12)', restricted = false;
-      if (h < 3 || (isNextDay && h === 3) || (_calEarly && !isNextDay && h === 3 && m === 0)) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
-      } else if (!_calEarly && !isNextDay && h === 5 && m >= 30) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
-      } else if (!_calLatenight && isNextDay && h === 0) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
+      let bg = 'rgba(70,60,140,0.12)';
+      if (isNextDay) {
+        bg = 'rgba(0,0,0,0.3)';
       } else if (h >= 6 && h < 12) {
         bg = 'rgba(255,190,60,0.07)';
       } else if (h >= 12 && h < 18) {
         bg = 'rgba(100,180,255,0.07)';
       }
       arg.el.style.background = bg;
-      if (restricted) {
-        const labelTd = arg.el.previousElementSibling;
-        if (labelTd) labelTd.style.background = bg;
-      }
-    },
-    selectAllow: (sel) => {
-      if (calIsRestrictedStart(sel.start)) return false;
-      const e = sel.end ? calClampEnd(sel.end) : sel.start;
-      return sel.start < e;
-    },
-    eventAllow: (dropInfo) => {
-      if (calIsRestrictedStart(dropInfo.start)) return false;
-      if (dropInfo.end && calIsRestrictedEnd(dropInfo.end)) return false;
-      return true;
     },
     events: fetchGCalEvents,
     select: (info) => {
       if (_calDraggingHandles) return;
       if (_calJustClosed) { fcCalendar?.unselect(); return; }
-      const start = calClampStart(info.start);
-      const end = info.end ? calClampEnd(info.end) : info.start;
-      if (start >= end) { fcCalendar?.unselect(); return; }
-      openGCalPanel(null, calToDateStr(start), calToDateStr(end), null);
+      openGCalPanel(null, calToDateStr(info.start), calToDateStr(info.end), null);
     },
     eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
-    eventDrop: (info) => {
-      if (calIsRestrictedStart(info.event.start) || (info.event.end && calIsRestrictedEnd(info.event.end))) {
-        info.revert(); return;
-      }
-      moveGCalEvent(info.event);
-    },
-    eventResize: (info) => {
-      if (calIsRestrictedStart(info.event.start) || (info.event.end && calIsRestrictedEnd(info.event.end))) {
-        info.revert(); return;
-      }
-      moveGCalEvent(info.event);
-    },
+    eventDrop: (info) => { moveGCalEvent(info.event); },
+    eventResize: (info) => { moveGCalEvent(info.event); },
   });
   fcCalendar.render();
 }
