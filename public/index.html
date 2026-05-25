@@ -387,6 +387,11 @@ body::before {
   background: rgba(66,133,244,0.85); border-radius: 2px;
   touch-action: none;
 }
+.cal-restrict-mask {
+  position: absolute; left: 0; right: 0;
+  pointer-events: none; z-index: 5;
+  background: rgba(0, 0, 0, 0.55);
+}
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
 .gcal-kind-chip {
@@ -1944,7 +1949,7 @@ body::before {
     <button class="gcal-panel-close" onclick="closeGCalPanel(false)">×</button>
   </div>
   <input class="modal-input" id="gcal-ev-title" placeholder="タイトル" autocomplete="off"
-    onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();closeGCalPanel(true)}"/>
+    onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();event.target.blur()}"/>
   <div class="gcal-time-row">
     <input class="modal-input" id="gcal-ev-start" type="datetime-local" style="flex:1" onchange="gcalSyncEndTime()"/>
     <span style="color:var(--text-dim);font-size:12px">→</span>
@@ -2396,6 +2401,20 @@ function setupCalHighlightObserver() {
   _calHighlightObserver.observe(root, { childList: true, subtree: true });
 }
 
+function applyCalRestrictMasks() {
+  const colBg = document.querySelector('.fc-timegrid-col-bg');
+  if (!colBg) return;
+  colBg.querySelectorAll('.cal-restrict-mask').forEach(el => el.remove());
+  const ranges = getCalRestrictRanges();
+  for (const r of ranges) {
+    const el = document.createElement('div');
+    el.className = 'cal-restrict-mask';
+    el.style.top = r.top + 'px';
+    el.style.height = r.h + 'px';
+    colBg.appendChild(el);
+  }
+}
+
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
@@ -2403,6 +2422,7 @@ function toggleCalLatenight() {
   const btn = document.getElementById('fc-btn-down');
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
   requestAnimationFrame(reapplyCalLabelStyles);
+  requestAnimationFrame(applyCalRestrictMasks);
 }
 
 function toggleCalEarly() {
@@ -2412,6 +2432,7 @@ function toggleCalEarly() {
   const btn = document.getElementById('fc-btn-up');
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
   requestAnimationFrame(reapplyCalLabelStyles);
+  requestAnimationFrame(applyCalRestrictMasks);
 }
 
 function reapplyCalLabelStyles() {
@@ -2486,6 +2507,7 @@ function renderFullCalendar() {
     expandRows: false,
     nowIndicator: true,
     editable: true,
+    eventResizableFromStart: true,
     selectable: true,
     unselectAuto: false,
     allDaySlot: false,
@@ -2527,7 +2549,7 @@ function renderFullCalendar() {
         }
       });
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(setupCalHighlightObserver); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(setupCalHighlightObserver); requestAnimationFrame(applyCalRestrictMasks); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
@@ -2552,9 +2574,9 @@ function renderFullCalendar() {
       }
     },
     selectAllow: (sel) => {
-      const s = calClampStart(sel.start);
+      if (calIsRestrictedStart(sel.start)) return false;
       const e = sel.end ? calClampEnd(sel.end) : sel.start;
-      return s < e;
+      return sel.start < e;
     },
     eventAllow: (dropInfo) => {
       if (calIsRestrictedStart(dropInfo.start)) return false;
@@ -2707,6 +2729,7 @@ let _calDraggingHandles = false;
 let _calJustClosed = false;       // 閉直後の再選択を防ぐ
 let _calOptEventId = null;        // ライブプレビューイベントのID
 let _calOrigEventTitle = null;    // 編集キャンセル時に戻すタイトル
+let _calYoteiCreated = false;     // 初文字入力後にYoteiを生成したか（一方向フラグ）
 let _calHandleTop = null, _calHandleBottom = null;
 let _calHandleStartMs = 0, _calHandleEndMs = 0;
 
@@ -2732,31 +2755,27 @@ function openGCalPanel(fcEvent, startStr, endStr, anchorEl) {
   panel.style.display = 'block';
 
   if (!fcEvent && startStr && endStr) {
-    // 新規: プレビューイベント追加 + ハンドル表示
+    // 新規: ハンドルのみ表示（Yoteiは初文字入力まで作らない）
     const sMs = new Date(startStr).getTime();
     const eMs = new Date(endStr).getTime();
-    const ts = Date.now();
-    _calOptEventId = '_opt_' + ts;
+    _calOptEventId = null;
+    _calYoteiCreated = false;
     _calOrigEventTitle = null;
-    const { bg, border, text } = gcalEventColor('新しい予定', '');
-    fcCalendar?.addEvent({
-      id: _calOptEventId, title: '新しい予定',
-      start: startStr, end: endStr,
-      backgroundColor: bg, borderColor: border, textColor: text,
-      extendedProps: { description:'', location:'', calendarId:'primary', eventId:null, useToken2:false },
-    });
+    _calHandleStartMs = sMs;
+    _calHandleEndMs = eMs;
     requestAnimationFrame(() => {
       showCalSelHandles(sMs, eMs);
       positionGCalPanel(anchorEl || document.querySelector('.fc-highlight'));
     });
+    setTimeout(() => document.getElementById('gcal-ev-title')?.focus(), 80);
   } else {
     // 既存イベント編集: タイトルを保存（キャンセル時に戻す）
     _calOptEventId = null;
+    _calYoteiCreated = false;
     _calOrigEventTitle = fcEvent ? fcEvent.title : null;
     positionGCalPanel(anchorEl);
+    // Issue 3: 既存イベントはフォーカスしない
   }
-
-  setTimeout(() => document.getElementById('gcal-ev-title')?.focus(), 80);
 }
 
 // 旧名互換（_tdEnd から呼ばれる）
@@ -2806,6 +2825,7 @@ function closeGCalPanel(save) {
     submitGCalEvent(); // _calOptEventId が有効なうちに呼ぶ
     _calOptEventId = null;
     _calOrigEventTitle = null;
+    _calYoteiCreated = false;
   } else {
     // キャンセル: プレビューを削除 or 元タイトルに戻す
     if (_calOptEventId) {
@@ -2816,6 +2836,7 @@ function closeGCalPanel(save) {
     }
     _calOptEventId = null;
     _calOrigEventTitle = null;
+    _calYoteiCreated = false;
   }
 }
 
@@ -2937,12 +2958,45 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!titleInput) return;
   titleInput.addEventListener('input', () => {
     if (document.getElementById('gcal-panel')?.style.display === 'none') return;
-    const title = titleInput.value || '新しい予定';
+    const val = titleInput.value;
+
+    // Issue 5: 新規入力の初文字でYoteiを生成し青いハイライトを消す
+    if (val.length > 0 && !_calYoteiCreated && !gcalEditingId) {
+      _calYoteiCreated = true;
+      const ts = Date.now();
+      _calOptEventId = '_opt_' + ts;
+      const { bg, border, text } = gcalEventColor(val, '');
+      fcCalendar?.addEvent({
+        id: _calOptEventId, title: val,
+        start: new Date(_calHandleStartMs).toISOString(),
+        end:   new Date(_calHandleEndMs).toISOString(),
+        backgroundColor: bg, borderColor: border, textColor: text,
+        extendedProps: { description:'', location:'', calendarId:'primary', eventId:null, useToken2:false },
+      });
+      fcCalendar?.unselect();
+      removeCalSelHandles();
+      return;
+    }
+
+    const title = val || '新しい予定';
     if (_calOptEventId) {
       fcCalendar?.getEventById(_calOptEventId)?.setProp('title', title);
     } else if (gcalEditingId) {
       const fcEv = fcCalendar?.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
       fcEv?.setProp('title', title);
+    }
+  });
+
+  // Issue 4: パネル表示中・フォーカスなし状態でEnter → 保存
+  document.addEventListener('keydown', (e) => {
+    const panel = document.getElementById('gcal-panel');
+    if (!panel || panel.style.display === 'none') return;
+    if (e.isComposing) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') && panel.contains(active)) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      closeGCalPanel(true);
     }
   });
 });
