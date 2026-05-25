@@ -352,8 +352,8 @@ body::before {
 .fc-timegrid-slot-label { border-bottom: none !important; }
 /* 整時（:00）の線 */
 .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":00:00"] { border-top-color: rgba(255,255,255,0.25) !important; }
-/* 半整時（:30）の線 */
-.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top-color: rgba(255,255,255,0.15) !important; }
+/* 半整時（:30）の線 - 点線 */
+.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top: 1px dashed rgba(255,255,255,0.15) !important; }
 /* 15分線（minor）は非表示 */
 .fc-timegrid-slot.fc-timegrid-slot-minor { border-top-color: transparent !important; }
 /* 24:00スロットは最小高さに */
