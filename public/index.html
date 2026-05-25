@@ -2304,7 +2304,7 @@ function calToDateStr(d) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
 }
 
-let _calRcBusy = false, _calHighlightObserver = null;
+let _calRcBusy = false, _calHighlightObserver = null, _calPointerHandler = null;
 
 function getCalRestrictRanges(colBg) {
   const slotsTable = document.querySelector('.fc-timegrid-slots');
@@ -2366,19 +2366,26 @@ function setupCalHighlightObserver() {
   if (_calHighlightObserver) _calHighlightObserver.disconnect();
   const root = document.getElementById('fc-el');
   if (!root) return;
+
+  let _rafId = null;
+  const run = () => {
+    if (_rafId) return;
+    _rafId = requestAnimationFrame(() => { updateCalRC(); _rafId = null; });
+  };
+
+  // childList のみ監視 — clip-path 変更で自己ループしない
   _calHighlightObserver = new MutationObserver(mutations => {
-    if (_calRcBusy) return;
-    const relevant = mutations.some(m => {
-      if (m.type === 'childList')
-        return [...(m.addedNodes||[])].some(n => n.classList?.contains('fc-highlight')) ||
-               [...(m.removedNodes||[])].some(n => n.classList?.contains('fc-highlight'));
-      return m.type === 'attributes' && m.target.classList?.contains('fc-highlight');
-    });
-    if (!relevant) return;
-    _calRcBusy = true;
-    requestAnimationFrame(() => { updateCalRC(); _calRcBusy = false; });
+    if (mutations.some(m => m.type === 'childList' &&
+        [...m.addedNodes, ...m.removedNodes].some(n => n.classList?.contains('fc-highlight')))) {
+      run();
+    }
   });
-  _calHighlightObserver.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+  _calHighlightObserver.observe(root, { childList: true, subtree: true });
+
+  // ドラッグ中も毎フレーム同期
+  if (_calPointerHandler) root.removeEventListener('pointermove', _calPointerHandler);
+  _calPointerHandler = run;
+  root.addEventListener('pointermove', _calPointerHandler);
 }
 
 function toggleCalLatenight() {
