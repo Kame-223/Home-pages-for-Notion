@@ -2998,9 +2998,11 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       closeGCalPanel(true);
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
       if (gcalEditingId) {
-        e.preventDefault();
         deleteGCalEvent();
+      } else {
+        closeGCalPanel(false); // 新規Yoteiはキャンセル扱いで削除
       }
     }
   });
@@ -3064,12 +3066,18 @@ function submitGCalEvent() {
 function deleteGCalEvent() {
   if (!gcalEditingId) return;
 
-  // 楽観的更新: 即座に削除
+  // 楽観的更新: eventIdで検索→なければFCのidで検索（楽観的イベント対応）
   if (fcCalendar) {
-    const fcEv = fcCalendar.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
+    const fcEv = fcCalendar.getEvents().find(e =>
+      (e.extendedProps?.eventId && e.extendedProps.eventId === gcalEditingId) ||
+      e.id === gcalEditingId
+    );
     fcEv?.remove();
   }
   closeGCalPanel(false);
+
+  // _opt_始まりはローカル楽観的イベントなのでAPIに送らない
+  if (gcalEditingId.startsWith('_opt_')) return;
 
   const token = gcalUseToken2 ? gToken2 : gToken;
   const calId = encodeURIComponent(gcalCalendarId);
