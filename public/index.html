@@ -2339,13 +2339,27 @@ function updateCalRC() {
   const colBg = document.querySelector('.fc-timegrid-col-bg');
   if (!colBg) return;
   colBg.querySelectorAll('.cal-rc').forEach(el => el.remove());
-  if (!colBg.querySelector('.fc-highlight')) return;
-  getCalRestrictRanges(colBg).forEach(r => {
-    const cover = document.createElement('div');
-    cover.className = 'cal-rc';
-    cover.style.cssText = `position:absolute;left:0;right:0;top:${r.top}px;height:${r.h}px;background:rgba(13,13,26,0.97);pointer-events:none;`;
-    colBg.appendChild(cover);
-  });
+  const hl = colBg.querySelector('.fc-highlight');
+  if (!hl) return;
+
+  const hlTop = parseFloat(hl.style.top) || 0;
+  const hlH   = parseFloat(hl.style.height) || 0;
+  if (hlH <= 0) return;
+  const hlBot = hlTop + hlH;
+
+  const ranges = getCalRestrictRanges(colBg);
+  let clipTop = 0, clipBot = 0;
+  for (const r of ranges) {
+    const rBot = r.top + r.h;
+    if (r.top <= hlTop && rBot > hlTop)
+      clipTop = Math.max(clipTop, Math.min(rBot - hlTop, hlH));
+    if (rBot >= hlBot && r.top < hlBot)
+      clipBot = Math.max(clipBot, Math.min(hlBot - r.top, hlH));
+  }
+  const target = (clipTop > 0 || clipBot > 0)
+    ? `inset(${Math.round(clipTop)}px 0 ${Math.round(clipBot)}px 0)`
+    : '';
+  if (hl.style.clipPath !== target) hl.style.clipPath = target;
 }
 
 function setupCalHighlightObserver() {
