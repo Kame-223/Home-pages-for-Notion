@@ -2409,6 +2409,32 @@ function addCalBufferOverlays() {
   }
 }
 
+let _hlObserver = null;
+function setupHighlightClipping() {
+  if (_hlObserver) { _hlObserver.disconnect(); _hlObserver = null; }
+  const colBg = document.querySelector('.fc-timegrid-col-bg');
+  const frame = document.querySelector('.fc-timegrid-col-frame');
+  if (!colBg || !frame) return;
+  let _clipping = false;
+  function clipHighlight() {
+    const hl = colBg.querySelector('.fc-highlight');
+    if (!hl) return;
+    const frameH = frame.offsetHeight;
+    const topBuf = 18, botBuf = 27;
+    const hlTop = parseFloat(hl.style.top) || 0;
+    const hlH = parseFloat(hl.style.height) || 0;
+    const ct = Math.max(0, topBuf - hlTop);
+    const cb = Math.max(0, (hlTop + hlH) - (frameH - botBuf));
+    const newClip = `inset(${ct}px 0 ${cb}px 0)`;
+    if (hl.style.clipPath === newClip) return;
+    _clipping = true;
+    hl.style.clipPath = newClip;
+    requestAnimationFrame(() => { _clipping = false; });
+  }
+  _hlObserver = new MutationObserver(() => { if (!_clipping) clipHighlight(); });
+  _hlObserver.observe(colBg, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+}
+
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
@@ -2417,6 +2443,7 @@ function toggleCalLatenight() {
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
   requestAnimationFrame(reapplyCalLabelStyles);
   requestAnimationFrame(addCalBufferOverlays);
+  requestAnimationFrame(setupHighlightClipping);
 }
 
 function toggleCalEarly() {
@@ -2427,6 +2454,7 @@ function toggleCalEarly() {
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
   requestAnimationFrame(reapplyCalLabelStyles);
   requestAnimationFrame(addCalBufferOverlays);
+  requestAnimationFrame(setupHighlightClipping);
 }
 
 function reapplyCalLabelStyles() {
@@ -2545,7 +2573,7 @@ function renderFullCalendar() {
         }
       });
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
