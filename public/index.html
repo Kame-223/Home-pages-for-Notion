@@ -387,9 +387,13 @@ body::before {
   background: rgba(66,133,244,0.85); border-radius: 2px;
   touch-action: none;
 }
-.fc-timegrid-col-bg {
-  clip-path: inset(18px 0 18px 0);
+.cal-buf-top, .cal-buf-bot {
+  position: absolute; left: 0; right: 0;
+  height: 18px; pointer-events: none; z-index: 10;
+  background: var(--bg, #0a0a0f);
 }
+.cal-buf-top { top: 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.cal-buf-bot { bottom: 0; border-top: 1px solid rgba(255,255,255,0.12); }
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
 .gcal-kind-chip {
@@ -2290,6 +2294,15 @@ function calToDateStr(d) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
 }
 
+function addCalBufferOverlays() {
+  const frame = document.querySelector('.fc-timegrid-col-frame');
+  if (!frame) return;
+  if (!frame.querySelector('.cal-buf-top')) {
+    const t = document.createElement('div'); t.className = 'cal-buf-top'; frame.appendChild(t);
+    const b = document.createElement('div'); b.className = 'cal-buf-bot'; frame.appendChild(b);
+  }
+}
+
 function toggleCalLatenight() {
   _calLatenight = !_calLatenight;
   if (!fcCalendar) return;
@@ -2297,6 +2310,7 @@ function toggleCalLatenight() {
   const btn = document.getElementById('fc-btn-down');
   if (btn) btn.textContent = _calLatenight ? '↑' : '↓';
   requestAnimationFrame(reapplyCalLabelStyles);
+  requestAnimationFrame(addCalBufferOverlays);
 }
 
 function toggleCalEarly() {
@@ -2306,6 +2320,7 @@ function toggleCalEarly() {
   const btn = document.getElementById('fc-btn-up');
   if (btn) btn.textContent = _calEarly ? '↓' : '↑';
   requestAnimationFrame(reapplyCalLabelStyles);
+  requestAnimationFrame(addCalBufferOverlays);
 }
 
 function reapplyCalLabelStyles() {
@@ -2422,7 +2437,7 @@ function renderFullCalendar() {
         }
       });
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
