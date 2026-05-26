@@ -828,6 +828,13 @@ body::before {
   box-shadow: 0 0 28px rgba(255,255,255,0.75), 0 0 56px rgba(255,255,255,0.38),
     inset 0 1px 4px rgba(255,255,255,1);
 }
+.jk-orb.orb-active {
+  transform: scale(1.12);
+  box-shadow: 0 0 32px rgba(255,255,255,0.92), 0 0 64px rgba(255,255,255,0.5),
+    inset 0 1px 4px rgba(255,255,255,1);
+  outline: 2.5px solid rgba(255,255,255,0.75);
+  outline-offset: 2px;
+}
 /* ===== 振り分け済みセクション ===== */
 .bunbun-section { margin-top: 8px; }
 .bunbun-toggle {
@@ -837,6 +844,13 @@ body::before {
   transition: all .15s; text-align: left;
 }
 .bunbun-toggle:hover { background: rgba(133,183,235,0.12); }
+.bunbun-show-all-btn {
+  font-size: 11px; padding: 5px 14px; border-radius: 99px;
+  border: 0.5px solid rgba(133,183,235,0.35); background: rgba(133,183,235,0.08);
+  color: rgba(133,183,235,0.85); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all .15s; margin: 8px 0 4px; display: block;
+}
+.bunbun-show-all-btn:hover { background: rgba(133,183,235,0.18); }
 .bunbun-list { display: none; padding-top: 6px; }
 .bunbun-list.open { display: block; }
 .bunbun-group { margin-bottom: 8px; }
@@ -1879,9 +1893,9 @@ body::before {
 
     <!-- 朝昼夜 光の玉 (Sモードのみ) -->
     <div class="s-orb-col" id="s-orb-col">
-      <div class="jk-orb" data-jk="朝" id="orb-asa">朝</div>
-      <div class="jk-orb" data-jk="昼" id="orb-hiru">昼</div>
-      <div class="jk-orb" data-jk="夜" id="orb-yoru">夜</div>
+      <div class="jk-orb" data-jk="朝" id="orb-asa" onclick="setOrbFilter('朝')">朝</div>
+      <div class="jk-orb" data-jk="昼" id="orb-hiru" onclick="setOrbFilter('昼')">昼</div>
+      <div class="jk-orb" data-jk="夜" id="orb-yoru" onclick="setOrbFilter('夜')">夜</div>
     </div>
 
     <!-- 下段 -->
@@ -3924,12 +3938,21 @@ function renderAll() {
         const grp = {朝:[],昼:[],夜:[]};
         assigned.forEach(t => { const jk=getJK(t); if(grp[jk]) grp[jk].push(t); });
         let bHtml = '';
-        ['朝','昼','夜'].forEach(jk => {
-          if (!grp[jk].length) return;
-          bHtml += `<div class="bunbun-group"><div class="bunbun-header">${bLabels[jk]}</div>${grp[jk].map(t=>renderCard(t,'today')).join('')}</div>`;
-        });
+        if (orbFilter) {
+          const filtered = grp[orbFilter] || [];
+          bHtml = filtered.length
+            ? filtered.map(t => renderCard(t,'today')).join('')
+            : `<div class="section-empty">${orbFilter}のタスクはありません</div>`;
+          bHtml += `<button class="bunbun-show-all-btn" onclick="clearOrbFilter()">他の時間帯を表示</button>`;
+        } else {
+          ['朝','昼','夜'].forEach(jk => {
+            if (!grp[jk].length) return;
+            bHtml += `<div class="bunbun-group"><div class="bunbun-header">${bLabels[jk]}</div>${grp[jk].map(t=>renderCard(t,'today')).join('')}</div>`;
+          });
+        }
+        const filterLabel = orbFilter ? `${bLabels[orbFilter]} のみ` : `振り分け済み（${assigned.length}件）`;
         todayHtml += `<div class="bunbun-section">
-          <button class="bunbun-toggle" onclick="toggleBunbun()">振り分け済み（${assigned.length}件）${bunbunOpen?' ▲':' ▼'}</button>
+          <button class="bunbun-toggle" onclick="toggleBunbun()">${filterLabel}${bunbunOpen?' ▲':' ▼'}</button>
           <div class="bunbun-list ${bunbunOpen?'open':''}" id="bunbun-list">${bHtml}</div>
         </div>`;
       }
@@ -3984,6 +4007,11 @@ function renderAll() {
 
   // 子タスクキャッシュがあるカードの進捗を常に表示
   requestAnimationFrame(() => Object.keys(subtaskData).forEach(id => updateSubtaskProgress(id)));
+
+  // orb active状態を更新
+  document.querySelectorAll('.jk-orb').forEach(o => {
+    o.classList.toggle('orb-active', o.dataset.jk === orbFilter);
+  });
 
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
@@ -4531,6 +4559,7 @@ let leftoverRevealed = false;
 let leftoverExpanded = false;
 let leftoverAddedOpen = false;
 let bunbunOpen = false;
+let orbFilter = null;
 let _tdContainerId = 'today-tasks';
 let leftoverSet = new Set();
 
@@ -4540,6 +4569,8 @@ function expandLeftoverList()   { leftoverExpanded = true;  renderAll(); }
 function collapseLeftoverList() { leftoverExpanded = false; renderAll(); }
 function toggleLeftoverAdded()  { leftoverAddedOpen = !leftoverAddedOpen; renderAll(); }
 function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
+function setOrbFilter(jk) { orbFilter = jk; bunbunOpen = true; renderAll(); }
+function clearOrbFilter() { orbFilter = null; renderAll(); }
 
 function renderLeftoverSection(leftover) {
   const leftoverPanelEl = document.getElementById('leftover-panel');
@@ -5135,6 +5166,7 @@ function setMode(mode) {
   renderAll();
   updateExecHint();
   if (!isSelect) {
+    orbFilter = null;
     requestAnimationFrame(() => {
       const now = new Date();
       const minH = _calEarly ? 2.5 : 5.5;
