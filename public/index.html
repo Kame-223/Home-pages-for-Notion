@@ -48,7 +48,7 @@ html[data-theme="light"] {
   --board-border-bottom: rgba(127,119,221,0.15);
 }
 html[data-theme="light"] body { background-color: var(--bg); }
-html[data-theme="light"] body::before { background: transparent; }
+html[data-theme="light"] body::before { background: rgba(245, 245, 247, 0.84); }
 html[data-theme="light"] .sidebar {
   background: rgba(0,0,0,0.04);
   border-right: 0.5px solid rgba(0,0,0,0.08);
@@ -2210,10 +2210,8 @@ function applyBackground() {
 }
 
 function setupBackground() {
-  if (document.documentElement.dataset.theme === 'light') return;
   applyBackground();
   setInterval(() => {
-    if (document.documentElement.dataset.theme === 'light') return;
     const p = getBgPeriod();
     if (p !== _bgPeriod) applyBackground();
   }, 60000);
@@ -2226,11 +2224,6 @@ function toggleTheme() {
   localStorage.setItem('theme', next);
   document.getElementById('theme-toggle-icon').textContent  = next === 'light' ? '🌙' : '☀️';
   document.getElementById('theme-toggle-label').textContent = next === 'light' ? 'Dark' : 'Light';
-  if (next === 'light') {
-    document.body.style.backgroundImage = 'none';
-  } else {
-    applyBackground();
-  }
 }
 
 function initTheme() {
@@ -2240,7 +2233,6 @@ function initTheme() {
   const label = document.getElementById('theme-toggle-label');
   if (icon)  icon.textContent  = saved === 'light' ? '🌙' : '☀️';
   if (label) label.textContent = saved === 'light' ? 'Dark' : 'Light';
-  if (saved === 'light') document.body.style.backgroundImage = 'none';
 }
 
 // ===== Google Calendar OAuth =====
