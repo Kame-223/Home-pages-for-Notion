@@ -48,7 +48,7 @@ html[data-theme="light"] {
   --board-border-bottom: rgba(127,119,221,0.15);
 }
 html[data-theme="light"] body { background-color: var(--bg); }
-html[data-theme="light"] body::before { background: rgba(245, 245, 247, 0.2); }
+html[data-theme="light"] body::before { background: rgba(245, 245, 247, 0.3); }
 html[data-theme="light"] .sidebar {
   background: rgba(255,255,255,0.6);
   border-right: 0.5px solid rgba(0,0,0,0.08);
@@ -103,6 +103,18 @@ html[data-theme="light"] .btn-change-prop {
   background: rgba(0,0,0,0.04);
 }
 html[data-theme="light"] .btn-change-prop:hover { background: rgba(0,0,0,0.08); }
+/* カレンダー整時ライン・ラベル */
+html[data-theme="light"] .fc-timegrid-slot-label-cushion { color: rgba(0,0,0,0.5) !important; }
+html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":00:00"] { border-top-color: rgba(0,0,0,0.18) !important; }
+html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top: 1px dashed rgba(0,0,0,0.1) !important; }
+html[data-theme="light"] .fc-theme-standard td,
+html[data-theme="light"] .fc-theme-standard th,
+html[data-theme="light"] .fc-theme-standard .fc-scrollgrid { border-color: rgba(0,0,0,0.1) !important; }
+/* 時間帯ドロップダウン */
+html[data-theme="light"] .time-dropdown { background: var(--surface); border-color: var(--border2); box-shadow: 0 -4px 16px rgba(0,0,0,0.1); }
+html[data-theme="light"] .time-opt:hover { background: rgba(0,0,0,0.06); }
+/* ICUチップ（白ベース→暗色に） */
+html[data-theme="light"] .edit-chip[data-val="ICU"] { --chip-bg: rgba(0,0,0,0.08); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.2); }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   background: var(--bg);
@@ -2225,6 +2237,7 @@ function toggleTheme() {
   localStorage.setItem('theme', next);
   document.getElementById('theme-toggle-icon').textContent  = next === 'light' ? '🌙' : '☀️';
   document.getElementById('theme-toggle-label').textContent = next === 'light' ? 'Dark' : 'Light';
+  requestAnimationFrame(reapplyCalLabelStyles);
 }
 
 function initTheme() {
@@ -2434,7 +2447,8 @@ function reapplyCalLabelStyles() {
     cushion.style.removeProperty('font-size');
     cushion.style.removeProperty('letter-spacing');
     if (h === 6 || h === 13 || h === 19 || h === 24) {
-      cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
+      const lc = document.documentElement.dataset.theme === 'light' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)';
+      cushion.style.setProperty('color', lc, 'important');
       cushion.style.setProperty('font-weight', '900', 'important');
       cushion.style.setProperty('font-size', '13px', 'important');
       cushion.style.setProperty('letter-spacing', '0', 'important');
@@ -2516,7 +2530,8 @@ function renderFullCalendar() {
       const frame = arg.el.firstElementChild;
       if (frame) frame.style.overflow = 'visible';
       if (h === 6 || h === 13 || h === 19 || (h === 0 && m === 0)) {
-        cushion.style.setProperty('color', 'rgba(255,255,255,0.95)', 'important');
+        const lc = document.documentElement.dataset.theme === 'light' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)';
+        cushion.style.setProperty('color', lc, 'important');
         cushion.style.setProperty('font-weight', '900', 'important');
         cushion.style.setProperty('font-size', '13px', 'important');
         cushion.style.setProperty('letter-spacing', '0', 'important');
