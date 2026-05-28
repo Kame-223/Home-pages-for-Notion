@@ -312,8 +312,8 @@ body::before {
 .content-grid.select-mode .today-board { grid-column: 1; grid-row: 2; order: unset; }
 .content-grid.select-mode .s-star-col {
   display: flex !important; grid-column: 2; grid-row: 1;
-  flex-direction: column; justify-content: center; align-items: center;
-  align-self: start; padding: 20px 0;
+  flex-direction: column; justify-content: flex-start; align-items: center;
+  position: sticky; top: 86px; align-self: start; padding: 0;
 }
 .content-grid.select-mode .s-orb-col {
   display: flex !important; grid-column: 2; grid-row: 2;
@@ -4130,6 +4130,7 @@ function renderAll() {
     sOrbColEl?.classList.add('orb-hidden');
     sStarColEl?.classList.add('star-hidden');
   }
+  requestAnimationFrame(updateStarFollow);
 
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
@@ -4693,6 +4694,23 @@ function handlePanelClick(panel) {
   focusedPanel = panel;
   renderAll();
 }
+function updateStarFollow() {
+  const sStarCol = document.getElementById('s-star-col');
+  const nextPanel = document.getElementById('next-panel');
+  if (!sStarCol || !nextPanel) return;
+  if (currentMode !== 'select' || focusedPanel !== 'next') return;
+  const npRect  = nextPanel.getBoundingClientRect();
+  const headerH = 62;
+  const btnH    = 68;
+  const margin  = 24;
+  const minTop  = headerH + margin;
+  const maxTop  = window.innerHeight - btnH - margin;
+  // progress: 0 = パネル上端が画面上部 → 1 = パネル下端が画面上部
+  const progress = Math.max(0, Math.min(1, (headerH - npRect.top) / Math.max(npRect.height, 1)));
+  sStarCol.style.top = Math.round(minTop + progress * (maxTop - minTop)) + 'px';
+}
+window.addEventListener('scroll', updateStarFollow, { passive: true });
+
 function starNextClick() {
   focusedPanel = 'today';
   renderAll();
