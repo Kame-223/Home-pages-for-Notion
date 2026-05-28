@@ -368,9 +368,8 @@ body::before {
   cursor: pointer;
   filter: blur(6px);
   opacity: 0.28;
-  overflow: hidden;
+  clip-path: inset(0);
   will-change: filter;
-  contain: style;
   transition: opacity 0.35s;
 }
 .panel-blurred::after {
