@@ -361,14 +361,15 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* filter:blur(3px)+opacity:0.38。will-change:filterでGPUテクスチャ事前確保（スクロール中再描画なし）。
-   transition:filterを使わずopacityのみアニメーション → GPU再シェーダーを削減 */
+/* filter:blur(6px) でコンテンツをぼかし霧感を演出。
+   opacity:0.5 でパネル背景色を維持し高さが視覚的に一致するようにする。
+   will-change:filter でGPUテクスチャ事前確保 → スクロール中再描画なし。
+   各パネルに overflow:hidden があるため clip-path は不要。 */
 .panel-blurred {
   position: relative;
   cursor: pointer;
   filter: blur(6px);
-  opacity: 0.28;
-  clip-path: inset(0);
+  opacity: 0.5;
   will-change: filter;
   transition: opacity 0.35s;
 }
