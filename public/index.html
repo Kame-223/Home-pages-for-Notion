@@ -327,14 +327,19 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
+/* filter:blur() をパネル本体から外し ::before backdrop-filter に移すことでスクロールラグを解消 */
 .panel-blurred {
-  filter: blur(4px);
-  opacity: 0.38;
-  transition: filter .35s, opacity .35s;
   position: relative;
   cursor: pointer;
-  will-change: filter;
-  transform: translateZ(0); /* GPU compositing layer でスクロール重さ解消 */
+}
+.panel-blurred::before {
+  content: ''; position: absolute; inset: 0; z-index: 50;
+  background: rgba(6, 6, 18, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  border-radius: inherit;
+  transition: opacity .35s;
 }
 .panel-blurred::after {
   content: ''; position: absolute; inset: 0; z-index: 200;
@@ -345,25 +350,20 @@ body::before {
 /* specificity 0,4,0 で select-mode の flex !important (0,3,0) を確実に上書き */
 .content-grid.select-mode .s-star-col.star-hidden { display: none !important; }
 .content-grid.select-mode .s-orb-col.orb-hidden   { display: none !important; }
-@keyframes starPulse {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.52))
-            drop-shadow(0 4px 10px rgba(0,0,0,0.52));
-  }
-  30% { transform: translateY(-7px) rotate(2deg); }
-  70% { transform: translateY(-4px) rotate(-1deg); }
-  50% {
-    filter: drop-shadow(0 0 22px rgba(255,255,255,0.88))
-            drop-shadow(0 0 44px rgba(255,255,255,0.3))
-            drop-shadow(0 4px 12px rgba(0,0,0,0.58));
-  }
+@keyframes starFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  30%      { transform: translateY(-8px) rotate(2.5deg); }
+  70%      { transform: translateY(-5px) rotate(-1.5deg); }
+}
+@keyframes starGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.5)) drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+  50%      { filter: drop-shadow(0 0 22px rgba(255,255,255,0.88)) drop-shadow(0 0 44px rgba(255,255,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.6)); }
 }
 .star-btn {
   width: 68px; height: 68px; position: relative;
   cursor: pointer; border: none; background: transparent; padding: 0;
   display: block;
-  animation: starPulse 3.2s ease-in-out infinite;
+  animation: starFloat 3s ease-in-out infinite, starGlow 2.6s ease-in-out infinite;
 }
 .star-btn:hover {
   animation-play-state: paused;
@@ -378,8 +378,9 @@ body::before {
   filter: drop-shadow(0 0 7px rgba(255,255,255,0.45)) drop-shadow(0 2px 6px rgba(0,0,0,0.4));
   opacity: 0.8;
 }
-.execution-star-wrap { text-align: center; padding: 14px 0 6px; }
+.execution-star-wrap { display: flex; justify-content: center; align-items: center; padding: 14px 0 6px; }
 .execution-star { width: 80px; height: 80px; }
+.bunbun-list .task-card { padding: 6px 12px; margin-bottom: 5px; }
 .content-grid {
 }
 
