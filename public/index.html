@@ -361,19 +361,15 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* backdrop-filter はスクロール毎に背後ピクセルを再サンプリングするため廃止。
-   filter:blur() をパネル自身に適用し will-change:filter でGPUテクスチャを事前確保。
-   スクロール中は事前確保したテクスチャを移動するだけなので再ブラー不要 */
+/* filter:blur は大型GPUテクスチャ（~1.5MB×2枚）をスクロール層に生成しGPUメモリを圧迫するため廃止。
+   不透明度の高い暗色オーバーレイのみで霧効果を実現 */
 .panel-blurred {
   position: relative;
   cursor: pointer;
-  filter: blur(2.5px);
-  overflow: hidden;
-  will-change: filter;
 }
 .panel-blurred::before {
   content: ''; position: absolute; inset: 0; z-index: 50;
-  background: rgba(6, 6, 18, 0.76);
+  background: rgba(4, 4, 14, 0.84);
   pointer-events: none;
   border-radius: inherit;
 }
@@ -391,19 +387,23 @@ body::before {
   30%      { transform: translateY(-8px) rotate(2.5deg); }
   70%      { transform: translateY(-5px) rotate(-1.5deg); }
 }
+/* starGlow: filter:drop-shadow のアニメーションはGPU再シェーダーを毎フレーム強制するため
+   opacity アニメーションに変更（コンポジター完結、再描画なし）*/
 @keyframes starGlow {
-  0%, 100% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.5)) drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
-  50%      { filter: drop-shadow(0 0 22px rgba(255,255,255,0.88)) drop-shadow(0 0 44px rgba(255,255,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.6)); }
+  0%, 100% { opacity: 0.82; }
+  50%       { opacity: 1; }
 }
 .star-btn {
   width: 68px; height: 68px; position: relative;
   cursor: pointer; border: none; background: transparent; padding: 0;
   display: block;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.65)) drop-shadow(0 3px 8px rgba(0,0,0,0.5));
   animation: starFloat 3s ease-in-out infinite, starGlow 2.6s ease-in-out infinite;
-  will-change: transform, filter;
+  will-change: transform, opacity;
 }
 .star-btn:hover {
   animation-play-state: paused;
+  opacity: 1;
   transform: scale(1.14) translateY(-3px);
   filter: drop-shadow(0 0 28px rgba(255,255,255,0.98))
           drop-shadow(0 0 56px rgba(255,255,255,0.45))
@@ -770,7 +770,7 @@ body::before {
   padding: 11px 14px;
   margin-bottom: 8px;
   position: relative;
-  transition: all .2s;
+  transition: background .2s, border-color .2s, opacity .2s, transform .2s;
   contain: layout;
 }
 .task-card.area-kadai    { border-left-color: #FF7ED4; }
@@ -3412,7 +3412,8 @@ function setupDatetime() {
       `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   }
   update();
-  setInterval(update, 1000);
+  const _ric = window.requestIdleCallback || (fn => setTimeout(fn, 0));
+  setInterval(() => _ric(update, { timeout: 800 }), 1000);
 }
 
 // ===== カレンダー =====
@@ -6686,7 +6687,8 @@ window.onload = () => {
   loadTasks();
   initTodayCardDrag();
   document.querySelector('.content-grid').classList.add('select-mode');
-  setInterval(refreshDeadlineTags, 1000);
+  const _ricDl = window.requestIdleCallback || (fn => setTimeout(fn, 0));
+  setInterval(() => _ricDl(refreshDeadlineTags, { timeout: 800 }), 1000);
   // 60秒ごとに自動更新（ドラッグ中・集中モード中はスキップ）
   setInterval(() => {
     if (document.hidden) return;
