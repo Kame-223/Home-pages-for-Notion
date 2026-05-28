@@ -4714,12 +4714,12 @@ function updateStarFollow() {
   const npRect  = nextPanel.getBoundingClientRect();
   const headerH = 62;
   const btnH    = 68;
-  const margin  = 24;
-  const minTop  = headerH + margin;
-  const maxTop  = window.innerHeight - btnH - margin;
-  // progress: 0 = パネル上端が画面上部 → 1 = パネル下端が画面上部
-  const progress = Math.max(0, Math.min(1, (headerH - npRect.top) / Math.max(npRect.height, 1)));
-  sStarCol.style.top = Math.round(minTop + progress * (maxTop - minTop)) + 'px';
+  const margin  = 20;
+  const baseTop = Math.max(npRect.top + margin, headerH + margin);
+  const scrolled = Math.max(0, headerH - npRect.top);
+  const offset   = scrolled * 0.5;
+  const maxTop   = Math.max(headerH + margin, npRect.bottom - btnH - margin);
+  sStarCol.style.top = Math.min(Math.round(baseTop + offset), maxTop) + 'px';
 }
 window.addEventListener('scroll', updateStarFollow, { passive: true });
 
