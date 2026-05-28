@@ -322,8 +322,8 @@ body::before {
 }
 .content-grid.select-mode .schedule-col {
   grid-column: 3; grid-row: 1 / span 2; order: unset;
-  position: sticky; top: 60px; align-self: start;
-  max-height: calc(100vh - 80px); overflow: hidden;
+  position: sticky; top: 0; align-self: start;
+  height: 100vh; max-height: 100vh; overflow: hidden;
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
@@ -2646,6 +2646,7 @@ function reapplyCalLabelStyles() {
 function addFcExpandBtns() {
   document.getElementById('fc-btn-up')?.remove();
   document.getElementById('fc-btn-down')?.remove();
+  if (currentMode === 'select') return;
   const fcEl = document.getElementById('fc-el');
   if (!fcEl) return;
   fcEl.style.position = 'relative';
@@ -2790,6 +2791,17 @@ function renderFullCalendar() {
     eventResize: (info) => { moveGCalEvent(info.event); },
   });
   fcCalendar.render();
+  // 初期ロードはSモードなのでSモード用オプションを適用
+  if (currentMode === 'select') {
+    fcCalendar.setOption('slotMinTime', '06:00:00');
+    fcCalendar.setOption('slotMaxTime', '24:00:00');
+    fcCalendar.setOption('expandRows', true);
+    requestAnimationFrame(() => {
+      const hdr = document.querySelector('.schedule-col .section-header');
+      fcCalendar.setOption('height', window.innerHeight - (hdr ? hdr.offsetHeight : 38));
+      fcCalendar.updateSize();
+    });
+  }
 }
 
 function gcalEventColor(title, description, calName, isIcu) {
@@ -5207,6 +5219,11 @@ function _todayWheelHandler(e) {
 
 window.addEventListener('resize', () => {
   if (currentMode === 'exec') _cacheExecScrollRange();
+  if (currentMode === 'select' && fcCalendar) {
+    const hdr = document.querySelector('.schedule-col .section-header');
+    fcCalendar.setOption('height', window.innerHeight - (hdr ? hdr.offsetHeight : 38));
+    fcCalendar.updateSize();
+  }
 }, { passive: true });
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
@@ -5317,6 +5334,24 @@ function setMode(mode) {
   document.getElementById('btn-select').classList.toggle('active', isSelect);
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
+  if (fcCalendar) {
+    if (isSelect) {
+      fcCalendar.setOption('slotMinTime', '06:00:00');
+      fcCalendar.setOption('slotMaxTime', '24:00:00');
+      fcCalendar.setOption('expandRows', true);
+      requestAnimationFrame(() => {
+        const hdr = document.querySelector('.schedule-col .section-header');
+        fcCalendar.setOption('height', window.innerHeight - (hdr ? hdr.offsetHeight : 38));
+        fcCalendar.updateSize();
+      });
+    } else {
+      fcCalendar.setOption('height', 'auto');
+      fcCalendar.setOption('expandRows', false);
+      fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
+      fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
+      requestAnimationFrame(() => { addFcExpandBtns(); fcCalendar.updateSize(); });
+    }
+  }
   renderAll();
   updateExecHint();
   if (!isSelect) {
