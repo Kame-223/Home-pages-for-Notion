@@ -4687,6 +4687,8 @@ let leftoverAddedOpen = false;
 let bunbunOpen = false;
 let orbFilter = null;
 let focusedPanel = 'next'; // 'next' | 'today'
+let _starAnchorScrollY = null;
+let _starAnchorViewportTop = null;
 let _tdContainerId = 'today-tasks';
 let leftoverSet = new Set();
 
@@ -4699,22 +4701,36 @@ function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 function handlePanelClick(panel) {
   if (currentMode !== 'select' || focusedPanel === panel) return;
   focusedPanel = panel;
+  if (panel === 'next') resetStarAnchor();
   renderAll();
+}
+function resetStarAnchor() {
+  const leftoverEl = document.getElementById('leftover-panel');
+  const headerH = 62;
+  const margin = 16;
+  _starAnchorScrollY = window.scrollY;
+  if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
+    const lpRect = leftoverEl.getBoundingClientRect();
+    _starAnchorViewportTop = Math.max(lpRect.top + margin, headerH + margin);
+  } else {
+    _starAnchorViewportTop = headerH + margin;
+  }
 }
 function updateStarFollow() {
   const sStarCol = document.getElementById('s-star-col');
-  const nextPanel = document.getElementById('next-panel');
-  if (!sStarCol || !nextPanel) return;
+  const todayBoardEl = document.querySelector('.today-board');
+  if (!sStarCol || !todayBoardEl) return;
   if (currentMode !== 'select' || focusedPanel !== 'next') return;
-  const npRect  = nextPanel.getBoundingClientRect();
+  if (_starAnchorScrollY === null) resetStarAnchor();
   const headerH = 62;
   const btnH    = 68;
-  const margin  = 20;
-  const baseTop = Math.max(npRect.top + margin, headerH + margin);
-  const scrolled = Math.max(0, headerH - npRect.top);
-  const offset   = scrolled * 0.5;
-  const maxTop   = Math.max(headerH + margin, npRect.bottom - btnH - margin);
-  sStarCol.style.top = Math.min(Math.round(baseTop + offset), maxTop) + 'px';
+  const margin  = 16;
+  const tbRect  = todayBoardEl.getBoundingClientRect();
+  const scrollDelta = window.scrollY - _starAnchorScrollY;
+  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.5);
+  const minTop  = headerH + margin;
+  const maxTop  = Math.max(minTop, tbRect.bottom - btnH - margin);
+  sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
 }
 window.addEventListener('scroll', updateStarFollow, { passive: true });
 
@@ -5336,6 +5352,9 @@ function setMode(mode) {
   }
   renderAll();
   updateExecHint();
+  if (isSelect) {
+    requestAnimationFrame(resetStarAnchor);
+  }
   if (!isSelect) {
     orbFilter = null;
     focusedPanel = 'next';
