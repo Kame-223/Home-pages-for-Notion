@@ -4730,7 +4730,7 @@ function updateStarFollow() {
   const margin  = 16;
   const tbRect  = todayBoardEl.getBoundingClientRect();
   const scrollDelta = window.scrollY - _starAnchorScrollY;
-  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.3);
+  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
   const minTop  = headerH + margin;
   const maxTop  = Math.max(minTop, tbRect.bottom - btnH - margin);
   sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
