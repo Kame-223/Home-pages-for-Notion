@@ -4746,8 +4746,6 @@ let leftoverAddedOpen = false;
 let bunbunOpen = false;
 let orbFilter = null;
 let focusedPanel = 'next'; // 'next' | 'today'
-let _starAnchorScrollY = null;
-let _starAnchorViewportTop = null;
 let _tdContainerId = 'today-tasks';
 let leftoverSet = new Set();
 
@@ -4760,36 +4758,26 @@ function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 function handlePanelClick(panel) {
   if (currentMode !== 'select' || focusedPanel === panel) return;
   focusedPanel = panel;
-  if (panel === 'next') resetStarAnchor();
   renderAll();
 }
-function resetStarAnchor() {
-  const leftoverEl = document.getElementById('leftover-panel');
-  const headerH = 62;
-  const margin = 16;
-  _starAnchorScrollY = window.scrollY;
-  if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
-    const lpRect = leftoverEl.getBoundingClientRect();
-    _starAnchorViewportTop = Math.max(lpRect.top + margin, headerH + margin);
-  } else {
-    _starAnchorViewportTop = headerH + margin;
-  }
-}
+function resetStarAnchor() { updateStarFollow(); }
 function updateStarFollow() {
   const sStarCol = document.getElementById('s-star-col');
-  const todayBoardEl = document.querySelector('.today-board');
-  if (!sStarCol || !todayBoardEl) return;
-  if (currentMode !== 'select' || focusedPanel !== 'next') return;
-  if (_starAnchorScrollY === null) resetStarAnchor();
-  const headerH = 62;
-  const btnH    = 68;
-  const margin  = 16;
-  const tbRect  = todayBoardEl.getBoundingClientRect();
-  const scrollDelta = window.scrollY - _starAnchorScrollY;
-  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
-  const minTop  = headerH + margin;
-  const maxTop  = Math.max(minTop, tbRect.bottom - btnH - margin);
-  sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
+  if (!sStarCol || currentMode !== 'select' || focusedPanel !== 'next') return;
+  const btnH     = 68;
+  const minTop   = 78;  // header + margin
+  const btmNav   = document.querySelector('.bottom-nav');
+  const btmH     = btmNav ? btmNav.offsetHeight : 56;
+  const maxTop   = window.innerHeight - btnH - btmH;
+  const nextPanel = document.getElementById('next-panel');
+  if (!nextPanel) return;
+  const rect   = nextPanel.getBoundingClientRect();
+  const visTop = Math.max(rect.top, minTop);
+  const visBot = Math.min(rect.bottom, window.innerHeight - btmH);
+  const target = visBot > visTop
+    ? Math.round((visTop + visBot) / 2 - btnH / 2)
+    : (rect.bottom < minTop ? minTop : maxTop);
+  sStarCol.style.top = Math.min(Math.max(target, minTop), maxTop) + 'px';
 }
 let _starScrollRafId = null;
 window.addEventListener('scroll', () => {
