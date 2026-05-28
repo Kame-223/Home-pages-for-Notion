@@ -304,12 +304,17 @@ body::before {
   background: transparent;
 }
 /* ===== SELECT MODE 3カラムレイアウト ===== */
-.content-grid.select-mode { grid-template-columns: 1fr 80px 1fr; }
+.content-grid.select-mode { grid-template-columns: 1fr 80px 1fr; padding-bottom: 100vh; }
 .content-grid.select-mode .bottom-row {
   grid-column: 1; grid-row: 1; order: unset;
   display: flex; flex-direction: column; gap: 12px;
 }
 .content-grid.select-mode .today-board { grid-column: 1; grid-row: 2; order: unset; }
+.content-grid.select-mode .s-star-col {
+  display: flex !important; grid-column: 2; grid-row: 1;
+  flex-direction: column; justify-content: center; align-items: center;
+  position: sticky; top: 60px; align-self: start; padding: 20px 0;
+}
 .content-grid.select-mode .s-orb-col {
   display: flex !important; grid-column: 2; grid-row: 2;
   flex-direction: column; justify-content: center; align-items: center; gap: 24px;
@@ -321,6 +326,31 @@ body::before {
   max-height: calc(100vh - 80px); overflow: hidden;
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
+/* ===== 霧効果（Sモード 表裏パネル） ===== */
+.panel-blurred {
+  filter: blur(5px);
+  opacity: 0.38;
+  transition: filter .35s, opacity .35s;
+  position: relative;
+}
+.panel-blurred::after {
+  content: ''; position: absolute; inset: 0; z-index: 200;
+  cursor: pointer; border-radius: inherit;
+}
+/* ===== 星形ボタン ===== */
+.s-star-col { display: none; }
+.star-btn {
+  width: 68px; height: 68px; position: relative;
+  cursor: pointer; border: none; background: transparent; padding: 0;
+  transition: transform .2s, filter .2s; display: block;
+}
+.star-btn:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 14px rgba(255,255,255,0.75));
+}
+.star-btn svg { width: 100%; height: 100%; overflow: visible; }
+.execution-star-wrap { text-align: center; padding: 14px 0 6px; }
+.execution-star { width: 80px; height: 80px; }
 .content-grid {
 }
 
@@ -838,25 +868,29 @@ body::before {
 /* ===== 振り分け済みセクション ===== */
 .bunbun-section { margin-top: 8px; }
 .bunbun-toggle {
-  width: 100%; font-size: 12px; padding: 8px 14px; border-radius: 8px;
-  border: 0.5px solid rgba(133,183,235,0.3); background: rgba(133,183,235,0.06);
-  color: rgba(133,183,235,0.9); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s; text-align: left;
+  font-size: 11px; color: var(--text-dim); cursor: pointer;
+  padding: 10px 0 4px; transition: color .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  user-select: none; border: none; background: transparent;
+  width: 100%; font-family: 'Noto Sans JP', sans-serif;
 }
-.bunbun-toggle:hover { background: rgba(133,183,235,0.12); }
-.bunbun-show-all-btn {
-  font-size: 11px; padding: 5px 14px; border-radius: 99px;
-  border: 0.5px solid rgba(133,183,235,0.35); background: rgba(133,183,235,0.08);
-  color: rgba(133,183,235,0.85); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s; margin: 8px 0 4px; display: block;
+.bunbun-toggle::before, .bunbun-toggle::after {
+  content: ''; flex: 1; height: 0.5px; background: var(--border);
 }
-.bunbun-show-all-btn:hover { background: rgba(133,183,235,0.18); }
+.bunbun-toggle:hover { color: var(--text-sub); }
 .bunbun-list { display: none; padding-top: 6px; }
 .bunbun-list.open { display: block; }
 .bunbun-group { margin-bottom: 8px; }
 .bunbun-header {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-sub);
-  padding: 5px 4px 3px; border-bottom: 0.5px solid var(--border); margin-bottom: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  padding: 5px 8px; margin-bottom: 6px; border-radius: 4px;
+  display: flex; align-items: center; gap: 7px;
+  color: rgba(30,30,40,0.85); background: rgba(255,255,255,0.82);
+}
+.bunbun-header::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
+  background: rgba(30,30,40,0.35);
 }
 /* 持ち越し「追加済み」セクション */
 .leftover-added-wrap { margin: 4px 0 8px; }
@@ -1883,8 +1917,21 @@ body::before {
       <div id="fc-container"></div>
     </div>
 
+    <!-- 星形NEXTボタン (Sモード 中央列上段) -->
+    <div class="s-star-col" id="s-star-col">
+      <button class="star-btn" id="star-next-btn" onclick="starNextClick()" title="今日やることへ">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,8 90,75 10,75" fill="rgba(255,255,255,0.92)"/>
+          <polygon points="50,92 10,25 90,25" fill="rgba(255,255,255,0.92)"/>
+          <text x="50" y="51" text-anchor="middle" dominant-baseline="middle"
+            font-size="11" font-weight="800" fill="#1d9e75"
+            font-family="'Noto Sans JP',sans-serif">NEXT</text>
+        </svg>
+      </button>
+    </div>
+
     <!-- 今日やること -->
-    <div class="today-board">
+    <div class="today-board" onclick="handlePanelClick('today')" style="cursor:pointer">
       <div class="today-board-inner" id="today-board-inner">
         <div class="section-header green">✅ 今日やること</div>
         <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
@@ -1906,7 +1953,7 @@ body::before {
         <div class="section-header red">🔄 持ち越し<span class="task-count" id="leftover-count"></span></div>
         <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
       </div>
-      <div id="next-panel" class="bottom-panel">
+      <div id="next-panel" class="bottom-panel" onclick="handlePanelClick('next')">
         <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
@@ -3930,7 +3977,16 @@ function renderAll() {
     const assigned   = orderedPending.filter(t => !!getJK(t));
     if (!unassigned.length && !assigned.length) {
       todayHtml = emptyMsg;
+    } else if (orbFilter) {
+      // 時間帯フィルター中：その時間帯のタスクのみ表示
+      const grp = {朝:[],昼:[],夜:[]};
+      assigned.forEach(t => { const jk=getJK(t); if(grp[jk]) grp[jk].push(t); });
+      const filtered = grp[orbFilter] || [];
+      todayHtml = filtered.length
+        ? filtered.map(t => renderCard(t,'today')).join('')
+        : `<div class="section-empty">${orbFilter}のタスクはありません</div>`;
     } else {
+      // 通常：未分類 + トグルで振り分け済み
       todayHtml = unassigned.length
         ? unassigned.map(t => renderCard(t,'today')).join('')
         : '<div class="section-empty" style="color:var(--green)">✅ 全て振り分け済み！</div>';
@@ -3938,27 +3994,26 @@ function renderAll() {
         const grp = {朝:[],昼:[],夜:[]};
         assigned.forEach(t => { const jk=getJK(t); if(grp[jk]) grp[jk].push(t); });
         let bHtml = '';
-        if (orbFilter) {
-          const filtered = grp[orbFilter] || [];
-          bHtml = filtered.length
-            ? filtered.map(t => renderCard(t,'today')).join('')
-            : `<div class="section-empty">${orbFilter}のタスクはありません</div>`;
-          bHtml += `<button class="bunbun-show-all-btn" onclick="clearOrbFilter()">他の時間帯を表示</button>`;
-        } else {
-          ['朝','昼','夜'].forEach(jk => {
-            if (!grp[jk].length) return;
-            bHtml += `<div class="bunbun-group"><div class="bunbun-header">${bLabels[jk]}</div>${grp[jk].map(t=>renderCard(t,'today')).join('')}</div>`;
-          });
-        }
-        const filterLabel = orbFilter ? `${bLabels[orbFilter]} のみ` : `振り分け済み（${assigned.length}件）`;
+        ['朝','昼','夜'].forEach(jk => {
+          if (!grp[jk].length) return;
+          bHtml += `<div class="bunbun-group"><div class="bunbun-header">${bLabels[jk]}</div>${grp[jk].map(t=>renderCard(t,'today')).join('')}</div>`;
+        });
         todayHtml += `<div class="bunbun-section">
-          <button class="bunbun-toggle" onclick="toggleBunbun()">${filterLabel}${bunbunOpen?' ▲':' ▼'}</button>
+          <button class="bunbun-toggle" onclick="toggleBunbun()">振り分け済み（${assigned.length}件）${bunbunOpen?' ▲':' ▼'}</button>
           <div class="bunbun-list ${bunbunOpen?'open':''}" id="bunbun-list">${bHtml}</div>
         </div>`;
       }
       if (assigned.length === orderedPending.length && assigned.length > 0) {
-        todayHtml += `<div class="jikantai-prompt">
-          <button class="jikantai-complete-btn" onclick="setMode('exec')">✅ 振り分け完了 → 実行モードへ</button>
+        todayHtml += `<div class="execution-star-wrap">
+          <button class="star-btn execution-star" onclick="setMode('exec')" title="実行モードへ">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="50,8 90,75 10,75" fill="rgba(255,255,255,0.92)"/>
+              <polygon points="50,92 10,25 90,25" fill="rgba(255,255,255,0.92)"/>
+              <text x="50" y="49" text-anchor="middle" dominant-baseline="middle"
+                font-size="7.5" font-weight="800" fill="#5599ff"
+                font-family="'Noto Sans JP',sans-serif" letter-spacing="-0.5">EXECUTION</text>
+            </svg>
+          </button>
         </div>`;
       }
     }
@@ -4012,6 +4067,17 @@ function renderAll() {
   document.querySelectorAll('.jk-orb').forEach(o => {
     o.classList.toggle('orb-active', o.dataset.jk === orbFilter);
   });
+
+  // 霧効果（Sモードのみ）
+  const todayBoardEl = document.querySelector('.today-board');
+  const nextPanelEl  = document.getElementById('next-panel');
+  if (currentMode === 'select') {
+    todayBoardEl?.classList.toggle('panel-blurred', focusedPanel !== 'today');
+    nextPanelEl?.classList.toggle('panel-blurred',  focusedPanel !== 'next');
+  } else {
+    todayBoardEl?.classList.remove('panel-blurred');
+    nextPanelEl?.classList.remove('panel-blurred');
+  }
 
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
@@ -4560,6 +4626,7 @@ let leftoverExpanded = false;
 let leftoverAddedOpen = false;
 let bunbunOpen = false;
 let orbFilter = null;
+let focusedPanel = 'next'; // 'next' | 'today'
 let _tdContainerId = 'today-tasks';
 let leftoverSet = new Set();
 
@@ -4569,8 +4636,25 @@ function expandLeftoverList()   { leftoverExpanded = true;  renderAll(); }
 function collapseLeftoverList() { leftoverExpanded = false; renderAll(); }
 function toggleLeftoverAdded()  { leftoverAddedOpen = !leftoverAddedOpen; renderAll(); }
 function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
-function setOrbFilter(jk) { orbFilter = jk; bunbunOpen = true; renderAll(); }
-function clearOrbFilter() { orbFilter = null; renderAll(); }
+function handlePanelClick(panel) {
+  if (currentMode !== 'select' || focusedPanel === panel) return;
+  focusedPanel = panel;
+  renderAll();
+}
+function starNextClick() {
+  focusedPanel = 'today';
+  renderAll();
+  requestAnimationFrame(() => {
+    const board = document.querySelector('.today-board');
+    if (board) window.scrollTo({ top: board.getBoundingClientRect().top + window.scrollY - 10, behavior: 'smooth' });
+  });
+}
+function setOrbFilter(jk) {
+  if (orbFilter === jk) { orbFilter = null; bunbunOpen = false; }
+  else { orbFilter = jk; bunbunOpen = true; }
+  renderAll();
+}
+function clearOrbFilter() { orbFilter = null; bunbunOpen = false; renderAll(); }
 
 function renderLeftoverSection(leftover) {
   const leftoverPanelEl = document.getElementById('leftover-panel');
@@ -5167,6 +5251,7 @@ function setMode(mode) {
   updateExecHint();
   if (!isSelect) {
     orbFilter = null;
+    focusedPanel = 'next';
     requestAnimationFrame(() => {
       const now = new Date();
       const minH = _calEarly ? 2.5 : 5.5;
