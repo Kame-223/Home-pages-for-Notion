@@ -361,17 +361,14 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* filter:blur は大型GPUテクスチャ（~1.5MB×2枚）をスクロール層に生成しGPUメモリを圧迫するため廃止。
-   不透明度の高い暗色オーバーレイのみで霧効果を実現 */
+/* filter:blur(4px)+opacity:0.38 で白い霧感を実現。will-change:filter でGPUテクスチャ事前確保 → スクロール中の再描画なし */
 .panel-blurred {
   position: relative;
   cursor: pointer;
-}
-.panel-blurred::before {
-  content: ''; position: absolute; inset: 0; z-index: 50;
-  background: rgba(4, 4, 14, 0.22);
-  pointer-events: none;
-  border-radius: inherit;
+  filter: blur(4px);
+  opacity: 0.38;
+  overflow: hidden;
+  will-change: filter;
 }
 .panel-blurred::after {
   content: ''; position: absolute; inset: 0; z-index: 200;
