@@ -384,9 +384,9 @@ body::before {
 .content-grid.select-mode .s-star-col.star-hidden { display: none !important; }
 .content-grid.select-mode .s-orb-col.orb-hidden   { visibility: hidden; pointer-events: none; }
 @keyframes starFloat {
-  0%, 100% { transform: translateY(0px); }
-  30%      { transform: translateY(-8px); }
-  70%      { transform: translateY(-5px); }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  30%      { transform: translateY(-8px) rotate(12deg); }
+  70%      { transform: translateY(-5px) rotate(-8deg); }
 }
 /* starGlow: filter:drop-shadow のアニメーションはGPU再シェーダーを毎フレーム強制するため
    opacity アニメーションに変更（コンポジター完結、再描画なし）*/
