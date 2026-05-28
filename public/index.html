@@ -88,6 +88,7 @@ html[data-theme="light"] .bottom-panel {
   background: rgba(255,255,255,0.8);
   border-color: var(--border2);
 }
+html[data-theme="light"] .panel-blurred::before { background: rgba(245,245,247,0.82); }
 html[data-theme="light"] .link-pill { border-color: rgba(0,0,0,0.18); }
 html[data-theme="light"] .link-pill:hover { border-color: rgba(0,0,0,0.4); }
 html[data-theme="light"] #gcal-panel {
@@ -260,8 +261,7 @@ body::before {
   position: absolute;
   width: 200px; height: 200px;
   border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.12;
+  opacity: 0.08;
   top: -60px; right: 20px;
   transition: background .8s;
 }
@@ -361,16 +361,17 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* filter:blur(6px) でコンテンツをぼかし霧感を演出。
-   opacity:0.5 でパネル背景色を維持し高さが視覚的に一致するようにする。
-   will-change:filter でGPUテクスチャ事前確保 → スクロール中再描画なし。
-   各パネルに overflow:hidden があるため clip-path は不要。 */
+/* filter:blur はパネル全体をGPUテクスチャに焼き直すため毎秒の内容更新でラグが発生する。
+   暗色オーバーレイ(::before)で視覚的に同等の霧感を実現。GPU再ラスタライズなし。 */
 .panel-blurred {
   position: relative;
   cursor: pointer;
-  filter: blur(6px);
-  opacity: 0.5;
-  will-change: filter;
+}
+.panel-blurred::before {
+  content: ''; position: absolute; inset: 0; z-index: 50;
+  background: rgba(4, 4, 14, 0.82);
+  pointer-events: none;
+  border-radius: inherit;
   transition: opacity 0.35s;
 }
 .panel-blurred::after {
@@ -5438,13 +5439,17 @@ function setMode(mode) {
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   if (fcCalendar) {
     if (isSelect) {
-      fcCalendar.setOption('slotMinTime', '06:00:00');
-      fcCalendar.setOption('slotMaxTime', '24:00:00');
+      fcCalendar.batchRendering(() => {
+        fcCalendar.setOption('slotMinTime', '06:00:00');
+        fcCalendar.setOption('slotMaxTime', '24:00:00');
+      });
       requestAnimationFrame(applySModeCalLayout);
     } else {
-      fcCalendar.setOption('contentHeight', 'auto');
-      fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
-      fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
+      fcCalendar.batchRendering(() => {
+        fcCalendar.setOption('contentHeight', 'auto');
+        fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
+        fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
+      });
       requestAnimationFrame(() => { addFcExpandBtns(); fcCalendar.updateSize(); });
     }
   }
@@ -6703,8 +6708,8 @@ window.onload = () => {
   loadTasks();
   initTodayCardDrag();
   document.querySelector('.content-grid').classList.add('select-mode');
-  const _ricDl = window.requestIdleCallback || (fn => setTimeout(fn, 0));
-  setInterval(() => _ricDl(refreshDeadlineTags, { timeout: 800 }), 1000);
+  const _ricDl = window.requestIdleCallback || (fn => setTimeout(fn, 200));
+  setInterval(() => _ricDl(refreshDeadlineTags), 1000);
   // 60秒ごとに自動更新（ドラッグ中・集中モード中はスキップ）
   setInterval(() => {
     if (document.hidden) return;
