@@ -966,12 +966,16 @@ body::before {
 /* 持ち越し「追加済み」セクション */
 .leftover-added-wrap { margin: 4px 0 8px; }
 .leftover-added-toggle {
-  font-size: 12px; padding: 6px 14px; border-radius: 8px;
-  border: 0.5px solid rgba(29,158,117,0.35); background: rgba(29,158,117,0.07);
-  color: rgba(29,158,117,0.85); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s; width: 100%; text-align: left;
+  font-size: 11px; color: var(--text-dim); cursor: pointer;
+  padding: 10px 0 4px; transition: color .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  user-select: none; border: none; background: transparent;
+  width: 100%; font-family: 'Noto Sans JP', sans-serif;
 }
-.leftover-added-toggle:hover { background: rgba(29,158,117,0.14); }
+.leftover-added-toggle::before, .leftover-added-toggle::after {
+  content: ''; flex: 1; height: 0.5px; background: var(--border);
+}
+.leftover-added-toggle:hover { color: var(--text-sub); }
 .leftover-added-cards { display: none; padding: 6px 0 2px; }
 .leftover-added-cards.open { display: block; }
 /* 持ち越し非表示ボタン */
