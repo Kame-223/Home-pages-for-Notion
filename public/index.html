@@ -115,7 +115,37 @@ html[data-theme="light"] .fc-theme-standard .fc-scrollgrid { border-color: rgba(
 html[data-theme="light"] .time-dropdown { background: var(--surface); border-color: var(--border2); box-shadow: 0 -4px 16px rgba(0,0,0,0.1); }
 html[data-theme="light"] .time-opt:hover { background: rgba(0,0,0,0.06); }
 /* ICUチップ（白ベース→暗色に） */
-html[data-theme="light"] .edit-chip[data-val="ICU"] { --chip-bg: rgba(0,0,0,0.08); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.2); }
+/* ===== ライトモード: タスク編集モーダル ===== */
+html[data-theme="light"] .task-edit-modal {
+  background: #ffffff;
+  border: 0.5px solid rgba(0,0,0,0.12);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.16);
+}
+html[data-theme="light"] .edit-close-btn { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.5); }
+html[data-theme="light"] .edit-close-btn:hover { background: rgba(0,0,0,0.11); color: rgba(0,0,0,0.85); }
+html[data-theme="light"] .edit-deadline-input { color-scheme: light; }
+html[data-theme="light"] .edit-reset-btn { color: #b03030; background: rgba(180,0,0,0.07); border-color: rgba(180,0,0,0.25); }
+/* 非アクティブチップの透過度をライトモードでは上げる */
+html[data-theme="light"] .edit-chips:has(.edit-chip.active) .edit-chip:not(.active) { opacity: 0.45; }
+/* チップ個別カラー（ライトモード：暗色テキスト） */
+html[data-theme="light"] .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.4); }
+html[data-theme="light"] .edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
+html[data-theme="light"] .edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
+html[data-theme="light"] .edit-chip[data-val="課題"]    { --chip-bg: rgba(46,168,160,0.14);  --chip-color: #167870; --chip-border: rgba(46,168,160,0.45); }
+html[data-theme="light"] .edit-chip[data-val="個人"]    { --chip-bg: rgba(191,160,64,0.14);  --chip-color: #806a10; --chip-border: rgba(191,160,64,0.45); }
+html[data-theme="light"] .edit-chip[data-val="生活"]    { --chip-bg: rgba(120,150,60,0.14);  --chip-color: #567020; --chip-border: rgba(120,150,60,0.45); }
+html[data-theme="light"] .edit-chip[data-val="ICU"]     { --chip-bg: rgba(0,0,0,0.07);       --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.18); }
+html[data-theme="light"] .edit-chip[data-val="カナダ"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.45); }
+html[data-theme="light"] .edit-chip[data-val="憲法"]    { --chip-bg: rgba(139,128,48,0.14);  --chip-color: #6a5e00; --chip-border: rgba(139,128,48,0.45); }
+html[data-theme="light"] .edit-chip[data-val="社会学"]  { --chip-bg: rgba(139,21,21,0.1);    --chip-color: #880e0e; --chip-border: rgba(139,21,21,0.4); }
+html[data-theme="light"] .edit-chip[data-val="PE"]      { --chip-bg: rgba(0,160,160,0.1);    --chip-color: #007070; --chip-border: rgba(0,160,160,0.4); }
+html[data-theme="light"] .edit-chip[data-val="教育原理"]{ --chip-bg: rgba(45,88,30,0.1);     --chip-color: #224810; --chip-border: rgba(45,88,30,0.4); }
+html[data-theme="light"] .edit-chip[data-val="ELA"],
+html[data-theme="light"] .edit-chip[data-val="ER4"],
+html[data-theme="light"] .edit-chip[data-val="S&L4"],
+html[data-theme="light"] .edit-chip[data-val="RCA"],
+html[data-theme="light"] .edit-chip[data-val="ATS4"],
+html[data-theme="light"] .edit-chip[data-val="ARW"]     { --chip-bg: rgba(28,58,110,0.1);    --chip-color: #1a3878; --chip-border: rgba(28,58,110,0.4); }
 * { margin:0; padding:0; box-sizing:border-box; }
 /* background-attachment:fixed はスクロール毎に全体を再描画するためGPUスクロール合成を破壊する。
    #bg-layer(position:fixed)に移すことでブラウザが通常のGPUスクロール合成を使えるようになる */
