@@ -327,19 +327,21 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* filter:blur() をパネル本体から外し ::before backdrop-filter に移すことでスクロールラグを解消 */
+/* backdrop-filter はスクロール毎に背後ピクセルを再サンプリングするため廃止。
+   filter:blur() をパネル自身に適用し will-change:filter でGPUテクスチャを事前確保。
+   スクロール中は事前確保したテクスチャを移動するだけなので再ブラー不要 */
 .panel-blurred {
   position: relative;
   cursor: pointer;
+  filter: blur(2.5px);
+  overflow: hidden;
+  will-change: filter;
 }
 .panel-blurred::before {
   content: ''; position: absolute; inset: 0; z-index: 50;
-  background: rgba(6, 6, 18, 0.62);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(6, 6, 18, 0.76);
   pointer-events: none;
   border-radius: inherit;
-  transition: opacity .35s;
 }
 .panel-blurred::after {
   content: ''; position: absolute; inset: 0; z-index: 200;
@@ -4727,12 +4729,19 @@ function updateStarFollow() {
   const margin  = 16;
   const tbRect  = todayBoardEl.getBoundingClientRect();
   const scrollDelta = window.scrollY - _starAnchorScrollY;
-  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.5);
+  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.3);
   const minTop  = headerH + margin;
   const maxTop  = Math.max(minTop, tbRect.bottom - btnH - margin);
   sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
 }
-window.addEventListener('scroll', updateStarFollow, { passive: true });
+let _starScrollRafId = null;
+window.addEventListener('scroll', () => {
+  if (_starScrollRafId) return;
+  _starScrollRafId = requestAnimationFrame(() => {
+    _starScrollRafId = null;
+    updateStarFollow();
+  });
+}, { passive: true });
 
 function starNextClick() {
   focusedPanel = 'today';
@@ -5295,10 +5304,7 @@ function applyExecFixed() {
 }
 
 function _syncExecPanelPos() { /* 新方式では不要 */ }
-window.addEventListener('scroll', _syncExecPanelPos, { passive: true });
-
 function syncExecScroll() { /* 新方式では不要: tc が sticky で自動追従 */ }
-window.addEventListener('scroll', syncExecScroll, { passive: true });
 
 let _execRafId = null;
 function _startExecRaf() {}
