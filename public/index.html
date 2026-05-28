@@ -771,6 +771,7 @@ body::before {
   margin-bottom: 8px;
   position: relative;
   transition: all .2s;
+  contain: layout;
 }
 .task-card.area-kadai    { border-left-color: #FF7ED4; }
 .task-card.area-personal { border-left-color: #D4A098; }
@@ -1039,12 +1040,21 @@ body::before {
   transition: opacity .2s, transform .25s cubic-bezier(.2, 1.5, .4, 1);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
-/* 今日締切タグ点滅 */
+/* 今日締切タグ点滅 — box-shadow は非コンポジットで毎フレーム再描画を起こすため
+   ::before + transform/opacity のみに変更（コンポジターで完結、再描画なし） */
 @keyframes tagPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,80,64,0); }
-  50%       { box-shadow: 0 0 0 3px rgba(255,80,64,0.45); }
+  0%, 100% { opacity: 0; transform: scale(0.8); }
+  50%       { opacity: 1; transform: scale(1.3); }
 }
-.deadline-today-tag { animation: tagPulse 1.6s ease-in-out infinite; }
+.deadline-today-tag { position: relative; }
+.deadline-today-tag::before {
+  content: '';
+  position: absolute; inset: -1px; border-radius: inherit;
+  border: 1.5px solid rgba(255,80,64,0.6);
+  animation: tagPulse 1.6s ease-in-out infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
 .btn-change-prop {
   font-size: 9px; padding: 1px 8px; border-radius: 4px;
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -1699,7 +1709,7 @@ body::before {
 .furikaeri-done-btn:hover { background: #6860c0; }
 .fr-done-overlay {
   display: none; position: absolute; inset: -16px -14px -16px -14px; border-radius: 12px;
-  background: rgba(10,10,20,0.85); backdrop-filter: blur(3px);
+  background: rgba(8,8,18,0.93);
   flex-direction: column; align-items: center; justify-content: center;
   gap: 10px; z-index: 10; cursor: pointer;
 }
@@ -3095,7 +3105,7 @@ function showCalSelHandles(startMs, endMs) {
 
   initCalHandleDrag(_calHandleTop,    'start');
   initCalHandleDrag(_calHandleBottom, 'end');
-  window.addEventListener('scroll', repositionCalSelHandles, { passive: true });
+  window.addEventListener('scroll', _repoCalScrollHandler, { passive: true });
 }
 
 function _mkCalHandle() {
@@ -3116,10 +3126,18 @@ function repositionCalSelHandles() {
   const hi = document.querySelector('.fc-highlight');
   if (hi && _calHandleTop) _posCalHandles(hi.getBoundingClientRect());
 }
+let _repoCalRafId = null;
+function _repoCalScrollHandler() {
+  if (_repoCalRafId) return;
+  _repoCalRafId = requestAnimationFrame(() => {
+    _repoCalRafId = null;
+    repositionCalSelHandles();
+  });
+}
 function removeCalSelHandles() {
   _calHandleTop?.remove();    _calHandleTop    = null;
   _calHandleBottom?.remove(); _calHandleBottom = null;
-  window.removeEventListener('scroll', repositionCalSelHandles);
+  window.removeEventListener('scroll', _repoCalScrollHandler);
 }
 
 function initCalHandleDrag(handleEl, which) {
