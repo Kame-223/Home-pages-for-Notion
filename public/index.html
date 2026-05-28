@@ -380,8 +380,8 @@ body::before {
 /* ===== 星形ボタン ===== */
 .s-star-col { display: none; }
 /* specificity 0,4,0 で select-mode の flex !important (0,3,0) を確実に上書き */
-.content-grid.select-mode .s-star-col.star-hidden { display: none !important; }
-.content-grid.select-mode .s-orb-col.orb-hidden   { display: none !important; }
+.content-grid.select-mode .s-star-col.star-hidden { visibility: hidden; pointer-events: none; }
+.content-grid.select-mode .s-orb-col.orb-hidden   { visibility: hidden; pointer-events: none; }
 @keyframes starFloat {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   30%      { transform: translateY(-8px) rotate(2.5deg); }
