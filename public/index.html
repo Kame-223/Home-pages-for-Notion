@@ -313,7 +313,7 @@ body::before {
 .content-grid.select-mode .s-star-col {
   display: flex !important; grid-column: 2; grid-row: 1;
   flex-direction: column; justify-content: center; align-items: center;
-  position: sticky; top: 60px; align-self: start; padding: 20px 0;
+  align-self: start; padding: 20px 0;
 }
 .content-grid.select-mode .s-orb-col {
   display: flex !important; grid-column: 2; grid-row: 2;
@@ -328,11 +328,13 @@ body::before {
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
 .panel-blurred {
-  filter: blur(5px);
+  filter: blur(4px);
   opacity: 0.38;
   transition: filter .35s, opacity .35s;
   position: relative;
   cursor: pointer;
+  will-change: filter;
+  transform: translateZ(0); /* GPU compositing layer でスクロール重さ解消 */
 }
 .panel-blurred::after {
   content: ''; position: absolute; inset: 0; z-index: 200;
@@ -340,8 +342,9 @@ body::before {
 }
 /* ===== 星形ボタン ===== */
 .s-star-col { display: none; }
-.s-star-col.star-hidden { display: none !important; }
-.s-orb-col.orb-hidden  { display: none !important; }
+/* specificity 0,4,0 で select-mode の flex !important (0,3,0) を確実に上書き */
+.content-grid.select-mode .s-star-col.star-hidden { display: none !important; }
+.content-grid.select-mode .s-orb-col.orb-hidden   { display: none !important; }
 @keyframes starPulse {
   0%, 100% {
     transform: translateY(0) rotate(0deg);
@@ -4020,9 +4023,27 @@ function renderAll() {
         : `<div class="section-empty">${orbFilter}のタスクはありません</div>`;
     } else {
       // 通常：未分類 + トグルで振り分け済み
+      const _execStarHtml = `<div class="execution-star-wrap">
+        <button class="star-btn execution-star" onclick="setMode('exec')" title="実行モードへ">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="exStarGrad" cx="38%" cy="30%" r="68%">
+                <stop offset="0%"   stop-color="rgba(255,255,255,1)"/>
+                <stop offset="48%"  stop-color="rgba(248,251,255,0.97)"/>
+                <stop offset="100%" stop-color="rgba(195,215,255,0.82)"/>
+              </radialGradient>
+            </defs>
+            <polygon points="50,8 90,75 10,75" fill="url(#exStarGrad)"/>
+            <polygon points="50,92 10,25 90,25" fill="url(#exStarGrad)"/>
+            <text x="50" y="49" text-anchor="middle" dominant-baseline="middle"
+              font-size="7.5" font-weight="800" fill="#5599ff"
+              font-family="'Noto Sans JP',sans-serif" letter-spacing="-0.5">EXECUTION</text>
+          </svg>
+        </button>
+      </div>`;
       todayHtml = unassigned.length
         ? unassigned.map(t => renderCard(t,'today')).join('')
-        : `<svg class="star-deco" viewBox="0 0 100 100" width="44" height="44" xmlns="http://www.w3.org/2000/svg"><polygon points="50,8 90,75 10,75" fill="rgba(255,255,255,0.88)"/><polygon points="50,92 10,25 90,25" fill="rgba(255,255,255,0.88)"/></svg>`;
+        : _execStarHtml;
       if (assigned.length) {
         const grp = {朝:[],昼:[],夜:[]};
         assigned.forEach(t => { const jk=getJK(t); if(grp[jk]) grp[jk].push(t); });
@@ -4034,19 +4055,6 @@ function renderAll() {
         todayHtml += `<div class="bunbun-section">
           <button class="bunbun-toggle" onclick="toggleBunbun()">振り分け済み（${assigned.length}件）${bunbunOpen?' ▲':' ▼'}</button>
           <div class="bunbun-list ${bunbunOpen?'open':''}" id="bunbun-list">${bHtml}</div>
-        </div>`;
-      }
-      if (assigned.length === orderedPending.length && assigned.length > 0) {
-        todayHtml += `<div class="execution-star-wrap">
-          <button class="star-btn execution-star" onclick="setMode('exec')" title="実行モードへ">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="50,8 90,75 10,75" fill="rgba(255,255,255,0.92)"/>
-              <polygon points="50,92 10,25 90,25" fill="rgba(255,255,255,0.92)"/>
-              <text x="50" y="49" text-anchor="middle" dominant-baseline="middle"
-                font-size="7.5" font-weight="800" fill="#5599ff"
-                font-family="'Noto Sans JP',sans-serif" letter-spacing="-0.5">EXECUTION</text>
-            </svg>
-          </button>
         </div>`;
       }
     }
