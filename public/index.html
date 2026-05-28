@@ -332,6 +332,7 @@ body::before {
   opacity: 0.38;
   transition: filter .35s, opacity .35s;
   position: relative;
+  cursor: pointer;
 }
 .panel-blurred::after {
   content: ''; position: absolute; inset: 0; z-index: 200;
@@ -339,16 +340,41 @@ body::before {
 }
 /* ===== 星形ボタン ===== */
 .s-star-col { display: none; }
+.s-star-col.star-hidden { display: none !important; }
+.s-orb-col.orb-hidden  { display: none !important; }
+@keyframes starPulse {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.52))
+            drop-shadow(0 4px 10px rgba(0,0,0,0.52));
+  }
+  30% { transform: translateY(-7px) rotate(2deg); }
+  70% { transform: translateY(-4px) rotate(-1deg); }
+  50% {
+    filter: drop-shadow(0 0 22px rgba(255,255,255,0.88))
+            drop-shadow(0 0 44px rgba(255,255,255,0.3))
+            drop-shadow(0 4px 12px rgba(0,0,0,0.58));
+  }
+}
 .star-btn {
   width: 68px; height: 68px; position: relative;
   cursor: pointer; border: none; background: transparent; padding: 0;
-  transition: transform .2s, filter .2s; display: block;
+  display: block;
+  animation: starPulse 3.2s ease-in-out infinite;
 }
 .star-btn:hover {
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 14px rgba(255,255,255,0.75));
+  animation-play-state: paused;
+  transform: scale(1.14) translateY(-3px);
+  filter: drop-shadow(0 0 28px rgba(255,255,255,0.98))
+          drop-shadow(0 0 56px rgba(255,255,255,0.45))
+          drop-shadow(0 4px 14px rgba(0,0,0,0.6));
 }
 .star-btn svg { width: 100%; height: 100%; overflow: visible; }
+.star-deco {
+  display: block; margin: 10px auto 6px;
+  filter: drop-shadow(0 0 7px rgba(255,255,255,0.45)) drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  opacity: 0.8;
+}
 .execution-star-wrap { text-align: center; padding: 14px 0 6px; }
 .execution-star { width: 80px; height: 80px; }
 .content-grid {
@@ -1921,8 +1947,15 @@ body::before {
     <div class="s-star-col" id="s-star-col">
       <button class="star-btn" id="star-next-btn" onclick="starNextClick()" title="今日やることへ">
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="50,8 90,75 10,75" fill="rgba(255,255,255,0.92)"/>
-          <polygon points="50,92 10,25 90,25" fill="rgba(255,255,255,0.92)"/>
+          <defs>
+            <radialGradient id="nextStarGrad" cx="38%" cy="30%" r="68%">
+              <stop offset="0%"   stop-color="rgba(255,255,255,1)"/>
+              <stop offset="48%"  stop-color="rgba(248,251,255,0.97)"/>
+              <stop offset="100%" stop-color="rgba(195,215,255,0.82)"/>
+            </radialGradient>
+          </defs>
+          <polygon points="50,8 90,75 10,75" fill="url(#nextStarGrad)"/>
+          <polygon points="50,92 10,25 90,25" fill="url(#nextStarGrad)"/>
           <text x="50" y="51" text-anchor="middle" dominant-baseline="middle"
             font-size="11" font-weight="800" fill="#1d9e75"
             font-family="'Noto Sans JP',sans-serif">NEXT</text>
@@ -1931,7 +1964,7 @@ body::before {
     </div>
 
     <!-- 今日やること -->
-    <div class="today-board" onclick="handlePanelClick('today')" style="cursor:pointer">
+    <div class="today-board" onclick="handlePanelClick('today')">
       <div class="today-board-inner" id="today-board-inner">
         <div class="section-header green">✅ 今日やること</div>
         <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
@@ -3989,7 +4022,7 @@ function renderAll() {
       // 通常：未分類 + トグルで振り分け済み
       todayHtml = unassigned.length
         ? unassigned.map(t => renderCard(t,'today')).join('')
-        : '<div class="section-empty" style="color:var(--green)">✅ 全て振り分け済み！</div>';
+        : `<svg class="star-deco" viewBox="0 0 100 100" width="44" height="44" xmlns="http://www.w3.org/2000/svg"><polygon points="50,8 90,75 10,75" fill="rgba(255,255,255,0.88)"/><polygon points="50,92 10,25 90,25" fill="rgba(255,255,255,0.88)"/></svg>`;
       if (assigned.length) {
         const grp = {朝:[],昼:[],夜:[]};
         assigned.forEach(t => { const jk=getJK(t); if(grp[jk]) grp[jk].push(t); });
@@ -4068,15 +4101,25 @@ function renderAll() {
     o.classList.toggle('orb-active', o.dataset.jk === orbFilter);
   });
 
-  // 霧効果（Sモードのみ）
-  const todayBoardEl = document.querySelector('.today-board');
-  const nextPanelEl  = document.getElementById('next-panel');
+  // 霧効果 + ボタン表示制御（Sモードのみ）
+  const todayBoardEl  = document.querySelector('.today-board');
+  const nextPanelEl   = document.getElementById('next-panel');
+  const leftoverEl    = document.getElementById('leftover-panel');
+  const sOrbColEl     = document.getElementById('s-orb-col');
+  const sStarColEl    = document.getElementById('s-star-col');
+  const isToday       = focusedPanel === 'today';
   if (currentMode === 'select') {
-    todayBoardEl?.classList.toggle('panel-blurred', focusedPanel !== 'today');
-    nextPanelEl?.classList.toggle('panel-blurred',  focusedPanel !== 'next');
+    todayBoardEl?.classList.toggle('panel-blurred', !isToday);
+    nextPanelEl?.classList.toggle('panel-blurred',   isToday);
+    leftoverEl?.classList.toggle('panel-blurred',    isToday);
+    sOrbColEl?.classList.toggle('orb-hidden',  !isToday);
+    sStarColEl?.classList.toggle('star-hidden',  isToday);
   } else {
     todayBoardEl?.classList.remove('panel-blurred');
     nextPanelEl?.classList.remove('panel-blurred');
+    leftoverEl?.classList.remove('panel-blurred');
+    sOrbColEl?.classList.add('orb-hidden');
+    sStarColEl?.classList.add('star-hidden');
   }
 
   // 1日のスケジュール（実行モード）
