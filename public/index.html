@@ -384,9 +384,9 @@ body::before {
 .content-grid.select-mode .s-star-col.star-hidden { display: none !important; }
 .content-grid.select-mode .s-orb-col.orb-hidden   { visibility: hidden; pointer-events: none; }
 @keyframes starFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  30%      { transform: translateY(-8px) rotate(2.5deg); }
-  70%      { transform: translateY(-5px) rotate(-1.5deg); }
+  0%, 100% { transform: translateY(0px); }
+  30%      { transform: translateY(-8px); }
+  70%      { transform: translateY(-5px); }
 }
 /* starGlow: filter:drop-shadow のアニメーションはGPU再シェーダーを毎フレーム強制するため
    opacity アニメーションに変更（コンポジター完結、再描画なし）*/
@@ -3421,16 +3421,19 @@ function setupBanner() {
 
 function setupDatetime() {
   const days = ['日','月','火','水','木','金','土'];
+  const dateEl = () => document.getElementById('dt-date');
+  const timeEl = () => document.getElementById('dt-time');
   function update() {
     const now = new Date();
-    document.getElementById('dt-date').textContent =
-      `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${days[now.getDay()]})`;
-    document.getElementById('dt-time').textContent =
-      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${days[now.getDay()]})`;
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const de = dateEl(), te = timeEl();
+    if (de && de.textContent !== dateStr) de.textContent = dateStr;
+    if (te && te.textContent !== timeStr) te.textContent = timeStr;
   }
   update();
-  const _ric = window.requestIdleCallback || (fn => setTimeout(fn, 0));
-  setInterval(() => _ric(update, { timeout: 800 }), 1000);
+  const _ric = window.requestIdleCallback || (fn => setTimeout(fn, 200));
+  setInterval(() => _ric(update), 1000);
 }
 
 // ===== カレンダー =====
@@ -6665,20 +6668,22 @@ document.addEventListener('click', () => {
 });
 
 // ===== 起動 =====
+let _dlFullNext = 0;
 function refreshDeadlineTags() {
+  const now = Date.now();
+  const doFull = now >= _dlFullNext;
+  if (doFull) _dlFullNext = now + 29000;
   document.querySelectorAll('.deadline-tag[data-deadline]').forEach(el => {
+    const isImportant = el.dataset.important === 'true';
+    if (!doFull && !isImportant) return; // 通常タグは30秒に1回
     const ds = el.dataset.deadline;
     if (!ds || ds.length <= 10) return;
-    const isImportant = el.dataset.important === 'true';
     const isDone = el.dataset.done === 'true';
-    const diffMs = ds ? (new Date(ds) - new Date()) : Infinity;
-    // 通常タグは30秒に1回更新、Importantは毎秒
-    if (!isImportant && (Date.now() % 30000 > 1100)) return;
     const dt = deadlineTag(ds, isDone, isImportant);
-    if (dt) {
-      el.textContent = dt.label;
-      el.className = `tag ${dt.cls} deadline-tag clickable`;
-    }
+    if (!dt) return;
+    const newClass = `tag ${dt.cls} deadline-tag clickable`;
+    if (el.textContent !== dt.label) el.textContent = dt.label;
+    if (el.className !== newClass) el.className = newClass;
   });
 }
 
