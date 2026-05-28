@@ -4765,15 +4765,19 @@ function handlePanelClick(panel) {
 }
 function resetStarAnchor() {
   const leftoverEl = document.getElementById('leftover-panel');
+  const nextPanelEl = document.getElementById('next-panel');
   const headerH = 62;
   const margin = 16;
   _starAnchorScrollY = window.scrollY;
+  let refTop = headerH + margin;
   if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
-    const lpRect = leftoverEl.getBoundingClientRect();
-    _starAnchorViewportTop = Math.max(lpRect.top + margin, headerH + margin);
-  } else {
-    _starAnchorViewportTop = headerH + margin;
+    const rect = leftoverEl.getBoundingClientRect();
+    refTop = Math.max(rect.top + margin, headerH + margin);
+  } else if (nextPanelEl) {
+    const rect = nextPanelEl.getBoundingClientRect();
+    refTop = Math.max(rect.top + margin, headerH + margin);
   }
+  _starAnchorViewportTop = refTop;
 }
 function updateStarFollow() {
   const sStarCol = document.getElementById('s-star-col');
