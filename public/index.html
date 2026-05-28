@@ -117,11 +117,15 @@ html[data-theme="light"] .time-opt:hover { background: rgba(0,0,0,0.06); }
 /* ICUチップ（白ベース→暗色に） */
 html[data-theme="light"] .edit-chip[data-val="ICU"] { --chip-bg: rgba(0,0,0,0.08); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.2); }
 * { margin:0; padding:0; box-sizing:border-box; }
+/* background-attachment:fixed はスクロール毎に全体を再描画するためGPUスクロール合成を破壊する。
+   #bg-layer(position:fixed)に移すことでブラウザが通常のGPUスクロール合成を使えるようになる */
+#bg-layer {
+  position: fixed; inset: 0; z-index: -1;
+  background-size: cover; background-position: center;
+  pointer-events: none;
+}
 body {
   background: var(--bg);
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
   color: var(--text);
   font-family: 'Noto Sans JP', sans-serif;
   font-weight: 300;
@@ -366,6 +370,7 @@ body::before {
   cursor: pointer; border: none; background: transparent; padding: 0;
   display: block;
   animation: starFloat 3s ease-in-out infinite, starGlow 2.6s ease-in-out infinite;
+  will-change: transform, filter;
 }
 .star-btn:hover {
   animation-play-state: paused;
@@ -1885,6 +1890,7 @@ body::before {
 </style>
 </head>
 <body>
+<div id="bg-layer"></div>
 <div class="page-wrapper">
 
 <!-- サイドバー -->
@@ -2378,7 +2384,7 @@ function applyBackground() {
   const period = getBgPeriod();
   _bgPeriod = period;
   const idx = (dayOfYear * 3 + period + 1) % BACKGROUNDS.length;
-  document.body.style.backgroundImage = `url('${BACKGROUNDS[idx]}')`;
+  document.getElementById('bg-layer').style.backgroundImage = `url('${BACKGROUNDS[idx]}')`;
 }
 
 function setupBackground() {
