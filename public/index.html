@@ -490,6 +490,7 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
+.content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
@@ -2795,12 +2796,6 @@ function renderFullCalendar() {
   if (currentMode === 'select') {
     fcCalendar.setOption('slotMinTime', '06:00:00');
     fcCalendar.setOption('slotMaxTime', '24:00:00');
-    fcCalendar.setOption('expandRows', true);
-    requestAnimationFrame(() => {
-      const hdr = document.querySelector('.schedule-col .section-header');
-      fcCalendar.setOption('height', window.innerHeight - (hdr ? hdr.offsetHeight : 38));
-      fcCalendar.updateSize();
-    });
   }
 }
 
@@ -5219,11 +5214,6 @@ function _todayWheelHandler(e) {
 
 window.addEventListener('resize', () => {
   if (currentMode === 'exec') _cacheExecScrollRange();
-  if (currentMode === 'select' && fcCalendar) {
-    const hdr = document.querySelector('.schedule-col .section-header');
-    fcCalendar.setOption('height', window.innerHeight - (hdr ? hdr.offsetHeight : 38));
-    fcCalendar.updateSize();
-  }
 }, { passive: true });
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
@@ -5338,15 +5328,7 @@ function setMode(mode) {
     if (isSelect) {
       fcCalendar.setOption('slotMinTime', '06:00:00');
       fcCalendar.setOption('slotMaxTime', '24:00:00');
-      fcCalendar.setOption('expandRows', true);
-      requestAnimationFrame(() => {
-        const hdr = document.querySelector('.schedule-col .section-header');
-        fcCalendar.setOption('height', window.innerHeight - (hdr ? hdr.offsetHeight : 38));
-        fcCalendar.updateSize();
-      });
     } else {
-      fcCalendar.setOption('height', 'auto');
-      fcCalendar.setOption('expandRows', false);
       fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
       fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
       requestAnimationFrame(() => { addFcExpandBtns(); fcCalendar.updateSize(); });
