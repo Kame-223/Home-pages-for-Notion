@@ -76,6 +76,10 @@ html[data-theme="light"] .schedule-col {
   background: rgba(255,255,255,0.8);
   border-color: var(--border2);
 }
+html[data-theme="light"] .content-grid.select-mode .sched-sticky {
+  background: rgba(255,255,255,0.8);
+  border-color: var(--border2);
+}
 html[data-theme="light"] .section-header {
   background: rgba(235,235,240,0.8);
   border-bottom-color: var(--border);
@@ -377,8 +381,19 @@ body::before {
 }
 .content-grid.select-mode .schedule-col {
   grid-column: 3; grid-row: 1 / span 2; order: unset;
-  position: sticky; top: 0; align-self: start;
+  align-self: stretch;
+  height: auto; max-height: none;
+  overflow: visible;
+  background: transparent; border: none; border-radius: 0;
+  position: static;
+}
+.content-grid.select-mode .sched-sticky {
+  position: sticky; top: 0;
   height: 100vh; max-height: 100vh; overflow: hidden;
+  background: rgba(13,13,26,0.72);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  display: flex; flex-direction: column;
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
@@ -461,6 +476,10 @@ body::before {
   display: flex;
   flex-direction: column;
   align-self: start;
+}
+.sched-sticky {
+  display: flex;
+  flex-direction: column;
 }
 .section-header {
   padding: 8px 12px;
@@ -2029,8 +2048,10 @@ body::before {
 
     <!-- スケジュール -->
     <div class="schedule-col">
-      <div class="section-header">📅 スケジュール<span id="cal-login-status" style="margin-left:auto;display:flex;gap:4px"></span><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
-      <div id="fc-container"></div>
+      <div class="sched-sticky">
+        <div class="section-header">📅 スケジュール<span id="cal-login-status" style="margin-left:auto;display:flex;gap:4px"></span><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
+        <div id="fc-container"></div>
+      </div>
     </div>
 
     <!-- 星形NEXTボタン (Sモード 中央列上段) -->
@@ -5376,9 +5397,15 @@ window.addEventListener('resize', () => {
 
 function applySModeCalLayout() {
   if (currentMode !== 'select' || !fcCalendar) return;
-  const sHdr = document.querySelector('.schedule-col .section-header');
+  const sHdr = document.querySelector('.sched-sticky .section-header');
   const btmNav = document.querySelector('.bottom-nav');
-  const overhead = (sHdr?.offsetHeight || 38) + 35 + 25 + (btmNav?.offsetHeight || 56) + 4;
+  const fcToolbar = document.querySelector('#fc-container .fc-header-toolbar');
+  const fcColHeaderSection = document.querySelector('#fc-container .fc-scrollgrid-section-header');
+  const sHdrH = sHdr?.offsetHeight || 38;
+  const fcToolbarH = fcToolbar?.offsetHeight || 35;
+  const fcColH = fcColHeaderSection?.offsetHeight || 25;
+  const btmNavH = btmNav?.offsetHeight || 56;
+  const overhead = sHdrH + fcToolbarH + fcColH + btmNavH;
   const h = Math.max(300, window.innerHeight - overhead);
   fcCalendar.setOption('contentHeight', h);
 }
