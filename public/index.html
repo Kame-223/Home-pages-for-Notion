@@ -115,6 +115,27 @@ html[data-theme="light"] .fc-theme-standard .fc-scrollgrid { border-color: rgba(
 /* 時間帯ドロップダウン */
 html[data-theme="light"] .time-dropdown { background: var(--surface); border-color: var(--border2); box-shadow: 0 -4px 16px rgba(0,0,0,0.1); }
 html[data-theme="light"] .time-opt:hover { background: rgba(0,0,0,0.06); }
+/* ===== ライトモード: タスクページ ===== */
+html[data-theme="light"] .task-inbox-col,
+html[data-theme="light"] .task-section,
+html[data-theme="light"] .task-gtd-area {
+  background: var(--surface);
+  border-color: var(--border2);
+}
+html[data-theme="light"] .task-toggle-header,
+html[data-theme="light"] .gtd-section-header {
+  background: var(--surface2);
+  border-bottom-color: var(--border);
+}
+html[data-theme="light"] .task-toggle-header:hover,
+html[data-theme="light"] .gtd-section-header:hover { background: rgba(0,0,0,0.04); }
+html[data-theme="light"] .gtd-reveal-btn {
+  border-color: rgba(0,0,0,0.14);
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .gtd-reveal-btn:hover { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.25); }
+html[data-theme="light"] .gtd-drag-ghost { background: rgba(255,255,255,0.97); color: rgba(0,0,0,0.85); box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
+
 /* ICUチップ（白ベース→暗色に） */
 /* ===== ライトモード: タスク編集モーダル ===== */
 html[data-theme="light"] .task-edit-modal {
