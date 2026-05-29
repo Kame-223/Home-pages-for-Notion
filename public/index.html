@@ -552,9 +552,6 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
-.content-grid.select-mode .fc-timegrid-slot { height: 6px !important; }
-.content-grid.select-mode .cal-buf-top { height: 12px !important; }
-.content-grid.select-mode .cal-buf-bot { height: 12px !important; }
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
@@ -2791,7 +2788,7 @@ function renderFullCalendar() {
       const days = ['日', '月', '火', '水', '木', '金', '土'];
       return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
     },
-    contentHeight: 456,
+    contentHeight: _initBodyH,
     expandRows: true,
     nowIndicator: true,
     editable: true,
@@ -2802,8 +2799,8 @@ function renderFullCalendar() {
     slotMinTime: '05:30:00',
     slotMaxTime: '24:30:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-    slotDuration: '00:15:00',
-    slotLabelInterval: '00:30:00',
+    slotDuration: '00:30:00',
+    slotLabelInterval: '01:00:00',
     snapDuration: '00:05:00',
     slotLabelContent: (arg) => {
       const h = arg.date.getHours();
@@ -2831,8 +2828,7 @@ function renderFullCalendar() {
       _pendingCushionFits.push({ el: arg.el, cushion });
       if (!_cushionFitRaf) _cushionFitRaf = requestAnimationFrame(_flushCushionFits);
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); requestAnimationFrame(forceSModeSlotHeights); },
-    datesSet: () => { requestAnimationFrame(forceSModeSlotHeights); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
@@ -5368,19 +5364,13 @@ window.addEventListener('resize', () => {
   if (currentMode === 'select') applySModeCalLayout();
 }, { passive: true });
 
-function forceSModeSlotHeights() {
-  if (currentMode !== 'select') return;
-  document.querySelectorAll('#fc-el .fc-timegrid-slots tr').forEach(tr => {
-    tr.style.setProperty('height', '6px', 'important');
-  });
-  document.querySelectorAll('#fc-el .fc-timegrid-slot').forEach(td => {
-    td.style.setProperty('height', '6px', 'important');
-  });
-}
-
 function applySModeCalLayout() {
   if (currentMode !== 'select' || !fcCalendar) return;
-  fcCalendar.setOption('contentHeight', 456);
+  const sHdr = document.querySelector('.schedule-col .section-header');
+  const btmNav = document.querySelector('.bottom-nav');
+  const overhead = (sHdr?.offsetHeight || 38) + 35 + 25 + (btmNav?.offsetHeight || 56) + 4;
+  const h = Math.max(300, window.innerHeight - overhead);
+  fcCalendar.setOption('contentHeight', h);
 }
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
@@ -5494,14 +5484,17 @@ function setMode(mode) {
         fcCalendar.setOption('expandRows', true);
         fcCalendar.setOption('slotMinTime', '05:30:00');
         fcCalendar.setOption('slotMaxTime', '24:30:00');
-        fcCalendar.setOption('contentHeight', 456);
+        fcCalendar.setOption('slotDuration', '00:30:00');
+        fcCalendar.setOption('slotLabelInterval', '01:00:00');
       });
+      requestAnimationFrame(applySModeCalLayout);
       requestAnimationFrame(addCalBufferOverlays);
-      requestAnimationFrame(forceSModeSlotHeights);
     } else {
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('expandRows', false);
         fcCalendar.setOption('contentHeight', 'auto');
+        fcCalendar.setOption('slotDuration', '00:15:00');
+        fcCalendar.setOption('slotLabelInterval', '00:30:00');
         fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
         fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
       });
