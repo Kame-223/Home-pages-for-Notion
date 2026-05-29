@@ -4843,8 +4843,8 @@ function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 function handlePanelClick(panel) {
   if (currentMode !== 'select' || focusedPanel === panel) return;
   focusedPanel = panel;
-  if (panel === 'next') resetStarAnchor();
   renderAll();
+  if (panel === 'next') requestAnimationFrame(resetStarAnchor);
 }
 function resetStarAnchor() {
   const leftoverEl = document.getElementById('leftover-panel');
@@ -4913,7 +4913,12 @@ function clearOrbFilter() { orbFilter = null; bunbunOpen = false; renderAll(); }
 
 function renderLeftoverSection(leftover) {
   const leftoverPanelEl = document.getElementById('leftover-panel');
-  if (leftoverPanelEl) leftoverPanelEl.classList.toggle('hidden', currentMode !== 'select' || leftover.length === 0);
+  if (leftoverPanelEl) {
+    const wasHidden = leftoverPanelEl.classList.contains('hidden');
+    leftoverPanelEl.classList.toggle('hidden', currentMode !== 'select' || leftover.length === 0);
+    const isHidden = leftoverPanelEl.classList.contains('hidden');
+    if (wasHidden !== isHidden && currentMode === 'select') _starAnchorScrollY = null;
+  }
   const leftEl = document.getElementById('leftover-list');
   const countEl = document.getElementById('leftover-count');
   if (!leftEl) return;
