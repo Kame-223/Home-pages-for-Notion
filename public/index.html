@@ -4805,25 +4805,27 @@ function resetStarAnchor() {
   let refTop = headerH + margin;
   if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
     const rect = leftoverEl.getBoundingClientRect();
-    refTop = Math.max(rect.top + margin, headerH + margin);
+    refTop = Math.max(rect.top, headerH + margin);
   } else if (nextPanelEl) {
     const rect = nextPanelEl.getBoundingClientRect();
-    refTop = Math.max(rect.top + margin, headerH + margin);
+    refTop = Math.max(rect.top, headerH + margin);
   }
   _starAnchorViewportTop = refTop;
 }
 function updateStarFollow() {
-  const sStarCol = document.getElementById('s-star-col');
-  if (!sStarCol) return;
+  const sStarCol    = document.getElementById('s-star-col');
+  const nextPanelEl = document.getElementById('next-panel');
+  if (!sStarCol || !nextPanelEl) return;
   if (currentMode !== 'select' || focusedPanel !== 'next') return;
   if (_starAnchorScrollY === null) resetStarAnchor();
   const headerH = 62;
   const btnH    = 68;
   const margin  = 16;
   const tbBottomViewport = _tbBottomDoc - window.scrollY;
+  const npTop   = nextPanelEl.getBoundingClientRect().top;
   const scrollDelta = window.scrollY - _starAnchorScrollY;
   const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
-  const minTop  = headerH + margin;
+  const minTop  = Math.max(npTop, headerH);   // 上限 = "次やる"パネル上端（動的）
   const maxTop  = Math.max(minTop, tbBottomViewport - btnH - margin);
   sStarCol.style.transform = `translateY(${Math.min(Math.max(rawTop, minTop), maxTop) - 86}px)`;
 }
