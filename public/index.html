@@ -6716,11 +6716,11 @@ window.onload = () => {
   setupBackground();
   setupBanner();
   setupDatetime();
+  document.querySelector('.content-grid').classList.add('select-mode');
   initGoogleCalendar();
   setupFurikaeri();
   loadTasks();
   initTodayCardDrag();
-  document.querySelector('.content-grid').classList.add('select-mode');
   const _ricDl = window.requestIdleCallback || (fn => setTimeout(fn, 200));
   setInterval(() => _ricDl(refreshDeadlineTags), 1000);
   // 60秒ごとに自動更新（ドラッグ中・集中モード中はスキップ）
