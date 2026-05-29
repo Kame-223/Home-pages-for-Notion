@@ -4078,6 +4078,7 @@ function renderAll() {
         <div class="exec-empty-text">今日やるタスクがまだ選ばれていません</div>
         <button class="exec-empty-btn" onclick="setMode('select')">← 選択モードで選ぶ</button>
       </div>`;
+  if (currentMode !== 'select' || focusedPanel === 'today') {
   let todayHtml = '';
 
   const getJK = t => taskState[t.id]?.jikantai || getProp(t,'実行時間帯') || null;
@@ -4185,6 +4186,7 @@ function renderAll() {
   todayEl.innerHTML = todayHtml;
   requestAnimationFrame(initTodayDrag);
   requestAnimationFrame(initBunbunDrag);
+  } // end: today panel skip
 
   // やり残し（1日の切り替わりは3:01基準）
   // 期限切れタスク ＋ 前セッションにピンしたが未完了のタスク（セッションをまたいだ今日やること）
@@ -4213,7 +4215,7 @@ function renderAll() {
   renderLeftoverSection(leftover);
 
   // 次やること
-  renderNextList();
+  if (currentMode !== 'select' || focusedPanel === 'next') renderNextList();
 
   // 子タスクキャッシュがあるカードの進捗を常に表示
   requestAnimationFrame(() => Object.keys(subtaskData).forEach(id => updateSubtaskProgress(id)));
