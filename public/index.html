@@ -362,22 +362,25 @@ body::before {
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* filter:blur はパネル全体をGPUテクスチャに焼き直すため毎秒の内容更新でラグが発生する。
-   暗色オーバーレイ(::before)で視覚的に同等の霧感を実現。GPU再ラスタライズなし。 */
+/* visibility:hidden でパネル背景・コンテンツを完全透明に。
+   ::before に visibility:visible で白い霧だけを表示 → 背景画像がそのまま透けて見える。
+   filter/opacity 不使用のためGPU負荷ゼロ。 */
 .panel-blurred {
   position: relative;
   cursor: pointer;
+  visibility: hidden;
 }
 .panel-blurred::before {
   content: ''; position: absolute; inset: 0; z-index: 50;
-  background: rgba(4, 4, 14, 0.82);
-  pointer-events: none;
+  background: rgba(255,255,255,0.18);
   border-radius: inherit;
-  transition: opacity 0.35s;
+  pointer-events: none;
+  visibility: visible;
 }
 .panel-blurred::after {
   content: ''; position: absolute; inset: 0; z-index: 200;
   cursor: pointer; border-radius: inherit;
+  visibility: visible;
 }
 /* ===== 星形ボタン ===== */
 .s-star-col { display: none; }
