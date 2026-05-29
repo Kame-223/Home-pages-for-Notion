@@ -369,7 +369,6 @@ body::before {
   display: flex !important; grid-column: 2; grid-row: 1 / -1;
   flex-direction: column; justify-content: flex-start; align-items: center;
   position: sticky; top: 86px; align-self: start; padding: 0;
-  will-change: transform;
 }
 .content-grid.select-mode .s-orb-col {
   display: flex !important; grid-column: 2; grid-row: 2;
@@ -4248,7 +4247,11 @@ function renderAll() {
     sOrbColEl?.classList.add('orb-hidden');
     sStarColEl?.classList.add('star-hidden');
   }
-  requestAnimationFrame(updateStarFollow);
+  requestAnimationFrame(() => {
+    const _tbEl = document.querySelector('.today-board');
+    if (_tbEl && currentMode === 'select') _tbBottomDoc = _tbEl.getBoundingClientRect().bottom + window.scrollY;
+    updateStarFollow();
+  });
 
   // 1日のスケジュール（実行モード）
   const blocks = {午前:[], 午後:[], 夜:[], 未設定:[]};
@@ -4855,7 +4858,7 @@ function updateStarFollow() {
   }
   const minTop = Math.min(currentPanelTop, _starAnchorViewportTop);
   const maxTop  = Math.max(minTop, tbBottomViewport - btnH - margin);
-  sStarCol.style.transform = `translateY(${Math.min(Math.max(rawTop, minTop), maxTop) - 86}px)`;
+  sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
 }
 let _starScrollRafId = null;
 window.addEventListener('scroll', () => {
