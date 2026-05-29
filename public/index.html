@@ -2793,7 +2793,7 @@ function renderFullCalendar() {
       return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
     },
     contentHeight: 456,
-    expandRows: false,
+    expandRows: true,
     nowIndicator: true,
     editable: true,
     eventResizableFromStart: true,
@@ -5476,6 +5476,7 @@ function setMode(mode) {
   if (fcCalendar) {
     if (isSelect) {
       fcCalendar.batchRendering(() => {
+        fcCalendar.setOption('expandRows', true);
         fcCalendar.setOption('slotMinTime', '05:30:00');
         fcCalendar.setOption('slotMaxTime', '24:30:00');
         fcCalendar.setOption('contentHeight', 456);
@@ -5483,6 +5484,7 @@ function setMode(mode) {
       requestAnimationFrame(addCalBufferOverlays);
     } else {
       fcCalendar.batchRendering(() => {
+        fcCalendar.setOption('expandRows', false);
         fcCalendar.setOption('contentHeight', 'auto');
         fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
         fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
