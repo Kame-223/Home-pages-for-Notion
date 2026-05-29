@@ -2798,8 +2798,8 @@ function renderFullCalendar() {
     selectable: true,
     unselectAuto: false,
     allDaySlot: false,
-    slotMinTime: '06:00:00',
-    slotMaxTime: '24:00:00',
+    slotMinTime: '05:30:00',
+    slotMaxTime: '24:30:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     slotDuration: '00:30:00',
     slotLabelInterval: '00:30:00',
@@ -5486,8 +5486,8 @@ function setMode(mode) {
     if (isSelect) {
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('expandRows', true);
-        fcCalendar.setOption('slotMinTime', '06:00:00');
-        fcCalendar.setOption('slotMaxTime', '24:00:00');
+        fcCalendar.setOption('slotMinTime', '05:30:00');
+        fcCalendar.setOption('slotMaxTime', '24:30:00');
         fcCalendar.setOption('slotDuration', '00:30:00');
         fcCalendar.setOption('slotLabelInterval', '00:30:00');
       });
