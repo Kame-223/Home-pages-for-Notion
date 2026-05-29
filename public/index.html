@@ -4843,10 +4843,15 @@ function updateStarFollow() {
   const btnH    = 68;
   const margin  = 16;
   const tbBottomViewport = _tbBottomDoc - window.scrollY;
-  const npTop   = nextPanelEl.getBoundingClientRect().top;
   const scrollDelta = window.scrollY - _starAnchorScrollY;
   const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
-  const minTop  = Math.max(npTop, headerH);   // 上限 = "次やる"パネル上端（動的）
+  const leftoverEl2 = document.getElementById('leftover-panel');
+  let minTop;
+  if (leftoverEl2 && !leftoverEl2.classList.contains('hidden')) {
+    minTop = Math.max(leftoverEl2.getBoundingClientRect().top, headerH);
+  } else {
+    minTop = Math.max(nextPanelEl.getBoundingClientRect().top, headerH);
+  }
   const maxTop  = Math.max(minTop, tbBottomViewport - btnH - margin);
   sStarCol.style.transform = `translateY(${Math.min(Math.max(rawTop, minTop), maxTop) - 86}px)`;
 }
