@@ -532,7 +532,7 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
-.content-grid.select-mode .fc-timegrid-slot { height: 4px !important; }
+.content-grid.select-mode .fc-timegrid-slot { height: 6px !important; }
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
@@ -2754,12 +2754,6 @@ function renderFullCalendar() {
   if (!container) return;
   container.innerHTML = '<div id="fc-el" style="padding:0 4px 4px"></div>';
 
-  // 初期contentHeightを事前計算してFC二重レンダリングを防ぐ
-  const _sHdr = document.querySelector('.schedule-col .section-header');
-  const _btmNav = document.querySelector('.bottom-nav');
-  const _initOverhead = (_sHdr?.offsetHeight || 38) + 35 + 25 + (_btmNav?.offsetHeight || 56);
-  const _initBodyH = Math.max(300, window.innerHeight - _initOverhead - 4);
-
   fcCalendar = new FullCalendar.Calendar(document.getElementById('fc-el'), {
     initialView: 'timeGridDay',
     locale: 'ja',
@@ -2769,7 +2763,7 @@ function renderFullCalendar() {
       const days = ['日', '月', '火', '水', '木', '金', '土'];
       return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
     },
-    contentHeight: _initBodyH,
+    contentHeight: 436,
     expandRows: false,
     nowIndicator: true,
     editable: true,
@@ -5335,18 +5329,8 @@ window.addEventListener('resize', () => {
 
 function applySModeCalLayout() {
   if (currentMode !== 'select' || !fcCalendar) return;
-  const fcEl = document.getElementById('fc-el');
-  if (!fcEl) return;
-  const sHdr    = document.querySelector('.schedule-col .section-header');
-  const toolbar = fcEl.querySelector('.fc-header-toolbar');
-  const colHdr  = fcEl.querySelector('.fc-col-header');
-  const btmNav  = document.querySelector('.bottom-nav');
-  const overhead = (sHdr?.offsetHeight || 38)
-                 + (toolbar?.offsetHeight || 35)
-                 + (colHdr?.offsetHeight || 25)
-                 + (btmNav?.offsetHeight || 56);
-  const bodyH = window.innerHeight - overhead - 4;
-  fcCalendar.setOption('contentHeight', Math.max(300, bodyH));
+  // 6px/slot × 72slots(18h×4) + 4px buffer row = 436px
+  fcCalendar.setOption('contentHeight', 436);
 }
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
