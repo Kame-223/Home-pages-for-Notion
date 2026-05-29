@@ -532,7 +532,9 @@ body::before {
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
-.content-grid.select-mode .fc-timegrid-slot { height: 4px !important; }
+.content-grid.select-mode .fc-timegrid-slot { height: 6px !important; }
+.content-grid.select-mode .cal-buf-top { height: 12px !important; }
+.content-grid.select-mode .cal-buf-bot { height: 12px !important; }
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
@@ -2769,7 +2771,7 @@ function renderFullCalendar() {
       const days = ['日', '月', '火', '水', '木', '金', '土'];
       return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
     },
-    contentHeight: _initBodyH,
+    contentHeight: 456,
     expandRows: false,
     nowIndicator: true,
     editable: true,
@@ -2777,8 +2779,8 @@ function renderFullCalendar() {
     selectable: true,
     unselectAuto: false,
     allDaySlot: false,
-    slotMinTime: '06:00:00',
-    slotMaxTime: '24:00:00',
+    slotMinTime: '05:30:00',
+    slotMaxTime: '24:30:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     slotDuration: '00:15:00',
     slotLabelInterval: '00:30:00',
@@ -5335,18 +5337,7 @@ window.addEventListener('resize', () => {
 
 function applySModeCalLayout() {
   if (currentMode !== 'select' || !fcCalendar) return;
-  const fcEl = document.getElementById('fc-el');
-  if (!fcEl) return;
-  const sHdr    = document.querySelector('.schedule-col .section-header');
-  const toolbar = fcEl.querySelector('.fc-header-toolbar');
-  const colHdr  = fcEl.querySelector('.fc-col-header');
-  const btmNav  = document.querySelector('.bottom-nav');
-  const overhead = (sHdr?.offsetHeight || 38)
-                 + (toolbar?.offsetHeight || 35)
-                 + (colHdr?.offsetHeight || 25)
-                 + (btmNav?.offsetHeight || 56);
-  const bodyH = window.innerHeight - overhead - 4;
-  fcCalendar.setOption('contentHeight', Math.max(300, bodyH));
+  fcCalendar.setOption('contentHeight', 456);
 }
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
@@ -5457,10 +5448,11 @@ function setMode(mode) {
   if (fcCalendar) {
     if (isSelect) {
       fcCalendar.batchRendering(() => {
-        fcCalendar.setOption('slotMinTime', '06:00:00');
-        fcCalendar.setOption('slotMaxTime', '24:00:00');
+        fcCalendar.setOption('slotMinTime', '05:30:00');
+        fcCalendar.setOption('slotMaxTime', '24:30:00');
+        fcCalendar.setOption('contentHeight', 456);
       });
-      requestAnimationFrame(applySModeCalLayout);
+      requestAnimationFrame(addCalBufferOverlays);
     } else {
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('contentHeight', 'auto');
