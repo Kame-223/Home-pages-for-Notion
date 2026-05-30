@@ -601,7 +601,7 @@ body::before {
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .content-grid.select-mode .fc-timegrid-slot { height: 20px !important; }
 .content-grid.select-mode .cal-buf-top { height: 9px; }
-.content-grid.select-mode .cal-buf-bot { display: none; }
+.content-grid.select-mode .cal-buf-bot { height: 20px; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
@@ -5637,7 +5637,7 @@ function applySModeCalLayout() {
   const fcToolbarH = fcToolbar?.offsetHeight || 35;
   const fcColH = fcColHeaderSection?.offsetHeight || 25;
   const btmNavH = btmNav?.offsetHeight || 56;
-  fcCalendar.setOption('contentHeight', 20 * 37); // 20px/slot × 37slots、余白はパネル背景で自然に埋まる
+  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // timeGrid=740px + colHeader で24:00が見える
   updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH, btmNavH);
 }
 
