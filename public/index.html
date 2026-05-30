@@ -1829,6 +1829,78 @@ body::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+/* ===== PROJECT PAGE ===== */
+#project-content { display: none; padding: 16px 20px; }
+.proj-page-header { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; }
+.proj-page-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.proj-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.proj-card {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px;
+  padding: 16px; cursor: pointer; transition: all .2s;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.proj-card:hover { border-color: rgba(127,119,221,0.45); background: rgba(127,119,221,0.04); }
+.proj-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.proj-card-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; flex: 1; }
+.proj-status-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px;
+  font-weight: 600; white-space: nowrap; flex-shrink: 0;
+}
+.proj-status-badge.進行中 { background: rgba(29,158,117,0.15); color: #1d9e75; border: 0.5px solid rgba(29,158,117,0.3); }
+.proj-status-badge.完了   { background: rgba(127,119,221,0.15); color: var(--purple); border: 0.5px solid rgba(127,119,221,0.3); }
+.proj-status-badge.停止中 { background: rgba(255,255,255,0.05); color: var(--text-dim); border: 0.5px solid var(--border); }
+.proj-progress-wrap { display: flex; flex-direction: column; gap: 4px; }
+.proj-progress-label { font-size: 10px; color: var(--text-dim); display: flex; justify-content: space-between; }
+.proj-progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.proj-progress-fill { height: 100%; border-radius: 2px; background: #1d9e75; transition: width .4s; }
+.proj-ms-list { display: flex; flex-direction: column; gap: 5px; }
+.proj-ms-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.proj-ms-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--purple); }
+.proj-ms-dot.done { background: var(--text-dim); }
+.proj-ms-name { color: var(--text-sub); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-ms-date { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
+.proj-deadline { font-size: 11px; color: var(--text-dim); }
+.proj-deadline.soon { color: var(--red); }
+.proj-new-card {
+  background: transparent; border: 1px dashed var(--border2); border-radius: 14px;
+  padding: 16px; cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; font-size: 13px; color: var(--text-dim); min-height: 110px;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.proj-new-card:hover { border-color: rgba(127,119,221,0.5); color: var(--purple); background: rgba(127,119,221,0.04); }
+/* Detail */
+.proj-detail-wrap { max-width: 680px; }
+.proj-back-btn {
+  font-size: 12px; color: var(--text-dim); background: none; border: none;
+  cursor: pointer; padding: 0 0 16px; display: flex; align-items: center; gap: 4px;
+  font-family: 'Noto Sans JP', sans-serif; transition: color .2s;
+}
+.proj-back-btn:hover { color: var(--text); }
+.proj-detail-name { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.proj-detail-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 12px; line-height: 1.6; }
+.proj-detail-meta { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.proj-detail-meta-item { font-size: 11px; color: var(--text-dim); }
+.proj-detail-section { margin-bottom: 24px; }
+.proj-detail-section-title {
+  font-size: 11px; font-weight: 700; color: var(--text-dim);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 10px; padding-bottom: 6px; border-bottom: 0.5px solid var(--border);
+}
+.proj-ms-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.proj-ms-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.proj-ms-card-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.proj-ms-badge { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: rgba(127,119,221,0.15); color: var(--purple); border: 0.5px solid rgba(127,119,221,0.25); }
+.proj-ms-badge.done { background: rgba(255,255,255,0.05); color: var(--text-dim); border-color: var(--border); }
+.proj-ms-date-label { font-size: 10px; color: var(--text-dim); margin-bottom: 6px; }
+.proj-ms-progress { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+.proj-task-mini { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 12px; color: var(--text-sub); }
+.proj-task-mini-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.proj-task-mini-dot.done { background: #1d9e75; }
+.proj-task-mini-name.done { text-decoration: line-through; color: var(--text-dim); }
+.proj-empty { font-size: 12px; color: var(--text-dim); padding: 8px 0; }
+.proj-loading { font-size: 13px; color: var(--text-dim); padding: 40px 0; text-align: center; }
+
 /* ===== TASK PAGE ===== */
 #task-content { display: none; }
 .task-page-grid {
@@ -1998,7 +2070,7 @@ body::before {
 <div class="sidebar">
   <button class="sb-btn active" data-page="home" onclick="showPage('home')"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></button>
   <button class="sb-btn" data-page="task" onclick="showPage('task')"><span class="sb-icon">📋</span><span class="sb-label">Task</span></button>
-  <a class="sb-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></a>
+  <button class="sb-btn" data-page="project" onclick="showPage('project')"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></button>
   <a class="sb-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank"><span class="sb-icon">📝</span><span class="sb-label">Note</span></a>
   <a class="sb-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank"><span class="sb-icon">📚</span><span class="sb-label">資料</span></a>
 </div>
@@ -2239,6 +2311,22 @@ body::before {
     </div>
   </div><!-- /#task-content -->
 
+  <!-- プロジェクト画面 -->
+  <div id="project-content">
+    <div id="proj-list-view">
+      <div class="proj-page-header">
+        <div class="proj-page-title">🗂 プロジェクト</div>
+      </div>
+      <div id="proj-grid-wrap"><div class="proj-loading">読み込み中...</div></div>
+    </div>
+    <div id="proj-detail-view" style="display:none">
+      <div class="proj-detail-wrap">
+        <button class="proj-back-btn" onclick="closeProject()">← 一覧へ</button>
+        <div id="proj-detail-inner"><div class="proj-loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div><!-- /#project-content -->
+
 </div>
 </div><!-- /.page-wrapper -->
 
@@ -2246,7 +2334,7 @@ body::before {
 <div class="bottom-nav">
   <button id="theme-toggle-btn" onclick="toggleTheme()" style="position:absolute;left:20px;background:none;border:none;cursor:pointer;font-size:20px;opacity:0.7;transition:opacity .2s;padding:4px" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.7"><span id="theme-toggle-icon">☀️</span></button>
   <button class="nav-btn" onclick="showPage('task')">📋 TASK</button>
-  <a class="nav-btn" href="https://www.notion.so/8584c1ec140d83b29e26019b60fe7a3e" target="_blank">🗂 PROJECT</a>
+  <button class="nav-btn" onclick="showPage('project')">🗂 PROJECT</button>
   <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a>
   <a class="nav-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank">📚 資料</a>
   <div class="nav-divider"></div>
@@ -6407,10 +6495,12 @@ function showPage(page) {
   currentPage = page;
   document.getElementById('home-content').style.display = page === 'home' ? 'block' : 'none';
   document.getElementById('task-content').style.display = page === 'task' ? 'block' : 'none';
+  document.getElementById('project-content').style.display = page === 'project' ? 'block' : 'none';
   document.querySelectorAll('.sb-btn[data-page]').forEach(b => {
     b.classList.toggle('active', b.dataset.page === page);
   });
   if (page === 'task') renderTaskPage();
+  if (page === 'project') renderProjectList();
 }
 
 // ===== タスクページ GTDエリア開閉 =====
@@ -6991,6 +7081,194 @@ function _tdCalcTime(clientY){
   const d=new Date(fcCalendar.getDate());
   d.setHours(Math.floor(fromMidnight/60),fromMidnight%60,0,0);
   return d;
+}
+
+// ===== PROJECT PAGE =====
+const DB_PROJECTS   = '8584c1ec140d83b29e26019b60fe7a3e';
+const DB_MILESTONES = '3704c1ec140d80ee8bcbce3af5d49edf';
+
+let _projCache = null;
+let _msCache   = null;
+let _currentProjectId = null;
+
+const _projIsDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
+
+async function _projFetch(dbId, sorts) {
+  const data = await notionQuery(dbId, null, sorts || null);
+  return data.results || [];
+}
+
+async function _loadProjects() {
+  if (!_projCache) _projCache = await _projFetch(DB_PROJECTS, [{property:'締切',direction:'ascending'}]);
+  return _projCache;
+}
+
+async function _loadMilestones() {
+  if (!_msCache) _msCache = await _projFetch(DB_MILESTONES, [{property:'日付',direction:'ascending'}]);
+  return _msCache;
+}
+
+function _projDeadlineHtml(deadline, cls='proj-deadline') {
+  if (!deadline) return '';
+  const days = Math.ceil((new Date(deadline) - new Date()) / 86400000);
+  const label = days < 0 ? `${Math.abs(days)}日超過` : `${days}日後`;
+  return `<div class="${cls} ${days <= 7 ? 'soon' : ''}">📅 ${deadline}（${label}）</div>`;
+}
+
+async function renderProjectList() {
+  const wrap = document.getElementById('proj-grid-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="proj-loading">読み込み中...</div>';
+  try {
+    const [projects, milestones] = await Promise.all([_loadProjects(), _loadMilestones()]);
+    if (projects.length === 0) {
+      wrap.innerHTML = '<div class="proj-empty">プロジェクトがありません</div>'; return;
+    }
+    const cards = projects.map(p => {
+      const id   = p.id.replace(/-/g,'');
+      const rid  = p.id;
+      const name   = getProp(p,'Name') || '無題';
+      const status = getProp(p,'ステータス') || '';
+      const deadline = getProp(p,'締切');
+      const pMs = milestones
+        .filter(m => (getProp(m,'プロジェクト')||[]).some(r => r.replace(/-/g,'')=== id || r === rid))
+        .slice(0,3);
+      const pTasks = (allTasks||[]).filter(t => {
+        const rel = getProp(t,'プロジェクト');
+        return Array.isArray(rel) && rel.some(r => r.replace(/-/g,'')=== id || r === rid);
+      });
+      const done = pTasks.filter(t => _projIsDone(t)).length;
+      const pct  = pTasks.length > 0 ? Math.round(done/pTasks.length*100) : 0;
+      const statusBadge = status ? `<span class="proj-status-badge ${status}">${status}</span>` : '';
+      const progressHtml = pTasks.length > 0 ? `
+        <div class="proj-progress-wrap">
+          <div class="proj-progress-label"><span>進捗</span><span>${done}/${pTasks.length}</span></div>
+          <div class="proj-progress-bar"><div class="proj-progress-fill" style="width:${pct}%"></div></div>
+        </div>` : '';
+      const msHtml = pMs.length > 0 ? `<div class="proj-ms-list">${pMs.map(m=>{
+        const mDone = getProp(m,'完了');
+        const mDate = getProp(m,'日付');
+        return `<div class="proj-ms-item">
+          <div class="proj-ms-dot ${mDone?'done':''}"></div>
+          <span class="proj-ms-name">${getProp(m,'Name')||'無題'}</span>
+          <span class="proj-ms-date">${mDate?mDate.slice(5):''}</span>
+        </div>`;
+      }).join('')}</div>` : '';
+      return `<div class="proj-card" onclick="openProject('${p.id}')">
+        <div class="proj-card-top">
+          <div class="proj-card-name">${name}</div>${statusBadge}
+        </div>
+        ${progressHtml}${msHtml}
+        ${_projDeadlineHtml(deadline)}
+      </div>`;
+    }).join('');
+    wrap.innerHTML = `<div class="proj-grid">${cards}
+      <button class="proj-new-card" onclick="alert('作成ウィザードは近日実装予定です')">＋ 新規プロジェクト</button>
+    </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="proj-empty">読み込みエラー: ${e.message}</div>`;
+  }
+}
+
+async function openProject(id) {
+  _currentProjectId = id;
+  document.getElementById('proj-list-view').style.display  = 'none';
+  document.getElementById('proj-detail-view').style.display = 'block';
+  await renderProjectDetail(id);
+}
+
+function closeProject() {
+  _currentProjectId = null;
+  document.getElementById('proj-list-view').style.display  = 'block';
+  document.getElementById('proj-detail-view').style.display = 'none';
+}
+
+async function renderProjectDetail(pid) {
+  const inner = document.getElementById('proj-detail-inner');
+  if (!inner) return;
+  inner.innerHTML = '<div class="proj-loading">読み込み中...</div>';
+  try {
+    const [projects, milestones] = await Promise.all([_loadProjects(), _loadMilestones()]);
+    const project = projects.find(p => p.id === pid);
+    if (!project) { inner.innerHTML = '<div class="proj-empty">見つかりません</div>'; return; }
+
+    const name     = getProp(project,'Name') || '無題';
+    const desc     = getProp(project,'説明') || '';
+    const status   = getProp(project,'ステータス') || '';
+    const deadline = getProp(project,'締切');
+
+    const idNorm = pid.replace(/-/g,'');
+    const pMs = milestones.filter(m =>
+      (getProp(m,'プロジェクト')||[]).some(r => r.replace(/-/g,'')=== idNorm || r === pid)
+    );
+    const pTasks = (allTasks||[]).filter(t => {
+      const rel = getProp(t,'プロジェクト');
+      return Array.isArray(rel) && rel.some(r => r.replace(/-/g,'')=== idNorm || r === pid);
+    });
+    const doneCount = pTasks.filter(t => _projIsDone(t)).length;
+    const pct = pTasks.length > 0 ? Math.round(doneCount/pTasks.length*100) : 0;
+
+    // group tasks by milestone
+    const byMs = {}; const unattached = [];
+    pTasks.forEach(t => {
+      const mRel = getProp(t,'マイルストーン');
+      if (Array.isArray(mRel) && mRel.length > 0) {
+        mRel.forEach(mid => { (byMs[mid]||(byMs[mid]=[])).push(t); });
+      } else { unattached.push(t); }
+    });
+
+    const taskMiniHtml = ts => ts.length > 0
+      ? ts.map(t => {
+          const d = _projIsDone(t);
+          const n = getProp(t,'タイトル') || '無題';
+          return `<div class="proj-task-mini">
+            <div class="proj-task-mini-dot ${d?'done':''}"></div>
+            <span class="proj-task-mini-name ${d?'done':''}">${n}</span>
+          </div>`;
+        }).join('')
+      : '<div class="proj-empty" style="padding:4px 0">タスクなし</div>';
+
+    const msCardsHtml = pMs.length > 0 ? pMs.map(m => {
+      const mid   = m.id;
+      const mName = getProp(m,'Name') || '無題';
+      const mDate = getProp(m,'日付');
+      const mDone = getProp(m,'完了');
+      const mTasks = byMs[mid] || byMs[mid.replace(/-/g,'')] || [];
+      const mDone2 = mTasks.filter(t => _projIsDone(t)).length;
+      return `<div class="proj-ms-card">
+        <div class="proj-ms-card-header">
+          <div class="proj-ms-card-title">${mName}</div>
+          <span class="proj-ms-badge ${mDone?'done':''}">${mDone?'完了':'進行中'}</span>
+        </div>
+        ${mDate?`<div class="proj-ms-date-label">📅 ${mDate}</div>`:''}
+        ${mTasks.length>0?`<div class="proj-ms-progress">${mDone2}/${mTasks.length} 完了</div>`:''}
+        <div>${taskMiniHtml(mTasks)}</div>
+      </div>`;
+    }).join('') : '<div class="proj-empty">マイルストーンなし</div>';
+
+    inner.innerHTML = `
+      <div class="proj-detail-name">${name}</div>
+      ${desc?`<div class="proj-detail-desc">${desc}</div>`:''}
+      <div class="proj-detail-meta">
+        ${status?`<span class="proj-status-badge ${status}">${status}</span>`:''}
+        ${deadline?`<span class="proj-detail-meta-item">📅 ${deadline}</span>`:''}
+        ${pTasks.length>0?`<span class="proj-detail-meta-item">タスク ${doneCount}/${pTasks.length}（${pct}%）</span>`:''}
+      </div>
+      ${pTasks.length>0?`<div style="margin-bottom:20px">
+        <div class="proj-progress-bar" style="height:6px">
+          <div class="proj-progress-fill" style="width:${pct}%"></div>
+        </div></div>`:''}
+      <div class="proj-detail-section">
+        <div class="proj-detail-section-title">マイルストーン</div>
+        ${msCardsHtml}
+      </div>
+      <div class="proj-detail-section">
+        <div class="proj-detail-section-title">マイルストーン未所属タスク</div>
+        ${taskMiniHtml(unattached)}
+      </div>`;
+  } catch(e) {
+    inner.innerHTML = `<div class="proj-empty">読み込みエラー: ${e.message}</div>`;
+  }
 }
 
 </script>
