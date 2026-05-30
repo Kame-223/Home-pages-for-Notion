@@ -364,6 +364,10 @@ body::before {
 }
 /* ===== SELECT MODE 3カラムレイアウト ===== */
 .content-grid.select-mode { grid-template-columns: 1fr 80px 1fr; padding-bottom: 0; }
+/* 行3スペーサー：schedule-col に sticky の travel 距離を与えるため行を延長 */
+.content-grid.select-mode::after {
+  content: ''; grid-column: 1; grid-row: 3; min-height: 100vh;
+}
 .content-grid.select-mode .bottom-row {
   grid-column: 1; grid-row: 1; order: unset;
   display: flex; flex-direction: column; gap: 12px;
@@ -380,9 +384,9 @@ body::before {
   position: sticky; top: 60px; align-self: start; padding: 20px 0;
 }
 .content-grid.select-mode .schedule-col {
-  grid-column: 3; grid-row: 1 / span 2; order: unset;
-  align-self: start;
-  height: auto; max-height: none; min-height: 100vh;
+  grid-column: 3; grid-row: 1 / span 3; order: unset;
+  align-self: stretch;
+  height: auto; max-height: none; min-height: 0;
   overflow: visible;
   background: transparent; border: none; border-radius: 0;
   position: static;
@@ -5397,20 +5401,8 @@ function _todayWheelHandler(e) {
 
 window.addEventListener('resize', () => {
   if (currentMode === 'exec') _cacheExecScrollRange();
-  if (currentMode === 'select') { _updateSchedColH(); applySModeCalLayout(); }
+  if (currentMode === 'select') { applySModeCalLayout(); }
 }, { passive: true });
-
-let _schedColHeightObs = null;
-
-function _updateSchedColH() {
-  if (currentMode !== 'select') return;
-  const sc = document.querySelector('.schedule-col');
-  if (!sc) return;
-  const bottomRow = document.querySelector('.bottom-row');
-  const todayBoard = document.querySelector('.today-board');
-  const leftH = (bottomRow?.offsetHeight || 0) + (todayBoard?.offsetHeight || 0) + 12;
-  sc.style.minHeight = (Math.max(leftH, window.innerHeight) + window.innerHeight) + 'px';
-}
 
 function applySModeCalLayout() {
   if (currentMode !== 'select' || !fcCalendar) return;
@@ -5541,14 +5533,8 @@ function setMode(mode) {
         fcCalendar.setOption('slotDuration', '00:30:00');
         fcCalendar.setOption('slotLabelInterval', '00:30:00');
       });
-      requestAnimationFrame(() => { _updateSchedColH(); applySModeCalLayout(); });
+      requestAnimationFrame(() => { applySModeCalLayout(); });
       requestAnimationFrame(addCalBufferOverlays);
-      if (_schedColHeightObs) _schedColHeightObs.disconnect();
-      _schedColHeightObs = new ResizeObserver(_updateSchedColH);
-      const _bRow = document.querySelector('.bottom-row');
-      const _tBoard = document.querySelector('.today-board');
-      if (_bRow) _schedColHeightObs.observe(_bRow);
-      if (_tBoard) _schedColHeightObs.observe(_tBoard);
     } else {
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('expandRows', false);
@@ -5603,9 +5589,6 @@ function setMode(mode) {
     });
   } else {
     if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
-    if (_schedColHeightObs) { _schedColHeightObs.disconnect(); _schedColHeightObs = null; }
-    const _sc = document.querySelector('.schedule-col');
-    if (_sc) _sc.style.minHeight = '';
     resetExecFixed();
   }
 }
@@ -6820,16 +6803,6 @@ window.onload = () => {
   initGoogleCalendar();
   setupFurikaeri();
   loadTasks();
-  requestAnimationFrame(() => {
-    _updateSchedColH();
-    if (!_schedColHeightObs) {
-      _schedColHeightObs = new ResizeObserver(_updateSchedColH);
-      const _bRow = document.querySelector('.bottom-row');
-      const _tBoard = document.querySelector('.today-board');
-      if (_bRow) _schedColHeightObs.observe(_bRow);
-      if (_tBoard) _schedColHeightObs.observe(_tBoard);
-    }
-  });
   initTodayCardDrag();
   const _ricDl = window.requestIdleCallback || (fn => setTimeout(fn, 200));
   setInterval(() => _ricDl(refreshDeadlineTags), 1000);
