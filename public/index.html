@@ -7486,7 +7486,7 @@ function _wizStep1(c) {
   c.innerHTML = `
     <div class="wiz-heading">🎯 プロジェクトのゴールは？</div>
     <div class="wiz-sub">このプロジェクトが完了したら、何が達成されている？</div>
-    <input class="wiz-input" id="wiz-goal" type="text" placeholder="例：憲法レポートを提出する" value="${_wiz.goal}" oninput="_wiz.goal=this.value;document.getElementById('wiz-next').disabled=!this.value.trim();document.getElementById('wiz-next').style.opacity=this.value.trim()?1:0.4">
+    <input class="wiz-input" id="wiz-goal" type="text" placeholder="例：憲法レポートを提出する" value="${_wiz.goal}" oninput="_wiz.goal=this.value;document.getElementById('wiz-next').disabled=!this.value.trim();document.getElementById('wiz-next').style.opacity=this.value.trim()?1:0.4" oncompositionstart="_wizComposing=true" oncompositionend="_wizComposing=false" onkeydown="if(event.key==='Enter'&&!_wizComposing){event.preventDefault();const n=document.getElementById('wiz-next');if(n&&!n.disabled)n.click()}">
     ${_wizActions(false, '次へ →', "_wiz.goal=document.getElementById('wiz-goal').value.trim();if(_wiz.goal){_wiz.step++;_renderWiz()}", !_wiz.goal.trim())}
   `;
   setTimeout(() => {
