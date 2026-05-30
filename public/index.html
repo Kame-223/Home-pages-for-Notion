@@ -601,7 +601,7 @@ body::before {
 .fc-timegrid-slot { height: 9px !important; }
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .content-grid.select-mode .fc-header-toolbar { margin-bottom: 0 !important; }
-.content-grid.select-mode .fc-timegrid-slot { height: 18px !important; }
+.content-grid.select-mode .fc-timegrid-slot { height: 20px !important; }
 .content-grid.select-mode .cal-buf-top { height: 9px; }
 .content-grid.select-mode .cal-buf-bot { display: none; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
@@ -5647,9 +5647,7 @@ function applySModeCalLayout() {
   const fcToolbarH = fcToolbar?.offsetHeight || 35;
   const fcColH = fcColHeaderSection?.offsetHeight || 25;
   const btmNavH = btmNav?.offsetHeight || 56;
-  const overhead = sHdrH + fcToolbarH + fcColH + btmNavH;
-  const h = Math.max(300, window.innerHeight - overhead);
-  fcCalendar.setOption('contentHeight', h);
+  fcCalendar.setOption('contentHeight', 20 * 37); // 20px/slot × 37slots、余白はパネル背景で自然に埋まる
   updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH, btmNavH);
 }
 
