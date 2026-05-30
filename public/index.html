@@ -379,9 +379,26 @@ body::before {
   position: sticky; top: 86px; align-self: start; padding: 0;
 }
 .content-grid.select-mode .s-orb-col {
-  display: flex !important; grid-column: 2; grid-row: 2;
-  flex-direction: column; justify-content: center; align-items: center; gap: 24px;
-  position: sticky; top: 60px; align-self: start; padding: 20px 0;
+  display: flex !important; flex-direction: column;
+  grid-column: 2; grid-row: 1 / span 3;
+  position: sticky; top: 0; align-self: start;
+  height: 100vh; width: 100%;
+}
+.jk-zone {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; transition: background .15s;
+  cursor: pointer;
+}
+.jk-zone[data-jk="朝"] { flex: 7; }
+.jk-zone[data-jk="昼"] { flex: 5; }
+.jk-zone[data-jk="夜"] { flex: 6.5; }
+.jk-zone.zone-drag-over {
+  background: rgba(255,255,255,0.13);
+}
+.jk-zone.zone-drag-over .jk-orb {
+  transform: scale(1.18);
+  box-shadow: 0 0 28px rgba(255,255,255,0.75), 0 0 56px rgba(255,255,255,0.38),
+    inset 0 1px 4px rgba(255,255,255,1);
 }
 .content-grid.select-mode .schedule-col {
   grid-column: 3; grid-row: 1 / span 3; order: unset;
@@ -2278,9 +2295,15 @@ body::before {
 
     <!-- 朝昼夜 光の玉 (Sモードのみ) -->
     <div class="s-orb-col" id="s-orb-col">
-      <div class="jk-orb" data-jk="朝" id="orb-asa" onclick="setOrbFilter('朝')">朝</div>
-      <div class="jk-orb" data-jk="昼" id="orb-hiru" onclick="setOrbFilter('昼')">昼</div>
-      <div class="jk-orb" data-jk="夜" id="orb-yoru" onclick="setOrbFilter('夜')">夜</div>
+      <div class="jk-zone" data-jk="朝" onclick="setOrbFilter('朝')">
+        <div class="jk-orb" data-jk="朝" id="orb-asa">朝</div>
+      </div>
+      <div class="jk-zone" data-jk="昼" onclick="setOrbFilter('昼')">
+        <div class="jk-orb" data-jk="昼" id="orb-hiru">昼</div>
+      </div>
+      <div class="jk-zone" data-jk="夜" onclick="setOrbFilter('夜')">
+        <div class="jk-orb" data-jk="夜" id="orb-yoru">夜</div>
+      </div>
     </div>
 
     <!-- 下段 -->
@@ -5625,6 +5648,15 @@ function applySModeCalLayout() {
   const overhead = sHdrH + fcToolbarH + fcColH + btmNavH;
   const h = Math.max(300, window.innerHeight - overhead);
   fcCalendar.setOption('contentHeight', h);
+  updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH);
+}
+
+function updateOrbZoneOffsets(topOffset) {
+  if (currentMode !== 'select') return;
+  const orbCol = document.getElementById('s-orb-col');
+  if (!orbCol) return;
+  // カレンダーの時間グリッド開始位置に合わせて上部余白をセット
+  orbCol.style.paddingTop = (topOffset || 0) + 'px';
 }
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
@@ -7080,13 +7112,13 @@ function _tdMove(e){
   _tdGhost.style.left=e.clientX+'px';_tdGhost.style.top=e.clientY+'px';
   const over=_tdOverCal(e.clientX,e.clientY);
   const overOrb = _tdOverOrb(e.clientX, e.clientY);
-  document.querySelectorAll('.jk-orb').forEach(o => o.classList.toggle('orb-drag-over', o.dataset.jk === overOrb));
+  document.querySelectorAll('.jk-zone').forEach(z => z.classList.toggle('zone-drag-over', z.dataset.jk === overOrb));
   _tdGhost.classList.toggle('over-cal',over);
   if(over){
     const t=_tdCalcTime(e.clientY);
     if(t){const h=String(t.getHours()).padStart(2,'0'),m=String(t.getMinutes()).padStart(2,'0');_tdGhost.dataset.time=h+':'+m;}
     document.querySelectorAll('.drag-insert-line').forEach(el=>el.remove());
-    document.querySelectorAll('.jk-orb').forEach(o => o.classList.remove('orb-drag-over'));
+    document.querySelectorAll('.jk-zone').forEach(z => z.classList.remove('zone-drag-over'));
     document.querySelectorAll('.time-block-label.drag-target').forEach(l=>l.classList.remove('drag-target'));
     dragTargetJK=null;
   }else{
@@ -7097,7 +7129,7 @@ function _tdMove(e){
 
 function _tdEnd(e){
   if(!_tdOk)return;
-  document.querySelectorAll('.jk-orb').forEach(o=>o.classList.remove('orb-drag-over'));
+  document.querySelectorAll('.jk-zone').forEach(z=>z.classList.remove('zone-drag-over'));
   const overOrb=_tdOverOrb(e.clientX,e.clientY);
   if(overOrb){
     if(taskState[_tdId]){
@@ -7147,9 +7179,9 @@ function _tdClean(){
 }
 
 function _tdOverOrb(x,y){
-  for(const orb of document.querySelectorAll('.jk-orb')){
-    const r=orb.getBoundingClientRect();
-    if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom) return orb.dataset.jk;
+  for(const zone of document.querySelectorAll('.jk-zone')){
+    const r=zone.getBoundingClientRect();
+    if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom) return zone.dataset.jk;
   }
   return null;
 }
