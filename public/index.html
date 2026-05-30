@@ -5665,9 +5665,8 @@ function applySModeCalLayout() {
     const diff = fcScrollgrid.getBoundingClientRect().top - schedSticky.getBoundingClientRect().top;
     if (diff > 0) aboveFC = diff;
   }
-  const contentH = Math.max(targetH - aboveFC, 20 * 37 + fcColH);
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
-  fcCalendar.setOption('contentHeight', contentH);
+  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // 24:30までぴったり、残りはパネル背景
   updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
