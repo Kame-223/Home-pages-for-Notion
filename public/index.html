@@ -7077,14 +7077,18 @@ function _tdDown(e){
   if(_tdOk||dragId)return;
   _tdContainerId = 'today-tasks';
   _tdXY={x:e.clientX,y:e.clientY};
-  _tdTimer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),100);
+  const timer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),100);
+  _tdTimer=timer;
   const cancel=()=>{
-    clearTimeout(_tdTimer);_tdTimer=null;
+    clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null;
     card.removeEventListener('pointerup',cancel);
     card.removeEventListener('pointercancel',cancel);
+    document.removeEventListener('pointerup',docCancel);
   };
+  const docCancel=()=>{ clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null; };
   card.addEventListener('pointerup',cancel,{once:true});
   card.addEventListener('pointercancel',cancel,{once:true});
+  document.addEventListener('pointerup',docCancel,{once:true});
 }
 
 function _tdStart(id,card,cx,cy){
@@ -7202,14 +7206,18 @@ function _bunbunDown(e){
   if(_tdOk||dragId)return;
   _tdContainerId='bunbun-list';
   _tdXY={x:e.clientX,y:e.clientY};
-  _tdTimer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),100);
+  const timer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),100);
+  _tdTimer=timer;
   const cancel=()=>{
-    clearTimeout(_tdTimer);_tdTimer=null;
+    clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null;
     card.removeEventListener('pointerup',cancel);
     card.removeEventListener('pointercancel',cancel);
+    document.removeEventListener('pointerup',docCancel);
   };
+  const docCancel=()=>{ clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null; };
   card.addEventListener('pointerup',cancel,{once:true});
   card.addEventListener('pointercancel',cancel,{once:true});
+  document.addEventListener('pointerup',docCancel,{once:true});
 }
 
 function _tdOverCal(x,y){
