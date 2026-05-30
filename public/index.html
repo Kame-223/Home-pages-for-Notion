@@ -5118,7 +5118,7 @@ function updateStarFollow() {
   const currentPanelTop = (leftoverEl2 && !leftoverEl2.classList.contains('hidden'))
     ? Math.max(leftoverEl2.getBoundingClientRect().top, headerH)
     : Math.max(nextPanelEl.getBoundingClientRect().top, headerH);
-  const minTop = Math.min(currentPanelTop, _starAnchorViewportTop);
+  const minTop = currentPanelTop;
   const maxTop = Math.max(minTop, tbBottomViewport - btnH - margin);
   sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
 }
