@@ -1829,6 +1829,121 @@ body::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+/* ===== PROJECT WIZARD ===== */
+#wizard-overlay {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(255,255,255,0.62); backdrop-filter: blur(14px);
+  align-items: center; justify-content: center;
+}
+#wizard-overlay.open { display: flex; }
+.wiz-modal {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 20px; padding: 36px 40px 32px;
+  width: 540px; max-width: 92vw; max-height: 88vh;
+  display: flex; flex-direction: column; gap: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  position: relative; overflow: hidden;
+}
+.wiz-close {
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none; font-size: 18px; cursor: pointer;
+  color: var(--text-dim); transition: color .2s; padding: 4px;
+}
+.wiz-close:hover { color: var(--text); }
+.wiz-progress { display: flex; gap: 6px; align-items: center; }
+.wiz-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border2); transition: all .25s;
+}
+.wiz-dot.active { background: var(--purple); width: 22px; border-radius: 4px; }
+.wiz-dot.done  { background: rgba(127,119,221,0.4); }
+.wiz-step-label { font-size: 11px; color: var(--text-dim); margin-left: 6px; }
+.wiz-heading { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.wiz-sub { font-size: 13px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; }
+.wiz-input {
+  width: 100%; padding: 12px 14px; border-radius: 10px; font-size: 14px;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  color: var(--text); font-family: 'Noto Sans JP', sans-serif;
+  outline: none; transition: border-color .2s; box-sizing: border-box;
+}
+.wiz-input:focus { border-color: var(--purple); }
+.wiz-textarea { min-height: 90px; resize: none; line-height: 1.6; }
+.wiz-add-row { display: flex; gap: 8px; }
+.wiz-add-btn {
+  padding: 10px 16px; border-radius: 10px; font-size: 13px; cursor: pointer;
+  border: 0.5px solid rgba(127,119,221,0.4); background: rgba(127,119,221,0.1);
+  color: var(--purple); font-family: 'Noto Sans JP', sans-serif;
+  white-space: nowrap; transition: all .2s;
+}
+.wiz-add-btn:hover { background: rgba(127,119,221,0.2); }
+.wiz-items { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.wiz-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: var(--surface2); border-radius: 8px;
+  border: 0.5px solid var(--border);
+}
+.wiz-item-text { flex: 1; font-size: 13px; color: var(--text); }
+.wiz-item-del {
+  background: none; border: none; cursor: pointer; color: var(--text-dim);
+  font-size: 14px; padding: 0 2px; transition: color .2s;
+}
+.wiz-item-del:hover { color: var(--red); }
+.wiz-sort-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: var(--surface2); border-radius: 8px; border: 0.5px solid var(--border);
+}
+.wiz-sort-text { flex: 1; font-size: 13px; color: var(--text); }
+.wiz-type-btns { display: flex; gap: 6px; }
+.wiz-type-btn {
+  font-size: 11px; padding: 3px 10px; border-radius: 20px; cursor: pointer;
+  border: 0.5px solid var(--border2); background: transparent;
+  color: var(--text-dim); font-family: 'Noto Sans JP', sans-serif;
+  transition: all .2s;
+}
+.wiz-type-btn.ms.active   { background: rgba(127,119,221,0.18); color: var(--purple); border-color: rgba(127,119,221,0.4); }
+.wiz-type-btn.task.active { background: rgba(29,158,117,0.15);  color: #1d9e75;       border-color: rgba(29,158,117,0.35); }
+.wiz-date-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--surface2); border-radius: 8px; border: 0.5px solid var(--border);
+}
+.wiz-date-label { flex: 1; font-size: 13px; color: var(--text); }
+.wiz-date-input {
+  padding: 5px 10px; border-radius: 8px; font-size: 12px;
+  border: 0.5px solid var(--border2); background: var(--surface);
+  color: var(--text); font-family: 'Noto Sans JP', sans-serif; outline: none;
+  cursor: pointer;
+}
+.wiz-date-input:focus { border-color: var(--purple); }
+.wiz-link-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--surface2); border-radius: 8px; border: 0.5px solid var(--border);
+}
+.wiz-link-label { flex: 1; font-size: 13px; color: var(--text); }
+.wiz-link-select {
+  padding: 5px 10px; border-radius: 8px; font-size: 12px;
+  border: 0.5px solid var(--border2); background: var(--surface);
+  color: var(--text); font-family: 'Noto Sans JP', sans-serif; outline: none;
+  cursor: pointer; max-width: 180px;
+}
+.wiz-link-select:focus { border-color: var(--purple); }
+.wiz-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.wiz-back-btn {
+  background: none; border: none; font-size: 13px; color: var(--text-dim);
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif; padding: 0;
+  transition: color .2s;
+}
+.wiz-back-btn:hover { color: var(--text); }
+.wiz-next-btn {
+  padding: 10px 28px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  border: none; background: var(--purple); color: #fff;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .2s;
+}
+.wiz-next-btn:hover { background: #9992e8; }
+.wiz-next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.wiz-finish-btn { background: #1d9e75; }
+.wiz-finish-btn:hover { background: #25b887; }
+.wiz-saving { font-size: 13px; color: var(--text-dim); }
+
 /* ===== PROJECT PAGE ===== */
 #project-content { display: none; padding: 16px 20px; }
 .proj-page-header { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; }
@@ -7087,6 +7202,7 @@ function _tdCalcTime(clientY){
 // ===== PROJECT PAGE =====
 const DB_PROJECTS   = '8584c1ec140d83b29e26019b60fe7a3e';
 const DB_MILESTONES = '3704c1ec140d80ee8bcbce3af5d49edf';
+const DB_TASKS      = '3294c1ec140d838499ae0131fc67976d';
 
 let _projCache = null;
 let _msCache   = null;
@@ -7170,7 +7286,7 @@ async function renderProjectList() {
       </div>`;
     }).join('');
     wrap.innerHTML = `<div class="proj-grid">${cards}
-      <button class="proj-new-card" onclick="alert('作成ウィザードは近日実装予定です')">＋ 新規プロジェクト</button>
+      <button class="proj-new-card" onclick="openWizard()">＋ 新規プロジェクト</button>
     </div>`;
   } catch(e) {
     wrap.innerHTML = `<div class="proj-empty">読み込みエラー: ${e.message}</div>`;
@@ -7278,6 +7394,223 @@ async function renderProjectDetail(pid) {
   }
 }
 
+// ===== PROJECT WIZARD =====
+let _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[] };
+
+function openWizard() {
+  _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[] };
+  document.getElementById('wizard-overlay').classList.add('open');
+  _renderWiz();
+}
+function closeWizard() {
+  document.getElementById('wizard-overlay').classList.remove('open');
+}
+
+function _wizProgress() {
+  const prog = document.getElementById('wiz-progress');
+  if (!prog) return;
+  prog.innerHTML = [1,2,3,4,5].map(i =>
+    `<div class="wiz-dot ${_wiz.step === i ? 'active' : _wiz.step > i ? 'done' : ''}"></div>`
+  ).join('');
+}
+
+function _wizActions(backVisible, nextLabel, nextHandler, nextDisabled) {
+  return `<div class="wiz-actions">
+    <button class="wiz-back-btn" onclick="_wizBack()" style="visibility:${backVisible?'visible':'hidden'}">← 戻る</button>
+    <button class="wiz-next-btn" id="wiz-next" onclick="${nextHandler}" ${nextDisabled?'disabled':''} style="opacity:${nextDisabled?0.4:1}">${nextLabel}</button>
+  </div>`;
+}
+
+function _wizBack() { _wiz.step--; _renderWiz(); }
+
+function _renderWiz() {
+  _wizProgress();
+  const c = document.getElementById('wiz-content');
+  if (!c) return;
+  if (_wiz.step === 1) _wizStep1(c);
+  else if (_wiz.step === 2) _wizStep2(c);
+  else if (_wiz.step === 3) _wizStep3(c);
+  else if (_wiz.step === 4) _wizStep4(c);
+  else if (_wiz.step === 5) _wizStep5(c);
+}
+
+function _wizStep1(c) {
+  c.innerHTML = `
+    <div class="wiz-heading">🎯 プロジェクトのゴールは？</div>
+    <div class="wiz-sub">このプロジェクトが完了したら、何が達成されている？</div>
+    <input class="wiz-input" id="wiz-goal" type="text" placeholder="例：憲法レポートを提出する" value="${_wiz.goal}" oninput="_wiz.goal=this.value;document.getElementById('wiz-next').disabled=!this.value.trim();document.getElementById('wiz-next').style.opacity=this.value.trim()?1:0.4">
+    ${_wizActions(false, '次へ →', "_wiz.goal=document.getElementById('wiz-goal').value.trim();if(_wiz.goal){_wiz.step++;_renderWiz()}", !_wiz.goal.trim())}
+  `;
+  setTimeout(() => {
+    const inp = document.getElementById('wiz-goal');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function _wizStep2(c) {
+  c.innerHTML = `
+    <div class="wiz-heading">🧠 やること・必要なことを全部出す</div>
+    <div class="wiz-sub">思いついたことを箇条書きで。後で整理するので量を優先して。</div>
+    <div class="wiz-items" id="wiz-dump-list">
+      ${_wiz.items.map((it,i) => `
+        <div class="wiz-item" id="wiz-di-${i}">
+          <span class="wiz-item-text">${_escHtml(it)}</span>
+          <button class="wiz-item-del" onclick="_wizDelItem(${i})">✕</button>
+        </div>`).join('')}
+    </div>
+    <div class="wiz-add-row">
+      <input class="wiz-input" id="wiz-dump-inp" type="text" placeholder="やることを入力…" onkeydown="if(event.key==='Enter'){event.preventDefault();_wizAddItem()}">
+      <button class="wiz-add-btn" onclick="_wizAddItem()">追加</button>
+    </div>
+    ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", _wiz.items.length === 0)}
+  `;
+  setTimeout(() => {
+    const inp = document.getElementById('wiz-dump-inp');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function _wizAddItem() {
+  const inp = document.getElementById('wiz-dump-inp');
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (!v) return;
+  _wiz.items.push(v);
+  inp.value = '';
+  _renderWiz();
+  setTimeout(() => {
+    const ni = document.getElementById('wiz-dump-inp');
+    if (ni) ni.focus();
+  }, 50);
+}
+
+function _wizDelItem(i) {
+  _wiz.items.splice(i, 1);
+  _renderWiz();
+}
+
+function _wizStep3(c) {
+  // Sync sort arrays with current items
+  _wiz.milestones = _wiz.milestones.filter(m => _wiz.items.includes(m.text));
+  _wiz.tasks      = _wiz.tasks.filter(t => _wiz.items.includes(t.text));
+  const sorted = new Set([..._wiz.milestones.map(m=>m.text), ..._wiz.tasks.map(t=>t.text)]);
+  const unsorted = _wiz.items.filter(it => !sorted.has(it));
+
+  const rowHtml = (it) => {
+    const isMile = _wiz.milestones.some(m => m.text === it);
+    const isTask = _wiz.tasks.some(t => t.text === it);
+    return `<div class="wiz-sort-item">
+      <span class="wiz-sort-text">${_escHtml(it)}</span>
+      <div class="wiz-type-btns">
+        <button class="wiz-type-btn ms ${isMile?'active':''}" onclick="_wizSetType('milestone','${it.replace(/'/g,"\\'")}')">🎯 マイルストーン</button>
+        <button class="wiz-type-btn task ${isTask?'active':''}" onclick="_wizSetType('task','${it.replace(/'/g,"\\'")}')">✅ タスク</button>
+      </div>
+    </div>`;
+  };
+
+  const allSorted = _wiz.items.every(it => sorted.has(it));
+  c.innerHTML = `
+    <div class="wiz-heading">📂 それぞれを分類する</div>
+    <div class="wiz-sub">マイルストーン＝目標・締切のある中間ゴール　タスク＝具体的な作業</div>
+    <div class="wiz-items" style="max-height:280px;overflow-y:auto">${_wiz.items.map(rowHtml).join('')}</div>
+    ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", !allSorted)}
+  `;
+}
+
+function _wizSetType(type, text) {
+  _wiz.milestones = _wiz.milestones.filter(m => m.text !== text);
+  _wiz.tasks      = _wiz.tasks.filter(t => t.text !== text);
+  if (type === 'milestone') _wiz.milestones.push({ text, date: '' });
+  else _wiz.tasks.push({ text, milestoneText: '' });
+  _renderWiz();
+}
+
+function _wizStep4(c) {
+  if (_wiz.milestones.length === 0) {
+    _wiz.step++; _renderWiz(); return;
+  }
+  const rowHtml = (m, i) => `
+    <div class="wiz-date-item">
+      <span class="wiz-date-label">${_escHtml(m.text)}</span>
+      <input class="wiz-date-input" type="date" value="${m.date}" onchange="_wiz.milestones[${i}].date=this.value">
+    </div>`;
+  const allDated = _wiz.milestones.every(m => m.date);
+  c.innerHTML = `
+    <div class="wiz-heading">📅 マイルストーンの締切を設定</div>
+    <div class="wiz-sub">いつまでに達成するか決めよう</div>
+    <div class="wiz-items">${_wiz.milestones.map(rowHtml).join('')}</div>
+    ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", !allDated)}
+  `;
+}
+
+function _wizStep5(c) {
+  if (_wiz.tasks.length === 0 || _wiz.milestones.length === 0) {
+    _wizFinish(); return;
+  }
+  const msOpts = `<option value="">未設定</option>${_wiz.milestones.map(m=>`<option value="${_escHtml(m.text)}">${_escHtml(m.text)}</option>`).join('')}`;
+  const rowHtml = (t, i) => `
+    <div class="wiz-link-item">
+      <span class="wiz-link-label">${_escHtml(t.text)}</span>
+      <select class="wiz-link-select" onchange="_wiz.tasks[${i}].milestoneText=this.value">
+        ${msOpts.replace(`value="${_escHtml(t.milestoneText)}"`, `value="${_escHtml(t.milestoneText)}" selected`)}
+      </select>
+    </div>`;
+  c.innerHTML = `
+    <div class="wiz-heading">🔗 タスクをマイルストーンに紐づけ</div>
+    <div class="wiz-sub">どのタスクがどのマイルストーンのためか</div>
+    <div class="wiz-items">${_wiz.tasks.map(rowHtml).join('')}</div>
+    ${_wizActions(true, '✅ 作成する', "_wizFinish()", false)}
+  `;
+}
+
+function _escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function _wizFinish() {
+  const btn = document.getElementById('wiz-next');
+  if (btn) { btn.disabled = true; btn.textContent = '作成中…'; }
+  try {
+    // 1. Create project
+    const projPage = await notionCreate(DB_PROJECTS, {
+      名前: { title: [{ text: { content: _wiz.goal } }] },
+      ステータス: { select: { name: '進行中' } }
+    });
+    const projId = projPage.id;
+
+    // 2. Create milestones, track text → id
+    const msIdMap = {};
+    for (const m of _wiz.milestones) {
+      const props = {
+        名前: { title: [{ text: { content: m.text } }] },
+        プロジェクト: { relation: [{ id: projId }] }
+      };
+      if (m.date) props['締切'] = { date: { start: m.date } };
+      const msPage = await notionCreate(DB_MILESTONES, props);
+      msIdMap[m.text] = msPage.id;
+    }
+
+    // 3. Create tasks
+    for (const t of _wiz.tasks) {
+      const props = {
+        タイトル: { title: [{ text: { content: t.text } }] },
+        プロジェクト: { relation: [{ id: projId }] }
+      };
+      if (t.milestoneText && msIdMap[t.milestoneText]) {
+        props['マイルストーン'] = { relation: [{ id: msIdMap[t.milestoneText] }] };
+      }
+      await notionCreate(DB_TASKS, props);
+    }
+
+    closeWizard();
+    _projCache = null; _msCache = null;
+    await renderProjectList();
+  } catch(e) {
+    alert('作成エラー: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ 作成する'; }
+  }
+}
+
 </script>
 
 <!-- タスク編集モーダル -->
@@ -7375,6 +7708,15 @@ async function renderProjectDetail(pid) {
       <button class="imp-confirm-no" onclick="cancelImpConfirm()">キャンセル</button>
       <button class="imp-confirm-yes" onclick="confirmImp()">ON にする</button>
     </div>
+  </div>
+</div>
+
+<!-- プロジェクト作成ウィザード -->
+<div id="wizard-overlay">
+  <div class="wiz-modal">
+    <button class="wiz-close" onclick="closeWizard()">✕</button>
+    <div class="wiz-progress" id="wiz-progress"></div>
+    <div id="wiz-content"></div>
   </div>
 </div>
 
