@@ -376,7 +376,7 @@ body::before {
 .content-grid.select-mode .s-star-col {
   display: flex !important; grid-column: 2; grid-row: 1 / -1;
   flex-direction: column; justify-content: flex-start; align-items: center;
-  position: sticky; top: 86px; align-self: start; padding: 0;
+  position: relative; align-self: start; padding: 0;
 }
 .content-grid.select-mode .s-orb-col {
   display: flex !important; flex-direction: column;
@@ -5072,8 +5072,6 @@ let leftoverAddedOpen = false;
 let bunbunOpen = false;
 let orbFilter = null;
 let focusedPanel = 'next'; // 'next' | 'today'
-let _starAnchorScrollY = null;
-let _starAnchorViewportTop = null;
 let _tbBottomDoc = 0;
 let _tdContainerId = 'today-tasks';
 let leftoverSet = new Set();
@@ -5091,54 +5089,12 @@ function handlePanelClick(panel) {
   if (panel === 'next') requestAnimationFrame(resetStarAnchor);
 }
 function resetStarAnchor() {
-  const leftoverEl = document.getElementById('leftover-panel');
-  const nextPanelEl = document.getElementById('next-panel');
   const todayBoardEl = document.querySelector('.today-board');
-  const headerH = 62;
-  const margin = 16;
-  _starAnchorScrollY = window.scrollY;
   if (todayBoardEl) _tbBottomDoc = todayBoardEl.getBoundingClientRect().bottom + window.scrollY;
-  let refTop = headerH + margin;
-  if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
-    const rect = leftoverEl.getBoundingClientRect();
-    refTop = Math.max(rect.top, headerH + margin);
-  } else if (nextPanelEl) {
-    const rect = nextPanelEl.getBoundingClientRect();
-    refTop = Math.max(rect.top, headerH + margin);
-  }
-  _starAnchorViewportTop = refTop;
 }
 function updateStarFollow() {
-  const sStarCol    = document.getElementById('s-star-col');
-  const nextPanelEl = document.getElementById('next-panel');
-  if (!sStarCol || !nextPanelEl) return;
-  if (currentMode !== 'select' || focusedPanel !== 'next') return;
-  if (_starAnchorScrollY === null) resetStarAnchor();
-  const headerH = 62;
-  const btnH    = 68;
-  const margin  = 16;
-  const tbBottomViewport = _tbBottomDoc - window.scrollY;
-  const scrollDelta = window.scrollY - _starAnchorScrollY;
-  const rawTop  = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
-  const leftoverEl2 = document.getElementById('leftover-panel');
-  let currentPanelTop;
-  if (leftoverEl2 && !leftoverEl2.classList.contains('hidden')) {
-    currentPanelTop = Math.max(leftoverEl2.getBoundingClientRect().top, headerH);
-  } else {
-    currentPanelTop = Math.max(nextPanelEl.getBoundingClientRect().top, headerH);
-  }
-  const minTop = Math.min(currentPanelTop, _starAnchorViewportTop);
-  const maxTop  = Math.max(minTop, tbBottomViewport - btnH - margin);
-  sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
+  // position:relative でスクロール自然追従するため JS 位置計算は不要
 }
-let _starScrollRafId = null;
-window.addEventListener('scroll', () => {
-  if (_starScrollRafId) return;
-  _starScrollRafId = requestAnimationFrame(() => {
-    _starScrollRafId = null;
-    updateStarFollow();
-  });
-}, { passive: true });
 
 function starNextClick() {
   focusedPanel = 'today';
@@ -5161,7 +5117,7 @@ function renderLeftoverSection(leftover) {
     const wasHidden = leftoverPanelEl.classList.contains('hidden');
     leftoverPanelEl.classList.toggle('hidden', currentMode !== 'select' || leftover.length === 0);
     const isHidden = leftoverPanelEl.classList.contains('hidden');
-    if (wasHidden !== isHidden && currentMode === 'select') _starAnchorScrollY = null;
+    // (star follow is now CSS-based, no anchor reset needed)
   }
   const leftEl = document.getElementById('leftover-list');
   const countEl = document.getElementById('leftover-count');
