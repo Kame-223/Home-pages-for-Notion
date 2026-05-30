@@ -5665,8 +5665,12 @@ function applySModeCalLayout() {
     const diff = fcScrollgrid.getBoundingClientRect().top - schedSticky.getBoundingClientRect().top;
     if (diff > 0) aboveFC = diff;
   }
+  const fcContentH = 20 * 37 + fcColH; // 24:30ぴったり
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
-  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // 24:30までぴったり、残りはパネル背景
+  fcCalendar.setOption('contentHeight', fcContentH);
+  // fc-container を contentHeight でクリップして 24:30 以降の白をカット
+  const fcContainer = document.getElementById('fc-container');
+  if (fcContainer) { fcContainer.style.maxHeight = fcContentH + 'px'; fcContainer.style.overflow = 'hidden'; }
   updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
