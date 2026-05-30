@@ -5641,7 +5641,8 @@ function applySModeCalLayout() {
   const fcToolbarH = fcToolbar?.offsetHeight || 35;
   const fcColH = fcColHeaderSection?.offsetHeight || 25;
   const btmNavH = btmNav?.offsetHeight || 56;
-  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // timeGrid=740px + colHeader で24:00が見える
+  const contentH = Math.max(window.innerHeight - btmNavH - sHdrH - fcToolbarH, 20 * 37 + fcColH);
+  fcCalendar.setOption('contentHeight', contentH);
   updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH, btmNavH);
 }
 
