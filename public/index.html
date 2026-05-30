@@ -374,9 +374,8 @@ body::before {
 }
 .content-grid.select-mode .today-board { grid-column: 1; grid-row: 2; order: unset; }
 .content-grid.select-mode .s-star-col {
-  display: flex !important; grid-column: 2; grid-row: 1 / -1;
-  flex-direction: column; justify-content: flex-start; align-items: center;
-  position: sticky; top: 86px; align-self: start; padding: 0;
+  display: block !important; grid-column: 2; grid-row: 1 / -1;
+  position: relative;
 }
 .content-grid.select-mode .s-orb-col {
   display: flex !important; flex-direction: column;
@@ -5087,7 +5086,10 @@ function handlePanelClick(panel) {
   if (currentMode !== 'select' || focusedPanel === panel) return;
   focusedPanel = panel;
   renderAll();
-  if (panel === 'next') requestAnimationFrame(resetStarAnchor);
+  requestAnimationFrame(() => {
+    if (panel === 'next') { resetStarAnchor(); updateStarFollow(); }
+    else updateStarFollow();
+  });
 }
 function resetStarAnchor() {
   const leftoverEl = document.getElementById('leftover-panel');
@@ -5105,22 +5107,34 @@ function resetStarAnchor() {
   _starAnchorViewportTop = refTop;
 }
 function updateStarFollow() {
+  const btn = document.getElementById('star-next-btn');
   const sStarCol = document.getElementById('s-star-col');
-  const nextPanelEl = document.getElementById('next-panel');
-  if (!sStarCol || !nextPanelEl) return;
-  if (currentMode !== 'select' || focusedPanel !== 'next') return;
+  if (!btn || !sStarCol) return;
+  if (currentMode !== 'select' || focusedPanel !== 'next') {
+    btn.style.position = ''; btn.style.top = ''; btn.style.left = '';
+    return;
+  }
   if (_starAnchorScrollY === null) resetStarAnchor();
-  const headerH = 62, btnH = 68, margin = 16;
-  const tbBottomViewport = _tbBottomDoc - window.scrollY;
+  const headerH = 62;
+  const btnH = btn.offsetHeight || 68;
+  const btnW = btn.offsetWidth || 68;
+  const margin = 16;
   const scrollDelta = window.scrollY - _starAnchorScrollY;
   const rawTop = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
   const leftoverEl2 = document.getElementById('leftover-panel');
+  const nextPanelEl = document.getElementById('next-panel');
+  const todayBoardEl = document.querySelector('.today-board');
   const currentPanelTop = (leftoverEl2 && !leftoverEl2.classList.contains('hidden'))
     ? Math.max(leftoverEl2.getBoundingClientRect().top, headerH)
-    : Math.max(nextPanelEl.getBoundingClientRect().top, headerH);
-  const minTop = currentPanelTop;
-  const maxTop = Math.max(minTop, tbBottomViewport - btnH - margin);
-  sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
+    : Math.max(nextPanelEl?.getBoundingClientRect().top ?? headerH, headerH);
+  const tbTopViewport = todayBoardEl ? todayBoardEl.getBoundingClientRect().top : window.innerHeight;
+  const maxTop = Math.max(currentPanelTop, tbTopViewport - btnH - margin);
+  const clamped = Math.min(Math.max(rawTop, currentPanelTop), maxTop);
+  const colRect = sStarCol.getBoundingClientRect();
+  const colCenterX = colRect.left + colRect.width / 2;
+  btn.style.position = 'fixed';
+  btn.style.top = clamped + 'px';
+  btn.style.left = Math.round(colCenterX - btnW / 2) + 'px';
 }
 let _starScrollRafId = null;
 window.addEventListener('scroll', () => {
@@ -5132,6 +5146,7 @@ function starNextClick() {
   focusedPanel = 'today';
   renderAll();
   requestAnimationFrame(() => {
+    updateStarFollow();
     const board = document.querySelector('.today-board');
     if (board) window.scrollTo({ top: board.getBoundingClientRect().top + window.scrollY - 10, behavior: 'smooth' });
   });
