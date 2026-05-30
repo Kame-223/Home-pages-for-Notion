@@ -6820,6 +6820,16 @@ window.onload = () => {
   initGoogleCalendar();
   setupFurikaeri();
   loadTasks();
+  requestAnimationFrame(() => {
+    _updateSchedColH();
+    if (!_schedColHeightObs) {
+      _schedColHeightObs = new ResizeObserver(_updateSchedColH);
+      const _bRow = document.querySelector('.bottom-row');
+      const _tBoard = document.querySelector('.today-board');
+      if (_bRow) _schedColHeightObs.observe(_bRow);
+      if (_tBoard) _schedColHeightObs.observe(_tBoard);
+    }
+  });
   initTodayCardDrag();
   const _ricDl = window.requestIdleCallback || (fn => setTimeout(fn, 200));
   setInterval(() => _ricDl(refreshDeadlineTags), 1000);
