@@ -5123,15 +5123,11 @@ function updateStarFollow() {
   const margin = 16;
   const scrollDelta = window.scrollY - _starAnchorScrollY;
   const rawTop = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
-  const leftoverEl2 = document.getElementById('leftover-panel');
-  const nextPanelEl = document.getElementById('next-panel');
-  const todayBoardEl = document.querySelector('.today-board');
-  const currentPanelTop = (leftoverEl2 && !leftoverEl2.classList.contains('hidden'))
-    ? Math.max(leftoverEl2.getBoundingClientRect().top, headerH)
-    : Math.max(nextPanelEl?.getBoundingClientRect().top ?? headerH, headerH);
-  const tbTopViewport = todayBoardEl ? todayBoardEl.getBoundingClientRect().top : window.innerHeight;
-  const maxTop = Math.max(currentPanelTop, tbTopViewport - btnH - margin);
-  const clamped = Math.min(Math.max(rawTop, currentPanelTop), maxTop);
+  // min: アンカー位置（パネル上端）より上には行かせない
+  // max: ビューポート底面まで（今日やることの位置は制約しない — 別カラムなので重ならない）
+  const minTop = Math.max(headerH + margin, _starAnchorViewportTop);
+  const maxTop = window.innerHeight - btnH - margin;
+  const clamped = Math.min(Math.max(rawTop, minTop), maxTop);
   const colRect = sStarCol.getBoundingClientRect();
   const colCenterX = colRect.left + colRect.width / 2;
   btn.style.position = 'fixed';
