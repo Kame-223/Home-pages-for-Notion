@@ -5635,15 +5635,23 @@ function applySModeCalLayout() {
   if (currentMode !== 'select' || !fcCalendar) return;
   const sHdr = document.querySelector('.sched-sticky .section-header');
   const btmNav = document.querySelector('.bottom-nav');
-  const fcToolbar = document.querySelector('#fc-container .fc-header-toolbar');
   const fcColHeaderSection = document.querySelector('#fc-container .fc-scrollgrid-section-header');
+  const schedSticky = document.querySelector('.content-grid.select-mode .sched-sticky');
+  const fcScrollgrid = document.querySelector('#fc-container .fc-scrollgrid');
   const sHdrH = sHdr?.offsetHeight || 38;
-  const fcToolbarH = fcToolbar?.offsetHeight || 35;
   const fcColH = fcColHeaderSection?.offsetHeight || 25;
   const btmNavH = btmNav?.offsetHeight || 56;
-  const contentH = Math.max(window.innerHeight - btmNavH - sHdrH - fcToolbarH, 20 * 37 + fcColH);
+  const targetH = window.innerHeight - btmNavH;
+  // measure actual space above FC grid (sHdr + toolbar + toolbar margin-bottom)
+  let aboveFC = sHdrH + 35;
+  if (schedSticky && fcScrollgrid) {
+    const diff = fcScrollgrid.getBoundingClientRect().top - schedSticky.getBoundingClientRect().top;
+    if (diff > 0) aboveFC = diff;
+  }
+  const contentH = Math.max(targetH - aboveFC, 20 * 37 + fcColH);
+  if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
   fcCalendar.setOption('contentHeight', contentH);
-  updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH, btmNavH);
+  updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
 function updateOrbZoneOffsets(topOffset, bottomOffset) {
