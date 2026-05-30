@@ -374,8 +374,9 @@ body::before {
 }
 .content-grid.select-mode .today-board { grid-column: 1; grid-row: 2; order: unset; }
 .content-grid.select-mode .s-star-col {
-  display: block !important; grid-column: 2; grid-row: 1 / -1;
-  position: relative;
+  display: flex !important; grid-column: 2; grid-row: 1 / -1;
+  flex-direction: column; justify-content: flex-start; align-items: center;
+  position: sticky; top: 86px; align-self: start; padding: 0;
 }
 .content-grid.select-mode .s-orb-col {
   display: flex !important; flex-direction: column;
@@ -5070,6 +5071,8 @@ let leftoverAddedOpen = false;
 let bunbunOpen = false;
 let orbFilter = null;
 let focusedPanel = 'next'; // 'next' | 'today'
+let _starAnchorScrollY = null;
+let _starAnchorViewportTop = null;
 let _tbBottomDoc = 0;
 let _tdContainerId = 'today-tasks';
 let leftoverSet = new Set();
@@ -5086,36 +5089,38 @@ function handlePanelClick(panel) {
   renderAll();
   if (panel === 'next') requestAnimationFrame(resetStarAnchor);
 }
-function resetStarAnchor() {}
-function updateStarFollow() {
-  const btn = document.getElementById('star-next-btn');
-  const sStarCol = document.getElementById('s-star-col');
-  if (!btn || !sStarCol) return;
-  if (currentMode !== 'select' || focusedPanel !== 'next') {
-    btn.style.position = '';
-    btn.style.top = '';
-    btn.style.left = '';
-    return;
-  }
-  const colRect = sStarCol.getBoundingClientRect();
-  const colCenterX = colRect.left + colRect.width / 2;
-  const btnW = btn.offsetWidth || 68;
-  const btnH = btn.offsetHeight || 68;
+function resetStarAnchor() {
   const leftoverEl = document.getElementById('leftover-panel');
   const nextPanelEl = document.getElementById('next-panel');
   const todayBoardEl = document.querySelector('.today-board');
-  let panelBottom;
+  const headerH = 62, margin = 16;
+  _starAnchorScrollY = window.scrollY;
+  if (todayBoardEl) _tbBottomDoc = todayBoardEl.getBoundingClientRect().bottom + window.scrollY;
+  let refTop = headerH + margin;
   if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
-    panelBottom = leftoverEl.getBoundingClientRect().bottom;
+    refTop = Math.max(leftoverEl.getBoundingClientRect().top, headerH + margin);
   } else if (nextPanelEl) {
-    panelBottom = nextPanelEl.getBoundingClientRect().bottom;
-  } else { return; }
-  const todayTop = todayBoardEl ? todayBoardEl.getBoundingClientRect().top : window.innerHeight;
-  const mid = (panelBottom + todayTop) / 2 - btnH / 2;
-  const clamped = Math.min(Math.max(mid, 86), window.innerHeight - 80 - btnH);
-  btn.style.position = 'fixed';
-  btn.style.top = Math.round(clamped) + 'px';
-  btn.style.left = Math.round(colCenterX - btnW / 2) + 'px';
+    refTop = Math.max(nextPanelEl.getBoundingClientRect().top, headerH + margin);
+  }
+  _starAnchorViewportTop = refTop;
+}
+function updateStarFollow() {
+  const sStarCol = document.getElementById('s-star-col');
+  const nextPanelEl = document.getElementById('next-panel');
+  if (!sStarCol || !nextPanelEl) return;
+  if (currentMode !== 'select' || focusedPanel !== 'next') return;
+  if (_starAnchorScrollY === null) resetStarAnchor();
+  const headerH = 62, btnH = 68, margin = 16;
+  const tbBottomViewport = _tbBottomDoc - window.scrollY;
+  const scrollDelta = window.scrollY - _starAnchorScrollY;
+  const rawTop = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
+  const leftoverEl2 = document.getElementById('leftover-panel');
+  const currentPanelTop = (leftoverEl2 && !leftoverEl2.classList.contains('hidden'))
+    ? Math.max(leftoverEl2.getBoundingClientRect().top, headerH)
+    : Math.max(nextPanelEl.getBoundingClientRect().top, headerH);
+  const minTop = Math.min(currentPanelTop, _starAnchorViewportTop);
+  const maxTop = Math.max(minTop, tbBottomViewport - btnH - margin);
+  sStarCol.style.top = Math.min(Math.max(rawTop, minTop), maxTop) + 'px';
 }
 let _starScrollRafId = null;
 window.addEventListener('scroll', () => {
@@ -5144,7 +5149,6 @@ function renderLeftoverSection(leftover) {
     const wasHidden = leftoverPanelEl.classList.contains('hidden');
     leftoverPanelEl.classList.toggle('hidden', currentMode !== 'select' || leftover.length === 0);
     const isHidden = leftoverPanelEl.classList.contains('hidden');
-    // (star follow is now CSS-based, no anchor reset needed)
   }
   const leftEl = document.getElementById('leftover-list');
   const countEl = document.getElementById('leftover-count');
