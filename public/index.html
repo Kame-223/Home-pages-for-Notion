@@ -7105,7 +7105,7 @@ async function _projFetch(dbId, sorts) {
 }
 
 async function _loadProjects() {
-  if (!_projCache) _projCache = await _projFetch(DB_PROJECTS, [{property:'締切',direction:'ascending'}]);
+  if (!_projCache) _projCache = await _projFetch(DB_PROJECTS, null);
   return _projCache;
 }
 
