@@ -7094,7 +7094,13 @@ let _currentProjectId = null;
 const _projIsDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
 async function _projFetch(dbId, sorts) {
-  const data = await notionQuery(dbId, null, sorts || null);
+  const res = await fetch(`/api/notion?path=databases/${dbId}/query`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(sorts ? {sorts} : {}),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`DB:${dbId.slice(0,8)} → ${res.status} ${data.code||''} ${data.message||''}`);
   return data.results || [];
 }
 
