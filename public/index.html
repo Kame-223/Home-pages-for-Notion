@@ -409,6 +409,7 @@ body::before {
   cursor: pointer;
   visibility: hidden;
 }
+.panel-blurred * { transition: none !important; animation: none !important; }
 .panel-blurred::before {
   content: ''; position: absolute; inset: 0; z-index: 50;
   background: rgba(255,255,255,0.18);
@@ -2861,7 +2862,7 @@ function renderFullCalendar() {
       _pendingCushionFits.push({ el: arg.el, cushion });
       if (!_cushionFitRaf) _cushionFitRaf = requestAnimationFrame(_flushCushionFits);
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); requestAnimationFrame(applySModeCalLayout); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
