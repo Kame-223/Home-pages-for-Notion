@@ -7427,7 +7427,7 @@ async function renderProjectDetail(pid) {
 // ===== PROJECT WIZARD =====
 let _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
 let _wizComposing = false;
-let _wizCompositionEndTime = 0;
+let _wizJustComposed = false;
 
 function openWizard() {
   _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
@@ -7470,7 +7470,7 @@ function _wizStep1(c) {
   c.innerHTML = `
     <div class="wiz-heading">🎯 プロジェクトのゴールは？</div>
     <div class="wiz-sub">このプロジェクトが完了したら、何が達成されている？</div>
-    <input class="wiz-input" id="wiz-goal" type="text" placeholder="例：憲法レポートを提出する" value="${_wiz.goal}" oninput="_wiz.goal=this.value;document.getElementById('wiz-next').disabled=!this.value.trim();document.getElementById('wiz-next').style.opacity=this.value.trim()?1:0.4" oncompositionstart="_wizComposing=true" oncompositionend="_wizComposing=false;_wizCompositionEndTime=Date.now()" onkeydown="if(event.key==='Enter'){event.preventDefault();if(!_wizComposing&&Date.now()-_wizCompositionEndTime>50){const n=document.getElementById('wiz-next');if(n&&!n.disabled)n.click()}}">
+    <input class="wiz-input" id="wiz-goal" type="text" placeholder="例：憲法レポートを提出する" value="${_wiz.goal}" oninput="_wiz.goal=this.value;document.getElementById('wiz-next').disabled=!this.value.trim();document.getElementById('wiz-next').style.opacity=this.value.trim()?1:0.4" oncompositionstart="_wizComposing=true" oncompositionend="_wizComposing=false;_wizJustComposed=true" onkeydown="if(event.key==='Enter'){event.preventDefault();if(_wizJustComposed){_wizJustComposed=false;return;}const n=document.getElementById('wiz-next');if(n&&!n.disabled)n.click()}">
     ${_wizActions(false, '次へ →', "_wiz.goal=document.getElementById('wiz-goal').value.trim();if(_wiz.goal){_wiz.step++;_renderWiz()}", !_wiz.goal.trim())}
   `;
   setTimeout(() => {
@@ -7491,7 +7491,7 @@ function _wizStep2(c) {
         </div>`).join('')}
     </div>
     <div class="wiz-add-row">
-      <input class="wiz-input" id="wiz-dump-inp" type="text" placeholder="やることを入力…" oncompositionstart="_wizComposing=true" oncompositionend="_wizComposing=false;_wizCompositionEndTime=Date.now()" onkeydown="_wizDumpKeydown(event)">
+      <input class="wiz-input" id="wiz-dump-inp" type="text" placeholder="やることを入力…" oncompositionstart="_wizComposing=true" oncompositionend="_wizComposing=false;_wizJustComposed=true" onkeydown="_wizDumpKeydown(event)">
       <button class="wiz-add-btn" onclick="_wizAddItem()">追加</button>
     </div>
     ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", _wiz.items.length === 0)}
@@ -7505,10 +7505,11 @@ function _wizStep2(c) {
 function _wizDumpKeydown(e) {
   if (e.key !== 'Enter') return;
   e.preventDefault();
+  if (_wizJustComposed) { _wizJustComposed = false; return; }
   if (e.shiftKey) {
     const next = document.getElementById('wiz-next');
     if (next && !next.disabled) next.click();
-  } else if (!_wizComposing && Date.now() - _wizCompositionEndTime > 50) {
+  } else {
     _wizAddItem();
   }
 }
