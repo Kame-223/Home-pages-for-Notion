@@ -7443,6 +7443,7 @@ async function renderProjectDetail(pid) {
 
 // ===== PROJECT WIZARD =====
 let _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
+let _wizComposing = false;
 
 function openWizard() {
   _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
@@ -7506,7 +7507,7 @@ function _wizStep2(c) {
         </div>`).join('')}
     </div>
     <div class="wiz-add-row">
-      <input class="wiz-input" id="wiz-dump-inp" type="text" placeholder="やることを入力…" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_wizAddItem()}">
+      <input class="wiz-input" id="wiz-dump-inp" type="text" placeholder="やることを入力…" oncompositionstart="_wizComposing=true" oncompositionend="_wizComposing=false" onkeydown="_wizDumpKeydown(event)">
       <button class="wiz-add-btn" onclick="_wizAddItem()">追加</button>
     </div>
     ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", _wiz.items.length === 0)}
@@ -7517,15 +7518,22 @@ function _wizStep2(c) {
   }, 50);
 }
 
+function _wizDumpKeydown(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if (e.shiftKey) {
+    const next = document.getElementById('wiz-next');
+    if (next && !next.disabled) next.click();
+  } else if (!_wizComposing) {
+    _wizAddItem();
+  }
+}
+
 function _wizAddItem() {
   const inp = document.getElementById('wiz-dump-inp');
   if (!inp) return;
   const v = inp.value.trim();
-  if (!v) {
-    const next = document.getElementById('wiz-next');
-    if (next && !next.disabled) next.click();
-    return;
-  }
+  if (!v) return;
   _wiz.items.push(v);
   _wiz.aiSorted = false;
   inp.value = '';
