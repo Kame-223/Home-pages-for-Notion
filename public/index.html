@@ -600,6 +600,8 @@ body::before {
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
+.content-grid.select-mode .fc-header-toolbar { margin-bottom: 0 !important; }
+.content-grid.select-mode .fc-timegrid-slot { height: 18px !important; }
 .content-grid.select-mode .cal-buf-top { height: 9px; }
 .content-grid.select-mode .cal-buf-bot { display: none; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
@@ -3053,7 +3055,7 @@ function renderFullCalendar() {
       return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
     },
     contentHeight: _initBodyH,
-    expandRows: true,
+    expandRows: false,
     nowIndicator: true,
     editable: true,
     eventResizableFromStart: true,
@@ -5648,15 +5650,15 @@ function applySModeCalLayout() {
   const overhead = sHdrH + fcToolbarH + fcColH + btmNavH;
   const h = Math.max(300, window.innerHeight - overhead);
   fcCalendar.setOption('contentHeight', h);
-  updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH);
+  updateOrbZoneOffsets(sHdrH + fcToolbarH + fcColH, btmNavH);
 }
 
-function updateOrbZoneOffsets(topOffset) {
+function updateOrbZoneOffsets(topOffset, bottomOffset) {
   if (currentMode !== 'select') return;
   const orbCol = document.getElementById('s-orb-col');
   if (!orbCol) return;
-  // カレンダーの時間グリッド開始位置に合わせて上部余白をセット
   orbCol.style.paddingTop = (topOffset || 0) + 'px';
+  orbCol.style.paddingBottom = (bottomOffset || 0) + 'px';
 }
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
@@ -5767,8 +5769,8 @@ function setMode(mode) {
   if (fcCalendar) {
     if (isSelect) {
       fcCalendar.batchRendering(() => {
-        fcCalendar.setOption('expandRows', true);
-        fcCalendar.setOption('slotMinTime', '05:30:00');
+        fcCalendar.setOption('expandRows', false);
+        fcCalendar.setOption('slotMinTime', '06:00:00');
         fcCalendar.setOption('slotMaxTime', '24:30:00');
         fcCalendar.setOption('slotDuration', '00:30:00');
         fcCalendar.setOption('slotLabelInterval', '00:30:00');
