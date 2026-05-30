@@ -583,8 +583,8 @@ body::before {
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
-.content-grid.select-mode .cal-buf-top,
-.content-grid.select-mode .cal-buf-bot { display: none !important; }
+.content-grid.select-mode .cal-buf-top { height: 9px; }
+.content-grid.select-mode .cal-buf-bot { display: none; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
@@ -2686,7 +2686,9 @@ function setupHighlightClipping() {
     const hl = colBg.querySelector('.fc-highlight');
     if (!hl) return;
     const frameH = frame.offsetHeight;
-    const topBuf = 18, botBuf = 27;
+    const inSelect = document.querySelector('.content-grid')?.classList.contains('select-mode');
+    const topBuf = inSelect ? 9 : 18;
+    const botBuf = inSelect ? 0 : 27;
     const hlTop = parseFloat(hl.style.top) || 0;
     const hlH = parseFloat(hl.style.height) || 0;
     const ct = Math.max(0, topBuf - hlTop);
@@ -2830,7 +2832,7 @@ function renderFullCalendar() {
     selectable: true,
     unselectAuto: false,
     allDaySlot: false,
-    slotMinTime: '06:00:00',
+    slotMinTime: '05:30:00',
     slotMaxTime: '24:30:00',
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     slotDuration: '00:30:00',
@@ -5529,13 +5531,14 @@ function setMode(mode) {
     if (isSelect) {
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('expandRows', true);
-        fcCalendar.setOption('slotMinTime', '06:00:00');
+        fcCalendar.setOption('slotMinTime', '05:30:00');
         fcCalendar.setOption('slotMaxTime', '24:30:00');
         fcCalendar.setOption('slotDuration', '00:30:00');
         fcCalendar.setOption('slotLabelInterval', '00:30:00');
       });
       requestAnimationFrame(() => { addFcExpandBtns(); applySModeCalLayout(); });
       requestAnimationFrame(addCalBufferOverlays);
+      requestAnimationFrame(setupHighlightClipping);
     } else {
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('expandRows', false);
