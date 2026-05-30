@@ -1962,6 +1962,13 @@ body::before {
 .wiz-finish-btn { background: #1d9e75; }
 .wiz-finish-btn:hover { background: #25b887; }
 .wiz-saving { font-size: 13px; color: var(--text-dim); }
+.wiz-ai-loading { display: flex; justify-content: center; align-items: center; padding: 40px 0; }
+.wiz-ai-spinner {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 3px solid var(--border2); border-top-color: var(--purple);
+  animation: wiz-spin 0.8s linear infinite;
+}
+@keyframes wiz-spin { to { transform: rotate(360deg); } }
 
 /* ===== PROJECT PAGE ===== */
 #project-content { display: none; padding: 16px 20px; }
@@ -7435,10 +7442,10 @@ async function renderProjectDetail(pid) {
 }
 
 // ===== PROJECT WIZARD =====
-let _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[] };
+let _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
 
 function openWizard() {
-  _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[] };
+  _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
   document.getElementById('wizard-overlay').classList.add('open');
   _renderWiz();
 }
@@ -7516,6 +7523,7 @@ function _wizAddItem() {
   const v = inp.value.trim();
   if (!v) return;
   _wiz.items.push(v);
+  _wiz.aiSorted = false;
   inp.value = '';
   _renderWiz();
   setTimeout(() => {
@@ -7526,15 +7534,24 @@ function _wizAddItem() {
 
 function _wizDelItem(i) {
   _wiz.items.splice(i, 1);
+  _wiz.aiSorted = false;
   _renderWiz();
 }
 
 function _wizStep3(c) {
-  // Sync sort arrays with current items
   _wiz.milestones = _wiz.milestones.filter(m => _wiz.items.includes(m.text));
   _wiz.tasks      = _wiz.tasks.filter(t => _wiz.items.includes(t.text));
-  const sorted = new Set([..._wiz.milestones.map(m=>m.text), ..._wiz.tasks.map(t=>t.text)]);
-  const unsorted = _wiz.items.filter(it => !sorted.has(it));
+
+  if (!_wiz.aiSorted) {
+    c.innerHTML = `
+      <div class="wiz-heading">📂 AIが仕分け中…</div>
+      <div class="wiz-sub">ゴールと吐き出しを分析しています</div>
+      <div class="wiz-ai-loading"><div class="wiz-ai-spinner"></div></div>
+      ${_wizActions(true, '次へ →', '', true)}
+    `;
+    _wizAiSort();
+    return;
+  }
 
   const rowHtml = (it) => {
     const isMile = _wiz.milestones.some(m => m.text === it);
@@ -7548,13 +7565,66 @@ function _wizStep3(c) {
     </div>`;
   };
 
-  const allSorted = _wiz.items.every(it => sorted.has(it));
+  const allSorted = _wiz.items.every(it =>
+    _wiz.milestones.some(m=>m.text===it) || _wiz.tasks.some(t=>t.text===it)
+  );
   c.innerHTML = `
-    <div class="wiz-heading">📂 それぞれを分類する</div>
-    <div class="wiz-sub">マイルストーン＝目標・締切のある中間ゴール　タスク＝具体的な作業</div>
+    <div class="wiz-heading">📂 AIの仕分けを確認する</div>
+    <div class="wiz-sub">AIの提案を修正できます。マイルストーン＝目標・段階　タスク＝具体的作業</div>
     <div class="wiz-items" style="max-height:280px;overflow-y:auto">${_wiz.items.map(rowHtml).join('')}</div>
     ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", !allSorted)}
   `;
+}
+
+async function _wizAiSort() {
+  try {
+    const prompt = `以下のプロジェクトのゴールと吐き出しリストを、マイルストーンとタスクに仕分けてください。
+
+ゴール: ${_wiz.goal}
+
+吐き出しリスト:
+${_wiz.items.map((it,i) => `${i+1}. ${it}`).join('\n')}
+
+マイルストーンは「達成すべき中間目標・段階（締切を設けるべきもの）」、タスクは「具体的な作業」です。
+吐き出しリストの全項目をいずれかに必ず含め、以下のJSON形式のみで返してください（説明文不要）:
+{"milestones":["..."],"tasks":["..."]}`;
+
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], max_tokens: 512 }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || String(res.status));
+
+    const text = data.content?.[0]?.text || '';
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('レスポンスを解析できませんでした');
+
+    const parsed = JSON.parse(m[0]);
+    const miles = Array.isArray(parsed.milestones) ? parsed.milestones : [];
+    const tasks  = Array.isArray(parsed.tasks)      ? parsed.tasks      : [];
+
+    _wiz.milestones = miles.filter(t => _wiz.items.includes(t)).map(t => ({ text: t, date: '' }));
+    _wiz.tasks      = tasks.filter(t  => _wiz.items.includes(t)).map(t => ({ text: t, milestoneText: '' }));
+
+    // AIが漏らした項目はタスクに
+    const classified = new Set([..._wiz.milestones.map(m=>m.text), ..._wiz.tasks.map(t=>t.text)]);
+    _wiz.items.filter(it => !classified.has(it)).forEach(it => _wiz.tasks.push({ text: it, milestoneText: '' }));
+  } catch(e) {
+    // 失敗時は全項目タスクとしてフォールバック
+    _wiz.tasks = _wiz.items.map(t => ({ text: t, milestoneText: '' }));
+    _wiz.milestones = [];
+    const c = document.getElementById('wiz-content');
+    if (c) {
+      const err = document.createElement('div');
+      err.style.cssText = 'font-size:12px;color:var(--red);margin-bottom:8px';
+      err.textContent = `AI分析に失敗しました（${e.message}）。手動で仕分けてください。`;
+      c.prepend(err);
+    }
+  }
+  _wiz.aiSorted = true;
+  _renderWiz();
 }
 
 function _wizSetType(type, text) {
