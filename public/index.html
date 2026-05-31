@@ -388,9 +388,9 @@ body::before {
   border-radius: 6px; transition: background .15s;
   cursor: pointer;
 }
-.jk-zone[data-jk="朝"] { flex: 6.75; }
+.jk-zone[data-jk="朝"] { flex: 7; }
 .jk-zone[data-jk="昼"] { flex: 5; }
-.jk-zone[data-jk="夜"] { flex: 6.75; }
+.jk-zone[data-jk="夜"] { flex: 6.5; }
 .jk-zone.zone-drag-over {
   background: rgba(255,255,255,0.13);
 }
@@ -5726,7 +5726,7 @@ function updateOrbZoneOffsets(topOffset, bottomOffset) {
   // 朝=8:30, 昼=15:00 の位置に玉を合わせる（padding-bottomで重心をずらす）
   // orb中心 = (zoneH - pb) / 2 → pb = (asaSlots - desiredSlots*2) * slotPx
   const asaDesiredSlots  = (8.5 * 60 - minMin) / 30; // 8:30 から slotMin までのスロット数
-  const hiruDesiredSlots = (15  * 60 - 13 * 60) / 30; // 15:00 から昼start までのスロット数
+  const hiruDesiredSlots = 3.75; // 14:52 基準（朝↔昼・昼↔夜のギャップを均等化）
   const asaPb  = Math.max(0, (asaSlots  - asaDesiredSlots  * 2) * slotPx);
   const hiruPb = Math.max(0, (hiruSlots - hiruDesiredSlots * 2) * slotPx);
   if (asaZone)  { asaZone.style.height  = (asaSlots  * slotPx) + 'px'; asaZone.style.flex  = 'none'; asaZone.style.paddingBottom  = asaPb  + 'px'; }
