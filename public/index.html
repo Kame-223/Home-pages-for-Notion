@@ -7249,21 +7249,25 @@ function _tdDown(e){
   if(_tdOk||dragId)return;
   _tdContainerId = 'today-tasks';
   _tdXY={x:e.clientX,y:e.clientY};
-  const timer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),100);
+  let released = false;
+  const timer=setTimeout(()=>{ if(!released) _tdStart(id,card,e.clientX,e.clientY); },100);
   _tdTimer=timer;
   const cancel=()=>{
+    released=true;
     clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null;
     card.removeEventListener('pointerup',cancel);
     card.removeEventListener('pointercancel',cancel);
     document.removeEventListener('pointerup',docCancel);
   };
-  const docCancel=()=>{ clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null; };
+  const docCancel=()=>{ released=true; clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null; };
   card.addEventListener('pointerup',cancel,{once:true});
   card.addEventListener('pointercancel',cancel,{once:true});
   document.addEventListener('pointerup',docCancel,{once:true});
 }
 
 function _tdStart(id,card,cx,cy){
+  // 念のため既存の残留ゴーストを除去
+  if(_tdGhost){_tdGhost.remove();_tdGhost=null;}
   _tdOk=true;_tdId=id;
   dragId=id; dragEl=card;
   const task=allTasks.find(t=>t.id===id);
@@ -7353,6 +7357,16 @@ function _tdClean(){
   document.removeEventListener('pointerup',_tdEnd);
   document.removeEventListener('pointercancel',_tdClean);
 }
+
+// 新しいpointerdown時に残留ゴーストを強制除去（フォールセーフ）
+document.addEventListener('pointerdown', () => {
+  if (!_tdOk && _tdGhost) { _tdGhost.remove(); _tdGhost = null; }
+  if (!gtdDragActive && gtdDragGhost) { gtdDragGhost.remove(); gtdDragGhost = null; }
+}, true);
+// ページが非表示になった場合も強制クリーンアップ
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { _tdClean(); if(gtdDragGhost){finishGtdDrag(-9999,-9999);} }
+});
 
 function _tdOverOrb(x,y){
   for(const zone of document.querySelectorAll('.jk-zone')){
