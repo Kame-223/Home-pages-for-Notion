@@ -5674,7 +5674,7 @@ function applySModeCalLayout() {
     if (diff > 0) aboveFC = diff;
   }
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
-  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH + 20); // +20px で24:00ラベルをbufferの上に余裕をもって表示
+  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // スロット37本+colHeader、24:00ラベルはbufferの上に収まる
   updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
