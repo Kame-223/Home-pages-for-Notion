@@ -2157,6 +2157,57 @@ body::before {
 }
 .task-card.gtd-dragging { opacity: 0.3; transition: opacity .15s; }
 
+/* GTDスロットヘッダー */
+.gtd-slot-header {
+  padding: 8px 12px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
+  color: var(--text-sub);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  background: rgba(13,13,26,0.5);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+/* PROJECTミニグリッド */
+.proj-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px;
+}
+.proj-mini-card {
+  border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 10px 6px;
+  font-size: 11px; color: var(--text);
+  cursor: pointer; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: rgba(255,255,255,0.03);
+  transition: background .15s;
+}
+.proj-mini-card:hover { background: rgba(255,255,255,0.08); }
+.proj-mini-card.active { background: rgba(127,119,221,0.15); border-color: rgba(127,119,221,0.4); }
+.proj-mini-more-btn {
+  width: 100%; padding: 8px;
+  background: none; border: none;
+  border-top: 0.5px solid rgba(255,255,255,0.08);
+  color: var(--text-dim); font-size: 11px; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.proj-mini-more-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-sub); }
+/* タスクページ プロジェクト展開（左パネル） */
+.proj-left-ms { margin-bottom: 14px; }
+.proj-left-ms-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0 4px;
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  margin-bottom: 4px;
+}
+.proj-left-ms-name { font-size: 11px; font-weight: 600; color: var(--text-sub); letter-spacing: 0.05em; }
+.proj-left-ms-date { font-size: 10px; color: var(--text-dim); }
+.proj-left-task { padding: 3px 6px; font-size: 12px; color: var(--text); line-height: 1.5; border-radius: 4px; }
+.proj-left-task.done { color: var(--text-dim); text-decoration: line-through; }
+.proj-left-task-empty { padding: 3px 6px; font-size: 11px; color: var(--text-dim); }
+
 /* GTDボタン */
 .gtd-btn-wrap { position: relative; }
 .btn-gtd {
@@ -2188,6 +2239,8 @@ body::before {
 .gtd-opt-fire:hover { background: rgba(248,113,113,0.1); }
 .gtd-opt-trash { color: var(--text-dim); }
 .gtd-opt-trash:hover { background: rgba(255,255,255,0.05); }
+.gtd-opt-project { color: var(--purple); }
+.gtd-opt-project:hover { background: rgba(127,119,221,0.1); }
 
 /* 今日やること → カレンダー ドラッグ */
 .td-drag-ghost {
@@ -2403,58 +2456,28 @@ body::before {
   <div id="task-content">
     <div class="task-page-grid">
 
-      <!-- 左：INBOX -->
+      <!-- 左：展開パネル（デフォルト = INBOX） -->
       <div class="task-inbox-col" id="task-inbox-col-wrap">
-        <div class="task-toggle-header" onclick="toggleTaskSection('inbox')">
-          <span>📥 INBOX<span class="task-count" id="task-inbox-count"></span></span>
-          <span class="task-toggle-arrow open" id="inbox-arrow">▶</span>
+        <div class="task-toggle-header">
+          <span id="task-left-label">📥 INBOX</span>
         </div>
         <div class="task-section-body" id="task-inbox-list"><div class="loading">読み込み中...</div></div>
       </div>
 
-      <!-- 右：GTD分類 -->
+      <!-- 右：GTDスロット + PROJECT -->
       <div class="task-gtd-col">
 
-        <!-- 次やる -->
-        <div class="task-gtd-area" id="gtd-area-next" data-gtd="▶️ 次やる">
-          <div id="gtd-section-next" style="display:none" class="gtd-section-open">
-            <div class="gtd-section-header" onclick="toggleGtdArea('next')">
-              <span>▶️ 次やる<span class="task-count" id="task-next-count2"></span></span>
-              <span class="gtd-arrow" style="font-size:9px;color:var(--text-dim)">▶</span>
-            </div>
-            <div class="task-section-body" id="task-next-list" style="display:none"></div>
-          </div>
-          <div class="gtd-reveal-wrap" id="gtd-reveal-next">
-            <button class="gtd-reveal-btn" onclick="toggleGtdArea('next')">▶️ 次やるを表示<span class="task-count" id="task-next-count"></span></button>
-          </div>
-        </div>
+        <!-- 次やるスロット -->
+        <div class="task-gtd-area" id="gtd-slot-next" data-gtd="▶️ 次やる"></div>
 
-        <!-- 待ち -->
-        <div class="task-gtd-area" id="gtd-area-wait" data-gtd="📧 待ち">
-          <div id="gtd-section-wait" style="display:none" class="gtd-section-open">
-            <div class="gtd-section-header" onclick="toggleGtdArea('wait')">
-              <span>📧 待ち<span class="task-count" id="task-wait-count2"></span></span>
-              <span class="gtd-arrow" style="font-size:9px;color:var(--text-dim)">▶</span>
-            </div>
-            <div class="task-section-body" id="task-wait-list" style="display:none"></div>
-          </div>
-          <div class="gtd-reveal-wrap" id="gtd-reveal-wait">
-            <button class="gtd-reveal-btn" onclick="toggleGtdArea('wait')">📧 待ちを表示<span class="task-count" id="task-wait-count"></span></button>
-          </div>
-        </div>
+        <!-- 今じゃないスロット -->
+        <div class="task-gtd-area" id="gtd-slot-someday" data-gtd="💫今じゃない"></div>
 
-        <!-- 今じゃない -->
-        <div class="task-gtd-area" id="gtd-area-someday" data-gtd="💫今じゃない">
-          <div id="gtd-section-someday" style="display:none" class="gtd-section-open">
-            <div class="gtd-section-header" onclick="toggleGtdArea('someday')">
-              <span>💫 今じゃない<span class="task-count" id="task-someday-count2"></span></span>
-              <span class="gtd-arrow" style="font-size:9px;color:var(--text-dim)">▶</span>
-            </div>
-            <div class="task-section-body" id="task-someday-list" style="display:none"></div>
-          </div>
-          <div class="gtd-reveal-wrap" id="gtd-reveal-someday">
-            <button class="gtd-reveal-btn" onclick="toggleGtdArea('someday')">💫 今じゃないを表示<span class="task-count" id="task-someday-count"></span></button>
-          </div>
+        <!-- PROJECTミニパネル -->
+        <div class="task-gtd-area" id="gtd-slot-project" style="flex:none">
+          <div class="gtd-slot-header">PROJECT</div>
+          <div class="proj-mini-grid" id="proj-mini-grid"></div>
+          <button class="proj-mini-more-btn" id="proj-mini-more" style="display:none" onclick="toggleProjMini()"></button>
         </div>
 
       </div>
@@ -6679,22 +6702,33 @@ function showPage(page) {
 }
 
 // ===== タスクページ GTDエリア開閉 =====
-let taskGtdVisible = { next: false, wait: false, someday: false };
+let expandedGtdArea = null;   // null | 'next' | 'someday'
+let expandedProjectId = null; // プロジェクトID | null
+let projMiniExpanded = false;
 
-function toggleGtdArea(key) {
-  taskGtdVisible[key] = !taskGtdVisible[key];
+function toggleExpandGtd(key) {
+  if (expandedGtdArea === key) {
+    expandedGtdArea = null;
+  } else {
+    expandedGtdArea = key;
+    expandedProjectId = null;
+  }
   renderTaskPage();
 }
 
-// 旧API互換（他から呼ばれている場合のフォールバック）
-function toggleTaskSection(key) {
-  if (key in taskGtdVisible) { toggleGtdArea(key); return; }
-  const body = document.getElementById(`task-${key}-list`);
-  const arrow = document.getElementById(`${key}-arrow`);
-  if (!body) return;
-  body.classList.toggle('collapsed');
-  if (arrow) arrow.classList.toggle('open');
+function expandProjectInTask(id) {
+  if (expandedProjectId === id) {
+    expandedProjectId = null;
+  } else {
+    expandedProjectId = id;
+    expandedGtdArea = null;
+  }
+  renderTaskPage();
 }
+
+// 旧API互換
+function toggleGtdArea(key) { toggleExpandGtd(key); }
+function toggleTaskSection(key) { if (key === 'next' || key === 'someday') toggleExpandGtd(key); }
 
 // ===== GTDカード描画 =====
 function renderGtdCard(task) {
@@ -6738,8 +6772,8 @@ function renderGtdCard(task) {
   const gtdOpts = [
     ['📥 INBOX', 'gtd-opt'],
     ['▶️ 次やる', 'gtd-opt'],
-    ['📧 待ち', 'gtd-opt'],
     ['💫今じゃない', 'gtd-opt'],
+    ['🗂 PROJECT', 'gtd-opt gtd-opt-project'],
     ['🔥 今やる', 'gtd-opt gtd-opt-fire'],
     ['🗑ゴミ箱', 'gtd-opt gtd-opt-trash'],
   ].map(([val, cls]) =>
@@ -6866,60 +6900,147 @@ function renderTaskPage() {
 
   const inboxTasks   = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
   const nextTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '▶️ 次やる');
-  const waitTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '📧 待ち');
   const somedayTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '💫今じゃない');
 
-  const render = (el, tasks, emptyMsg) => {
-    if (!el) return;
-    el.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : `<div class="section-empty">${emptyMsg}</div>`;
-  };
+  const leftLabel = document.getElementById('task-left-label');
+  const leftList  = document.getElementById('task-inbox-list');
 
-  // INBOX は常時表示
-  const inboxEl = document.getElementById('task-inbox-list');
-  render(inboxEl, inboxTasks, 'INBOXは空です 🎉');
-  applyTaskListLimit(inboxEl, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
-
-  // GTDエリア：表示状態に応じてセクション切替
-  const gtdDefs = [
-    { key: 'next',    tasks: nextTasks,    emptyMsg: 'なし',
-      countId: 'task-next-count', count2Id: 'task-next-count2', listId: 'task-next-list' },
-    { key: 'wait',    tasks: waitTasks,    emptyMsg: 'なし',
-      countId: 'task-wait-count', count2Id: 'task-wait-count2', listId: 'task-wait-list' },
-    { key: 'someday', tasks: somedayTasks, emptyMsg: 'なし',
-      countId: 'task-someday-count', count2Id: 'task-someday-count2', listId: 'task-someday-list' },
-  ];
-
-  gtdDefs.forEach(({ key, tasks, emptyMsg, countId, count2Id, listId }) => {
-    const revealWrap  = document.getElementById(`gtd-reveal-${key}`);
-    const sectionDiv  = document.getElementById(`gtd-section-${key}`);
-    const listEl      = document.getElementById(listId);
-    const countEl     = document.getElementById(countId);
-    const count2El    = document.getElementById(count2Id);
-    const n = tasks.length;
-    const label = n ? `(${n})` : '';
-    if (countEl)  countEl.textContent  = label;
-    if (count2El) count2El.textContent = label;
-
-    const open = taskGtdVisible[key];
-    if (sectionDiv) { sectionDiv.style.display = ''; sectionDiv.style.flex = open ? '1' : '0 0 auto'; }
-    if (revealWrap) revealWrap.style.display = open ? 'none' : '';
-    const arrowEl = sectionDiv?.querySelector('.gtd-arrow');
-    if (arrowEl) arrowEl.textContent = open ? '▼' : '▶';
-    if (open) {
-      if (listEl) listEl.style.display = '';
-      if (key === 'next') {
-        if (listEl) listEl.innerHTML = tasks.length ? groupByArea(tasks, renderGtdCard) : `<div class="section-empty">${emptyMsg}</div>`;
-        applyTaskListLimit(listEl, taskNextExpanded, 'expandTaskNext', 'collapseTaskNext');
-      } else {
-        render(listEl, tasks, emptyMsg);
-      }
+  if (expandedProjectId) {
+    // プロジェクト展開
+    if (!_projCache || !_msCache) {
+      if (leftLabel) leftLabel.innerHTML = '🗂 読み込み中...';
+      if (leftList) leftList.innerHTML = '<div class="section-empty">読み込み中...</div>';
+      Promise.all([_loadProjects(), _loadMilestones()]).then(() => renderTaskPage());
     } else {
-      if (listEl) { listEl.style.display = 'none'; listEl.innerHTML = ''; }
+      const proj = _projCache.find(p => p.id === expandedProjectId);
+      const name = proj ? (getProp(proj,'Name') || '無題') : '無題';
+      if (leftLabel) leftLabel.innerHTML = `🗂 ${name}`;
+      if (leftList) leftList.innerHTML = _buildProjectLeftHtml(expandedProjectId);
     }
+  } else if (expandedGtdArea === 'next') {
+    if (leftLabel) leftLabel.innerHTML = `▶️ 次やる<span class="task-count">${nextTasks.length ? `(${nextTasks.length})` : ''}</span>`;
+    if (leftList) {
+      leftList.innerHTML = nextTasks.length
+        ? groupByArea(nextTasks, renderGtdCard)
+        : '<div class="section-empty">なし</div>';
+      applyTaskListLimit(leftList, taskNextExpanded, 'expandTaskNext', 'collapseTaskNext');
+    }
+  } else if (expandedGtdArea === 'someday') {
+    if (leftLabel) leftLabel.innerHTML = `💫 今じゃない<span class="task-count">${somedayTasks.length ? `(${somedayTasks.length})` : ''}</span>`;
+    if (leftList) leftList.innerHTML = somedayTasks.length
+      ? somedayTasks.map(renderGtdCard).join('')
+      : '<div class="section-empty">なし</div>';
+  } else {
+    if (leftLabel) leftLabel.innerHTML = `📥 INBOX<span class="task-count">${inboxTasks.length ? `(${inboxTasks.length})` : ''}</span>`;
+    if (leftList) {
+      leftList.innerHTML = inboxTasks.length
+        ? inboxTasks.map(renderGtdCard).join('')
+        : '<div class="section-empty">INBOXは空です 🎉</div>';
+      applyTaskListLimit(leftList, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
+    }
+  }
+
+  // 右スロット
+  _renderGtdSlot('gtd-slot-next',
+    expandedGtdArea === 'next'
+      ? { label: '📥 INBOX', n: inboxTasks.length, key: 'next' }
+      : { label: '▶️ 次やる', n: nextTasks.length,  key: 'next' }
+  );
+  _renderGtdSlot('gtd-slot-someday',
+    expandedGtdArea === 'someday'
+      ? { label: '📥 INBOX', n: inboxTasks.length, key: 'someday' }
+      : { label: '💫 今じゃない', n: somedayTasks.length, key: 'someday' }
+  );
+
+  _renderProjMini();
+  requestAnimationFrame(initGtdDrag);
+}
+
+function _renderGtdSlot(slotId, { label, n, key }) {
+  const el = document.getElementById(slotId);
+  if (!el) return;
+  el.innerHTML = `
+    <div class="gtd-slot-header">${label}</div>
+    <div class="gtd-reveal-wrap">
+      <button class="gtd-reveal-btn" onclick="toggleExpandGtd('${key}')">展開（${n}件）</button>
+    </div>`;
+}
+
+function _renderProjMini() {
+  const grid = document.getElementById('proj-mini-grid');
+  const moreBtn = document.getElementById('proj-mini-more');
+  if (!grid) return;
+  if (!_projCache) {
+    grid.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--text-dim)">読み込み中...</div>';
+    _loadProjects().then(() => _renderProjMini());
+    return;
+  }
+  const show = projMiniExpanded ? _projCache : _projCache.slice(0, 3);
+  const remaining = _projCache.length - 3;
+  grid.innerHTML = show.map(p => {
+    const name = getProp(p,'Name') || '無題';
+    const active = expandedProjectId === p.id;
+    return `<div class="proj-mini-card${active ? ' active' : ''}" onclick="expandProjectInTask('${p.id}')">${name}</div>`;
+  }).join('');
+  if (moreBtn) {
+    if (remaining > 0 && !projMiniExpanded) {
+      moreBtn.textContent = `もっと表示（${remaining}件）`;
+      moreBtn.style.display = '';
+    } else {
+      moreBtn.style.display = 'none';
+    }
+  }
+}
+
+function toggleProjMini() {
+  projMiniExpanded = !projMiniExpanded;
+  _renderProjMini();
+}
+
+function _buildProjectLeftHtml(pid) {
+  const idNorm = pid.replace(/-/g,'');
+  const pTasks = (allTasks||[]).filter(t => {
+    const rel = getProp(t,'プロジェクト');
+    return Array.isArray(rel) && rel.some(r => r.replace(/-/g,'') === idNorm || r === pid);
+  });
+  const pMs = (_msCache||[])
+    .filter(m => (getProp(m,'プロジェクト')||[]).some(r => r.replace(/-/g,'')=== idNorm || r === pid))
+    .sort((a,b) => (getProp(a,'日付')||'9999').localeCompare(getProp(b,'日付')||'9999'));
+
+  const byMs = {}; const unattached = [];
+  pTasks.forEach(t => {
+    const mRel = getProp(t,'マイルストーン');
+    if (Array.isArray(mRel) && mRel.length > 0) {
+      mRel.forEach(mid => { const k = mid.replace(/-/g,''); (byMs[k]||(byMs[k]=[])).push(t); });
+    } else { unattached.push(t); }
   });
 
-  // ドラッグ初期化（描画後）
-  requestAnimationFrame(initGtdDrag);
+  const taskItem = t => {
+    const done = taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+    return `<div class="proj-left-task${done?' done':''} ">・${getProp(t,'タイトル')||'無題'}</div>`;
+  };
+
+  let html = '';
+  pMs.forEach(m => {
+    const mTasks = byMs[m.id.replace(/-/g,'')] || [];
+    const mDate = getProp(m,'日付');
+    html += `<div class="proj-left-ms">
+      <div class="proj-left-ms-header">
+        <span class="proj-left-ms-name">${getProp(m,'Name')||'無題'}</span>
+        ${mDate ? `<span class="proj-left-ms-date">${mDate.slice(5)}</span>` : ''}
+      </div>
+      <div class="proj-left-ms-tasks">
+        ${mTasks.length ? mTasks.map(taskItem).join('') : '<div class="proj-left-task-empty">タスクなし</div>'}
+      </div>
+    </div>`;
+  });
+  if (unattached.length) {
+    html += `<div class="proj-left-ms">
+      <div class="proj-left-ms-header"><span class="proj-left-ms-name">未分類</span></div>
+      <div class="proj-left-ms-tasks">${unattached.map(taskItem).join('')}</div>
+    </div>`;
+  }
+  return html || '<div class="section-empty">タスクなし</div>';
 }
 
 // ===== タスクページ ドラッグ&ドロップ =====
@@ -6927,9 +7048,8 @@ let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragActive = fal
 
 const GTD_DROP_AREAS = [
   { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
-  { elId: 'gtd-area-next',    gtdVal: '▶️ 次やる' },
-  { elId: 'gtd-area-wait',    gtdVal: '📧 待ち' },
-  { elId: 'gtd-area-someday', gtdVal: '💫今じゃない' },
+  { elId: 'gtd-slot-next',    gtdVal: '▶️ 次やる' },
+  { elId: 'gtd-slot-someday', gtdVal: '💫今じゃない' },
 ];
 
 function initGtdDrag() {
@@ -7774,8 +7894,8 @@ async function _wizFinish() {
         <div class="gtd-dropdown" id="edit-gtd-dd">
           <div class="gtd-opt" onclick="selectEditGtd('📥 INBOX')">📥 INBOX</div>
           <div class="gtd-opt" onclick="selectEditGtd('▶️ 次やる')">▶️ 次やる</div>
-          <div class="gtd-opt" onclick="selectEditGtd('📧 待ち')">📧 待ち</div>
           <div class="gtd-opt" onclick="selectEditGtd('💫今じゃない')">💫今じゃない</div>
+          <div class="gtd-opt gtd-opt-project" onclick="selectEditGtd('🗂 PROJECT')">🗂 PROJECT</div>
           <div class="gtd-opt gtd-opt-fire" onclick="selectEditGtd('🔥 今やる')">🔥 今やる</div>
           <div class="gtd-opt gtd-opt-trash" onclick="selectEditGtd('🗑ゴミ箱')">🗑ゴミ箱</div>
         </div>
