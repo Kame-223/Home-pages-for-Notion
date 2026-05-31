@@ -603,7 +603,9 @@ body::before {
 .content-grid.select-mode .cal-buf-top { height: 9px; }
 .content-grid.select-mode .cal-buf-bot { height: 20px; }
 .content-grid.select-mode #fc-container .fc-view-harness,
-.content-grid.select-mode #fc-container .fc-scroller { background: transparent !important; }
+.content-grid.select-mode #fc-container .fc-scroller,
+.content-grid.select-mode #fc-container .fc-timegrid-body,
+.content-grid.select-mode #fc-container .fc-scrollgrid-sync-table { background: transparent !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
@@ -5661,12 +5663,8 @@ function applySModeCalLayout() {
     const diff = fcScrollgrid.getBoundingClientRect().top - schedSticky.getBoundingClientRect().top;
     if (diff > 0) aboveFC = diff;
   }
-  const fcContentH = 20 * 37 + fcColH; // 24:30ぴったり
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
-  fcCalendar.setOption('contentHeight', fcContentH);
-  // fc-container を contentHeight でクリップして 24:30 以降の白をカット
-  const fcContainer = document.getElementById('fc-container');
-  if (fcContainer) { fcContainer.style.maxHeight = fcContentH + 'px'; fcContainer.style.overflow = 'hidden'; }
+  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // 24:30ぴったり
   updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
