@@ -5090,10 +5090,11 @@ function handlePanelClick(panel) {
   if (currentMode !== 'select' || focusedPanel === panel) return;
   focusedPanel = panel;
   renderAll();
-  requestAnimationFrame(() => {
+  // 2rAF: star-hidden解除→ブラウザlayout確定→位置計算の順を保証
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     if (panel === 'next') { resetStarAnchor(); updateStarFollow(); }
     else updateStarFollow();
-  });
+  }));
 }
 function resetStarAnchor() {
   const leftoverEl = document.getElementById('leftover-panel');
@@ -5118,6 +5119,9 @@ function updateStarFollow() {
     btn.style.position = ''; btn.style.top = ''; btn.style.left = '';
     return;
   }
+  // カラムのレイアウトが未確定（display:none解除直後など）の場合は待つ
+  const colRect = sStarCol.getBoundingClientRect();
+  if (colRect.width === 0) return;
   if (_starAnchorScrollY === null) resetStarAnchor();
   const headerH = 62;
   const btnH = btn.offsetHeight || 68;
@@ -5137,7 +5141,6 @@ function updateStarFollow() {
   const tbBottom = todayBoardEl ? todayBoardEl.getBoundingClientRect().bottom : window.innerHeight;
   const maxTop = Math.max(minTop, tbBottom - btnH - margin);
   const clamped = Math.min(Math.max(rawTop, minTop), maxTop);
-  const colRect = sStarCol.getBoundingClientRect();
   const colCenterX = colRect.left + colRect.width / 2;
   btn.style.position = 'fixed';
   btn.style.top = clamped + 'px';
