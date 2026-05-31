@@ -6875,6 +6875,7 @@ let overlayInboxShown = false;
 let overlayInboxExpanded = false;
 let overlayProjectId = null;
 let projMiniExpanded = false;
+let _rightColHSet = false;
 
 function openOverlay(key) {
   overlayMode = key;
@@ -7198,17 +7199,15 @@ function renderTaskPage() {
 }
 
 function _updateRightColH() {
+  if (_rightColHSet) return;
   const col = document.getElementById('task-gtd-col');
   const nav = document.querySelector('.bottom-nav');
   if (!col || !nav) return;
   const colTop = col.getBoundingClientRect().top;
   const navTop = nav.getBoundingClientRect().top;
-  const h = navTop - colTop - 12; // 12px = bottom gap
-  if (h > 60) col.style.height = h + 'px';
+  const h = navTop - colTop - 12;
+  if (h > 60) { col.style.height = h + 'px'; _rightColHSet = true; }
 }
-window.addEventListener('resize', () => {
-  if (document.getElementById('task-content')?.style.display !== 'none') _updateRightColH();
-});
 
 function _renderProjMini() {
   const grid = document.getElementById('proj-mini-grid');
