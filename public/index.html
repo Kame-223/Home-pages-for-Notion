@@ -7303,7 +7303,13 @@ function _tdMove(e){
     dragTargetJK=null;
   }else{
     delete _tdGhost.dataset.time;
-    updateInsertLine(e.clientY, _tdContainerId);
+    const _cont = document.getElementById(_tdContainerId);
+    const _r = _cont?.getBoundingClientRect();
+    if(_r && e.clientX >= _r.left && e.clientX <= _r.right && e.clientY >= _r.top && e.clientY <= _r.bottom){
+      updateInsertLine(e.clientY, _tdContainerId);
+    }else{
+      document.querySelectorAll('.drag-insert-line').forEach(el=>el.remove());
+    }
   }
 }
 
