@@ -2070,7 +2070,7 @@ body::before {
 .task-gtd-col {
   display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 12px; align-self: start;
-  height: calc(100vh - 78px); /* JS で上書きされる */
+  height: calc(100vh - 76px);
 }
 .task-section {
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -6875,7 +6875,6 @@ let overlayInboxShown = false;
 let overlayInboxExpanded = false;
 let overlayProjectId = null;
 let projMiniExpanded = false;
-let _rightColHSet = false;
 
 function openOverlay(key) {
   overlayMode = key;
@@ -7195,18 +7194,7 @@ function renderTaskPage() {
   // オーバーレイが開いていれば内容も更新
   if (overlayMode) _renderOverlay();
 
-  requestAnimationFrame(() => { _updateRightColH(); initGtdDrag(); });
-}
-
-function _updateRightColH() {
-  if (_rightColHSet) return;
-  const col = document.getElementById('task-gtd-col');
-  const nav = document.querySelector('.bottom-nav');
-  if (!col || !nav) return;
-  const colTop = col.getBoundingClientRect().top;
-  const navTop = nav.getBoundingClientRect().top;
-  const h = navTop - colTop - 12;
-  if (h > 60) { col.style.height = h + 'px'; _rightColHSet = true; }
+  requestAnimationFrame(() => { initGtdDrag(); });
 }
 
 function _renderProjMini() {
