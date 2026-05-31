@@ -4640,10 +4640,11 @@ function renderAll() {
     if (s?.pinned && s?.pinnedSessionDate && s.pinnedSessionDate < currentSession) leftoverSet.add(t.id);
   });
   const leftover = allTasks.filter(t => leftoverSet.has(t.id));
-  // 持ち越しタスクの時間帯設定をリセット
+  // 持ち越しタスクの時間帯設定をリセット（今日のセッションでピン済みのタスクは除外）
   let _jkReset = false;
   leftover.forEach(t => {
     const s = taskState[t.id];
+    if (s?.pinnedSessionDate === currentSession) return;
     if (s?.jikantai) {
       s.jikantai = null;
       notionUpdate(t.id, {'実行時間帯': {select: null}}).catch(console.error);
@@ -7615,17 +7616,20 @@ function _bunbunDown(e){
   const id=card.id.replace(/^tc-/,'');
   if(!id||taskState[id]?.done)return;
   if(_tdOk||dragId)return;
+  e.stopPropagation(); // today-tasksの_tdDownと二重起動しないよう伝播を止める
   _tdContainerId='bunbun-list';
   _tdXY={x:e.clientX,y:e.clientY};
-  const timer=setTimeout(()=>_tdStart(id,card,e.clientX,e.clientY),100);
+  let released=false;
+  const timer=setTimeout(()=>{ if(!released) _tdStart(id,card,e.clientX,e.clientY); },100);
   _tdTimer=timer;
   const cancel=()=>{
+    released=true;
     clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null;
     card.removeEventListener('pointerup',cancel);
     card.removeEventListener('pointercancel',cancel);
     document.removeEventListener('pointerup',docCancel);
   };
-  const docCancel=()=>{ clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null; };
+  const docCancel=()=>{ released=true; clearTimeout(timer);if(_tdTimer===timer)_tdTimer=null; };
   card.addEventListener('pointerup',cancel,{once:true});
   card.addEventListener('pointercancel',cancel,{once:true});
   document.addEventListener('pointerup',docCancel,{once:true});
