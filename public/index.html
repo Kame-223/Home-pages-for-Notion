@@ -1167,24 +1167,13 @@ body::before {
 .card-lower { border-radius: 0 0 12px 12px; transition: background .2s; }
 .task-card.imp .card-lower { background: rgba(220,20,20,0.55); padding: 8px 14px 11px; margin: 0 -14px -11px; }
 .task-card.imp { border-color: rgba(220,20,20,0.7); }
-/* ===== 想定時間タイプ選択 ===== */
-.time-type-wrap { display: flex; gap: 3px; }
-.time-type-btn {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.03em;
-  padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 0.5px solid transparent;
-  opacity: 0.38; transition: opacity .15s; font-family: 'JetBrains Mono', monospace;
-}
-.time-type-btn:active { transform: scale(.92); }
-.time-type-btn.tt-quick  { background: rgba(34,197,94,0.2);  color: #86efac; border-color: rgba(34,197,94,0.4); }
-.time-type-btn.tt-normal { background: rgba(234,179,8,0.2);  color: #fde047; border-color: rgba(234,179,8,0.4); }
-.time-type-btn.tt-heavy  { background: rgba(220,38,38,0.2);  color: #fca5a5; border-color: rgba(220,38,38,0.4); }
-.time-type-btn.active { opacity: 1; }
-.time-type-btn.tt-quick.active  { background: rgba(34,197,94,0.4); }
-.time-type-btn.tt-normal.active { background: rgba(234,179,8,0.4); }
-.time-type-btn.tt-heavy.active  { background: rgba(220,38,38,0.4); }
+/* ===== 想定時間タイプ ===== */
 .task-card.tt-quick  { background: rgba(34,197,94,0.07); }
 .task-card.tt-normal { background: rgba(234,179,8,0.07); }
 .task-card.tt-heavy  { background: rgba(220,38,38,0.07); }
+.time-val.tt-quick  { color: #86efac; background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.4); min-width: 44px; }
+.time-val.tt-normal { color: #fde047; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.4); min-width: 44px; }
+.time-val.tt-heavy  { color: #fca5a5; background: rgba(220,38,38,0.2); border-color: rgba(220,38,38,0.4); min-width: 44px; }
 .tag-imp-dl { background: rgba(220,20,20,0.75); color: #fff; border: 0.5px solid rgba(255,60,60,0.9); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.02em; }
 /* Importantトグルスイッチ */
 .imp-switch-wrap { display: flex; align-items: center; gap: 7px; }
@@ -4397,9 +4386,12 @@ function renderCard(task, mode='today') {
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
   const ttCls = s.timeType ? `tt-${s.timeType.toLowerCase()}` : '';
-  const timeTypeHtml = ['Quick','Normal','Heavy'].map(t =>
-    `<button class="time-type-btn tt-${t.toLowerCase()} ${s.timeType===t?'active':''}" onclick="setTimeType('${id}','${t}')">${t}</button>`
-  ).join('');
+  const ttValCls = s.timeType ? ` tt-${s.timeType.toLowerCase()}` : '';
+  const timeTypeHtml = `<div class="time-wrap">
+    <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
+    <span class="time-val${ttValCls}" id="tv-${id}">${s.timeType||'—'}</span>
+    <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
+  </div>`;
 
   const effectiveArea = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
@@ -4443,7 +4435,7 @@ function renderCard(task, mode='today') {
       </div>
       <div style="position:relative">
         <div class="task-bottom">
-          <div class="time-type-wrap">${timeTypeHtml}</div>
+          ${timeTypeHtml}
           ${subtaskToggleHtml(id)}
         </div>
         ${linkPillsHtml}
@@ -4472,7 +4464,7 @@ function renderCard(task, mode='today') {
     </div>
     <div style="position:relative">
       <div class="task-bottom" style="position:relative">
-        <div class="time-type-wrap">${timeTypeHtml}</div>
+        ${timeTypeHtml}
         <div style="position:relative">
           <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;width:52px;padding:0;font-size:12px;border-radius:5px;text-align:center">${jikantaiLabel}</button>
           <div class="time-dropdown" id="tdd-${id}">
@@ -4903,18 +4895,24 @@ async function saveFurikaeri() {
 }
 
 // ===== インタラクション =====
-function setTimeType(id, type) {
+const TIME_TYPES = ['Quick', 'Normal', 'Heavy'];
+function cycleTimeType(id, d) {
   if (!taskState[id]) return;
-  taskState[id].timeType = taskState[id].timeType === type ? null : type;
+  const cur = taskState[id].timeType;
+  const idx = cur ? TIME_TYPES.indexOf(cur) : -1;
+  const newIdx = Math.max(-1, Math.min(TIME_TYPES.length - 1, idx + d));
+  taskState[id].timeType = newIdx < 0 ? null : TIME_TYPES[newIdx];
   const newType = taskState[id].timeType;
+  const ttValCls = newType ? ` tt-${newType.toLowerCase()}` : '';
   for (const prefix of ['tc-', 'gtc-']) {
     const card = document.getElementById(prefix + id);
     if (!card) continue;
     card.classList.remove('tt-quick', 'tt-normal', 'tt-heavy');
     if (newType) card.classList.add(`tt-${newType.toLowerCase()}`);
-    card.querySelectorAll('.time-type-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.trim() === newType);
-    });
+  }
+  for (const spanId of [`tv-${id}`, `gtv-${id}`]) {
+    const span = document.getElementById(spanId);
+    if (span) { span.textContent = newType || '—'; span.className = `time-val${ttValCls}`; }
   }
   saveTaskState();
 }
@@ -7021,9 +7019,12 @@ function renderGtdCard(task) {
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
   const ttClsG = s.timeType ? `tt-${s.timeType.toLowerCase()}` : '';
-  const timeTypeHtmlG = ['Quick','Normal','Heavy'].map(t =>
-    `<button class="time-type-btn tt-${t.toLowerCase()} ${s.timeType===t?'active':''}" onclick="setTimeType('${id}','${t}')">${t}</button>`
-  ).join('');
+  const ttValClsG = s.timeType ? ` tt-${s.timeType.toLowerCase()}` : '';
+  const timeTypeHtmlG = `<div class="time-wrap">
+    <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
+    <span class="time-val${ttValClsG}" id="gtv-${id}">${s.timeType||'—'}</span>
+    <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
+  </div>`;
 
   const effectiveAreaG = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, false, false);
@@ -7069,7 +7070,7 @@ function renderGtdCard(task) {
       </div>
       <div style="position:relative">
         <div class="task-bottom" style="position:relative">
-          <div class="time-type-wrap">${timeTypeHtmlG}</div>
+          ${timeTypeHtmlG}
           ${subtaskToggleHtml(id)}
         </div>
         ${bearBtn}
@@ -7306,7 +7307,7 @@ function initGtdDrag() {
     const card = e.target.closest('.task-card');
     if (!card) return;
     // GTDボタン・タイムボタン等は除外
-    if (e.target.closest('.btn-gtd,.time-btn,.time-type-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable')) return;
+    if (e.target.closest('.btn-gtd,.time-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable')) return;
 
     const id = card.id?.replace(/^gtc-/, '');
     if (!id) return;
