@@ -5700,6 +5700,10 @@ function applySModeCalLayout() {
   }
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
   fcCalendar.setOption('contentHeight', 20 * 37 + fcColH + 20); // +20でcal-buf-botをスクローラー内に確実に収める
+  // FCのデフォルトscrollTime(06:00)でスクロールされた状態を先頭にリセット → 06:00ラベルを確実に表示
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#fc-container .fc-scroller').forEach(s => { s.scrollTop = 0; });
+  });
   updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
