@@ -2066,7 +2066,7 @@ body::before {
 .task-gtd-col {
   display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 12px; align-self: start;
-  max-height: calc(100vh - 70px);
+  height: calc(100vh - 78px); /* JS で上書きされる */
 }
 .task-section {
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -7168,8 +7168,21 @@ function renderTaskPage() {
   // オーバーレイが開いていれば内容も更新
   if (overlayMode) _renderOverlay();
 
-  requestAnimationFrame(initGtdDrag);
+  requestAnimationFrame(() => { _updateRightColH(); initGtdDrag(); });
 }
+
+function _updateRightColH() {
+  const col = document.getElementById('task-gtd-col');
+  const nav = document.querySelector('.bottom-nav');
+  if (!col || !nav) return;
+  const colTop = col.getBoundingClientRect().top;
+  const navTop = nav.getBoundingClientRect().top;
+  const h = navTop - colTop - 12; // 12px = bottom gap
+  if (h > 60) col.style.height = h + 'px';
+}
+window.addEventListener('resize', () => {
+  if (document.getElementById('task-content')?.style.display !== 'none') _updateRightColH();
+});
 
 function _renderProjMini() {
   const grid = document.getElementById('proj-mini-grid');
