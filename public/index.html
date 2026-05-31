@@ -2975,6 +2975,7 @@ function toggleCalLatenight() {
   requestAnimationFrame(reapplyCalLabelStyles);
   requestAnimationFrame(addCalBufferOverlays);
   requestAnimationFrame(setupHighlightClipping);
+  if (currentMode === 'select') requestAnimationFrame(applySModeCalLayout);
 }
 
 function toggleCalEarly() {
@@ -2986,6 +2987,7 @@ function toggleCalEarly() {
   requestAnimationFrame(reapplyCalLabelStyles);
   requestAnimationFrame(addCalBufferOverlays);
   requestAnimationFrame(setupHighlightClipping);
+  if (currentMode === 'select') requestAnimationFrame(applySModeCalLayout);
 }
 
 function reapplyCalLabelStyles() {
@@ -5708,6 +5710,19 @@ function updateOrbZoneOffsets(topOffset, bottomOffset) {
   if (!orbCol) return;
   orbCol.style.paddingTop = (topOffset || 0) + 'px';
   orbCol.style.paddingBottom = (bottomOffset || 0) + 'px';
+  // ゾーン高さをFCスロット（20px/slot, 30min/slot）に正確に合わせる
+  const slotPx   = 20;
+  const visSlots = 38; // S-modeのcontentHeightで表示されるスロット数
+  const minMin   = _calEarly ? 150 : 330; // 02:30=150, 05:30=330
+  const asaSlots  = Math.min((13 * 60 - minMin) / 30, visSlots);
+  const hiruSlots = Math.min(10, Math.max(0, visSlots - asaSlots));
+  const yoruSlots = Math.max(0, visSlots - asaSlots - hiruSlots);
+  const asaZone  = orbCol.querySelector('.jk-zone[data-jk="朝"]');
+  const hiruZone = orbCol.querySelector('.jk-zone[data-jk="昼"]');
+  const yoruZone = orbCol.querySelector('.jk-zone[data-jk="夜"]');
+  if (asaZone)  { asaZone.style.height  = (asaSlots  * slotPx) + 'px'; asaZone.style.flex  = 'none'; }
+  if (hiruZone) { hiruZone.style.height = (hiruSlots * slotPx) + 'px'; hiruZone.style.flex = 'none'; }
+  if (yoruZone) { yoruZone.style.height = (yoruSlots * slotPx) + 'px'; yoruZone.style.flex = 'none'; }
 }
 
 // スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
