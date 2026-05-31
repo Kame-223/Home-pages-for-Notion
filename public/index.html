@@ -1168,12 +1168,9 @@ body::before {
 .task-card.imp .card-lower { background: rgba(220,20,20,0.55); padding: 8px 14px 11px; margin: 0 -14px -11px; }
 .task-card.imp { border-color: rgba(220,20,20,0.7); }
 /* ===== 想定時間タイプ ===== */
-.task-card.tt-quick  { background: rgba(34,197,94,0.07); }
-.task-card.tt-normal { background: rgba(234,179,8,0.07); }
-.task-card.tt-heavy  { background: rgba(220,38,38,0.07); }
-.time-val.tt-quick  { color: #86efac; background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.4); min-width: 44px; }
-.time-val.tt-normal { color: #fde047; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.4); min-width: 44px; }
-.time-val.tt-heavy  { color: #fca5a5; background: rgba(220,38,38,0.2); border-color: rgba(220,38,38,0.4); min-width: 44px; }
+.time-val.tt-quick  { color: #111; background: rgba(34,197,94,0.55); border-color: rgba(34,197,94,0.8); min-width: 44px; }
+.time-val.tt-normal { color: #111; background: rgba(234,179,8,0.6);  border-color: rgba(234,179,8,0.85); min-width: 44px; }
+.time-val.tt-heavy  { color: #111; background: rgba(220,38,38,0.55); border-color: rgba(220,38,38,0.8); min-width: 44px; }
 .tag-imp-dl { background: rgba(220,20,20,0.75); color: #fff; border: 0.5px solid rgba(255,60,60,0.9); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.02em; }
 /* Importantトグルスイッチ */
 .imp-switch-wrap { display: flex; align-items: center; gap: 7px; }
@@ -2127,16 +2124,17 @@ body::before {
 .gtd-reveal-btn {
   padding: 10px 20px;
   border-radius: 20px;
-  border: 0.5px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.04);
-  color: var(--text-sub);
+  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.07);
+  color: #ffffff;
   font-size: 12px;
   font-family: 'Noto Sans JP', sans-serif;
   cursor: pointer;
   transition: background .15s, border-color .15s;
   white-space: nowrap;
+  font-weight: 600;
 }
-.gtd-reveal-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.28); }
+.gtd-reveal-btn:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.7); }
 .gtd-section-open { display: flex; flex-direction: column; min-height: 0; }
 .gtd-section-open .task-section-body { flex: 1; overflow-y: auto; min-height: 0; }
 .gtd-section-header {
@@ -2172,9 +2170,9 @@ body::before {
 /* GTDスロットヘッダー */
 .gtd-slot-header {
   padding: 8px 12px;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
-  color: var(--text-sub);
-  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+  color: #ffffff;
+  border-bottom: 0.5px solid rgba(255,255,255,0.15);
   background: rgba(13,13,26,0.5);
   text-transform: uppercase;
   flex-shrink: 0;
@@ -2187,10 +2185,10 @@ body::before {
   padding: 8px;
 }
 .proj-mini-card {
-  border: 0.5px solid rgba(255,255,255,0.15);
+  border: 0.5px solid rgba(255,255,255,0.25);
   border-radius: 8px;
   padding: 10px 6px;
-  font-size: 11px; color: var(--text);
+  font-size: 11px; color: #ffffff;
   cursor: pointer; text-align: center;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   background: rgba(255,255,255,0.03);
@@ -4378,7 +4376,7 @@ function renderCard(task, mode='today') {
 
   if (!taskState[id]) taskState[id] = {
     done: false, pinned: false, important: false,
-    timeType: null,
+    timeType: 'Normal',
     focusSeconds: 0, jikantai: jikantai||null, link: link||null,
     links: link ? [link] : [],
   };
@@ -6360,7 +6358,7 @@ async function addToInbox() {
     const page = await notionCreate(DB.tasks, props);
     if (page?.id) {
       taskState[page.id] = { done:false, pinned:false, important:isImportant,
-        timeType:null, focusSeconds:0, jikantai:null, link:firstLink, links };
+        timeType:'Normal', focusSeconds:0, jikantai:null, link:firstLink, links };
       saveTaskState();
       allTasks.push(page);
       try { renderAll(); } catch(e) {}
@@ -7012,7 +7010,7 @@ function renderGtdCard(task) {
 
   if (!taskState[id]) taskState[id] = {
     done: false, pinned: false, important: false,
-    timeType: null,
+    timeType: 'Normal',
     focusSeconds: 0, jikantai: null, link: link||null,
     links: link ? [link] : [],
   };
