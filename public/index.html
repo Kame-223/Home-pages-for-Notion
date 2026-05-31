@@ -1167,6 +1167,24 @@ body::before {
 .card-lower { border-radius: 0 0 12px 12px; transition: background .2s; }
 .task-card.imp .card-lower { background: rgba(220,20,20,0.55); padding: 8px 14px 11px; margin: 0 -14px -11px; }
 .task-card.imp { border-color: rgba(220,20,20,0.7); }
+/* ===== 想定時間タイプ選択 ===== */
+.time-type-wrap { display: flex; gap: 3px; }
+.time-type-btn {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.03em;
+  padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 0.5px solid transparent;
+  opacity: 0.38; transition: opacity .15s; font-family: 'JetBrains Mono', monospace;
+}
+.time-type-btn:active { transform: scale(.92); }
+.time-type-btn.tt-quick  { background: rgba(34,197,94,0.2);  color: #86efac; border-color: rgba(34,197,94,0.4); }
+.time-type-btn.tt-normal { background: rgba(234,179,8,0.2);  color: #fde047; border-color: rgba(234,179,8,0.4); }
+.time-type-btn.tt-heavy  { background: rgba(220,38,38,0.2);  color: #fca5a5; border-color: rgba(220,38,38,0.4); }
+.time-type-btn.active { opacity: 1; }
+.time-type-btn.tt-quick.active  { background: rgba(34,197,94,0.4); }
+.time-type-btn.tt-normal.active { background: rgba(234,179,8,0.4); }
+.time-type-btn.tt-heavy.active  { background: rgba(220,38,38,0.4); }
+.task-card.tt-quick  { background: rgba(34,197,94,0.07); }
+.task-card.tt-normal { background: rgba(234,179,8,0.07); }
+.task-card.tt-heavy  { background: rgba(220,38,38,0.07); }
 .tag-imp-dl { background: rgba(220,20,20,0.75); color: #fff; border: 0.5px solid rgba(255,60,60,0.9); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.02em; }
 /* Importantトグルスイッチ */
 .imp-switch-wrap { display: flex; align-items: center; gap: 7px; }
@@ -4294,7 +4312,7 @@ function loadTaskState() {
 function saveTaskState() {
   const toSave = {};
   for (const [id, s] of Object.entries(taskState)) {
-    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeIdx: s.timeIdx, jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate };
+    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeType: s.timeType||null, jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate };
   }
   localStorage.setItem('taskState', JSON.stringify(toSave));
 }
@@ -4371,13 +4389,17 @@ function renderCard(task, mode='today') {
 
   if (!taskState[id]) taskState[id] = {
     done: false, pinned: false, important: false,
-    timeIdx: timeSteps.indexOf(soyo||'30m') >= 0 ? timeSteps.indexOf(soyo||'30m') : 1,
+    timeType: null,
     focusSeconds: 0, jikantai: jikantai||null, link: link||null,
     links: link ? [link] : [],
   };
   if (taskState[id].focusSeconds == null) taskState[id].focusSeconds = 0;
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
+  const ttCls = s.timeType ? `tt-${s.timeType.toLowerCase()}` : '';
+  const timeTypeHtml = ['Quick','Normal','Heavy'].map(t =>
+    `<button class="time-type-btn tt-${t.toLowerCase()} ${s.timeType===t?'active':''}" onclick="setTimeType('${id}','${t}')">${t}</button>`
+  ).join('');
 
   const effectiveArea = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
@@ -4409,7 +4431,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'leftover' || mode === 'next') {
     return `
-    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px;border-left-color:${areaBorderColor(effectiveArea)}">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''} ${ttCls}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px;border-left-color:${areaBorderColor(effectiveArea)}">
       <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
@@ -4421,11 +4443,7 @@ function renderCard(task, mode='today') {
       </div>
       <div style="position:relative">
         <div class="task-bottom">
-          <div class="time-wrap">
-            <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-            <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
-            <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-          </div>
+          <div class="time-type-wrap">${timeTypeHtml}</div>
           ${subtaskToggleHtml(id)}
         </div>
         ${linkPillsHtml}
@@ -4439,7 +4457,7 @@ function renderCard(task, mode='today') {
   const jikantaiEmoji = {'朝':'🌅','昼':'🌞','夜':'🌙'};
   const jikantaiLabel = s.jikantai ? `${jikantaiEmoji[s.jikantai]||''} ${s.jikantai}` : '⏰';
   return `
-  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''}" id="tc-${id}" style="border-left-color:${areaBorderColor(effectiveArea)}">
+  <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'pinned':''} ${s.done?'done':''} ${s.important?'imp':''} ${ttCls}" id="tc-${id}" style="border-left-color:${areaBorderColor(effectiveArea)}">
     <div class="pin-badge" onclick="togglePin('${id}')">✕</div>
     <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
@@ -4454,11 +4472,7 @@ function renderCard(task, mode='today') {
     </div>
     <div style="position:relative">
       <div class="task-bottom" style="position:relative">
-        <div class="time-wrap">
-          <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-          <span class="time-val" id="tv-${id}">${timeSteps[s.timeIdx]}</span>
-          <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-        </div>
+        <div class="time-type-wrap">${timeTypeHtml}</div>
         <div style="position:relative">
           <button class="btn-time" id="timetag-${id}" onclick="toggleTimeDropdown('${id}')" style="height:23px;width:52px;padding:0;font-size:12px;border-radius:5px;text-align:center">${jikantaiLabel}</button>
           <div class="time-dropdown" id="tdd-${id}">
@@ -4888,11 +4902,19 @@ async function saveFurikaeri() {
 }
 
 // ===== インタラクション =====
-function chTime(id, d) {
+function setTimeType(id, type) {
   if (!taskState[id]) return;
-  taskState[id].timeIdx = Math.max(0, Math.min(4, taskState[id].timeIdx+d));
-  const val = timeSteps[taskState[id].timeIdx];
-  [document.getElementById(`tv-${id}`), document.getElementById(`gtv-${id}`)].forEach(el => { if (el) el.textContent = val; });
+  taskState[id].timeType = taskState[id].timeType === type ? null : type;
+  const newType = taskState[id].timeType;
+  for (const prefix of ['tc-', 'gtc-']) {
+    const card = document.getElementById(prefix + id);
+    if (!card) continue;
+    card.classList.remove('tt-quick', 'tt-normal', 'tt-heavy');
+    if (newType) card.classList.add(`tt-${newType.toLowerCase()}`);
+    card.querySelectorAll('.time-type-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.trim() === newType);
+    });
+  }
   saveTaskState();
 }
 
@@ -5506,6 +5528,7 @@ let focusExpired     = false;
 let focusLastTickTs  = null;   // 最後にtickした時刻（タブ非表示対策）
 
 const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
+const TIME_TYPE_SECS  = { Quick: 900, Normal: 2700, Heavy: 5400 };
 
 function renderFocusTimer() {
   const el = document.getElementById('focus-timer');
@@ -5566,7 +5589,7 @@ function startFocus(id) {
   const area = getProp(task,'エリア');
   const subjects = getProp(task,'科目')||[];
   const link = s.link || getProp(task,'作業リンク');
-  const expected = timeSteps[s.timeIdx];
+  const expected = s.timeType || null;
   const subjectF = (area === '課題') ? (subjects?.[0] || null) : null;
   const focusTagsHtml = [
     area ? `<span class="tag ${areaTagCls(area)}">${area}</span>` : '',
@@ -5575,7 +5598,7 @@ function startFocus(id) {
 
   document.getElementById('focus-task').textContent = title;
   document.getElementById('focus-tags').innerHTML = focusTagsHtml;
-  document.getElementById('focus-expected').textContent = `想定時間：${expected}`;
+  document.getElementById('focus-expected').textContent = expected ? `想定時間：${expected}` : '';
 
   const links = s.links?.length ? s.links : (link ? [link] : []);
   const wrapEl = document.getElementById('focus-link-wrap');
@@ -5596,7 +5619,7 @@ function startFocus(id) {
 
   // カウントダウン初期化（離脱時の残り時間があれば復元）
   const saved = taskState[id]?.savedCountdown;
-  focusCountdown  = (saved && saved > 0) ? saved : (FOCUS_STEP_SECS[expected] || 1800);
+  focusCountdown  = (saved && saved > 0) ? saved : (TIME_TYPE_SECS[expected] || 1800);
   // Restartボタンをリロード後も維持するためにfocusSecondsをセット
   taskState[id].focusSeconds = Math.max(1, taskState[id].focusSeconds || 0);
   saveTaskState();
@@ -6338,7 +6361,7 @@ async function addToInbox() {
     const page = await notionCreate(DB.tasks, props);
     if (page?.id) {
       taskState[page.id] = { done:false, pinned:false, important:isImportant,
-        timeIdx:1, focusSeconds:0, jikantai:null, link:firstLink, links };
+        timeType:null, focusSeconds:0, jikantai:null, link:firstLink, links };
       saveTaskState();
       allTasks.push(page);
       try { renderAll(); } catch(e) {}
@@ -6990,12 +7013,16 @@ function renderGtdCard(task) {
 
   if (!taskState[id]) taskState[id] = {
     done: false, pinned: false, important: false,
-    timeIdx: timeSteps.indexOf(soyo||'30m') >= 0 ? timeSteps.indexOf(soyo||'30m') : 1,
+    timeType: null,
     focusSeconds: 0, jikantai: null, link: link||null,
     links: link ? [link] : [],
   };
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
+  const ttClsG = s.timeType ? `tt-${s.timeType.toLowerCase()}` : '';
+  const timeTypeHtmlG = ['Quick','Normal','Heavy'].map(t =>
+    `<button class="time-type-btn tt-${t.toLowerCase()} ${s.timeType===t?'active':''}" onclick="setTimeType('${id}','${t}')">${t}</button>`
+  ).join('');
 
   const effectiveAreaG = area || (subjects?.length ? '課題' : null);
   const dt = deadlineTag(deadline, false, false);
@@ -7027,7 +7054,7 @@ function renderGtdCard(task) {
   ).join('');
 
   return `
-  <div class="task-card ${areaBorderCls(effectiveAreaG)}" id="gtc-${id}" style="margin-bottom:6px">
+  <div class="task-card ${areaBorderCls(effectiveAreaG)} ${ttClsG}" id="gtc-${id}" style="margin-bottom:6px">
     <div class="tag-row">${leftBtnG}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
       <div class="card-body">
@@ -7041,11 +7068,7 @@ function renderGtdCard(task) {
       </div>
       <div style="position:relative">
         <div class="task-bottom" style="position:relative">
-          <div class="time-wrap">
-            <button class="time-btn" onclick="chTime('${id}',-1)">−</button>
-            <span class="time-val" id="gtv-${id}">${timeSteps[s.timeIdx]}</span>
-            <button class="time-btn" onclick="chTime('${id}',1)">＋</button>
-          </div>
+          <div class="time-type-wrap">${timeTypeHtmlG}</div>
           ${subtaskToggleHtml(id)}
         </div>
         ${bearBtn}
@@ -7282,7 +7305,7 @@ function initGtdDrag() {
     const card = e.target.closest('.task-card');
     if (!card) return;
     // GTDボタン・タイムボタン等は除外
-    if (e.target.closest('.btn-gtd,.time-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable')) return;
+    if (e.target.closest('.btn-gtd,.time-btn,.time-type-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable')) return;
 
     const id = card.id?.replace(/^gtc-/, '');
     if (!id) return;
@@ -7531,7 +7554,7 @@ function _tdEnd(e){
       const task=allTasks.find(t=>t.id===id);
       const title=task?(getProp(task,'タイトル')||'無題'):'無題';
       const s=taskState[id]||{};
-      const durMins=FOCUS_STEP_SECS[timeSteps[s.timeIdx]]?Math.round(FOCUS_STEP_SECS[timeSteps[s.timeIdx]]/60):60;
+      const durMins=s.timeType?Math.round((TIME_TYPE_SECS[s.timeType]||1800)/60):60;
       const et=new Date(st.getTime()+durMins*60000);
       openGCalModal(null,st.toISOString(),et.toISOString());
       setTimeout(()=>{const inp=document.getElementById('gcal-ev-title');if(inp)inp.value=title;},30);
