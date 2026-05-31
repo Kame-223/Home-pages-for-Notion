@@ -4743,7 +4743,6 @@ async function saveFurikaeri() {
     'あったこと':{rich_text: [{text: {content: event}}]},
     'よかったこと':{rich_text: [{text: {content: good}}]},
     '嫌だったこと':{rich_text: [{text: {content: bad}}]},
-    '振り返り': {rich_text: [{text: {content: [weekly, nextWeek].filter(Boolean).join(' / ')}}]},
   };
   if (mood)   props['気分']   = {select: {name: mood}};
   if (energy) props['体調']   = {select: {name: energy}};
