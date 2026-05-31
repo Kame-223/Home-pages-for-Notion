@@ -5125,9 +5125,14 @@ function updateStarFollow() {
   const margin = 16;
   const scrollDelta = window.scrollY - _starAnchorScrollY;
   const rawTop = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
-  // min: アンカー位置（パネル上端）より上には行かせない
+  // min: 現在のパネル上端（リアルタイム）より上には行かせない
   // max: 今日やることの下端まで（それ以降は追従停止）
-  const minTop = Math.max(headerH + margin, _starAnchorViewportTop);
+  const leftoverEl2 = document.getElementById('leftover-panel');
+  const nextPanelEl = document.getElementById('next-panel');
+  const currentPanelTop = (leftoverEl2 && !leftoverEl2.classList.contains('hidden'))
+    ? Math.max(leftoverEl2.getBoundingClientRect().top, headerH)
+    : Math.max(nextPanelEl?.getBoundingClientRect().top ?? headerH, headerH);
+  const minTop = currentPanelTop;
   const todayBoardEl = document.querySelector('.today-board');
   const tbBottom = todayBoardEl ? todayBoardEl.getBoundingClientRect().bottom : window.innerHeight;
   const maxTop = Math.max(minTop, tbBottom - btnH - margin);
