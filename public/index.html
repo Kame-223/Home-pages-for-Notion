@@ -4299,7 +4299,7 @@ function loadTaskState() {
 function saveTaskState() {
   const toSave = {};
   for (const [id, s] of Object.entries(taskState)) {
-    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeType: s.timeType||null, jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate };
+    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeType: s.timeType||'Normal', jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate };
   }
   localStorage.setItem('taskState', JSON.stringify(toSave));
 }
@@ -4383,11 +4383,11 @@ function renderCard(task, mode='today') {
   if (taskState[id].focusSeconds == null) taskState[id].focusSeconds = 0;
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
-  const ttCls = s.timeType ? `tt-${s.timeType.toLowerCase()}` : '';
-  const ttValCls = s.timeType ? ` tt-${s.timeType.toLowerCase()}` : '';
+  const _tt = s.timeType || 'Normal';
+  const ttCls = `tt-${_tt.toLowerCase()}`;
   const timeTypeHtml = `<div class="time-wrap">
     <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
-    <span class="time-val${ttValCls}" id="tv-${id}">${s.timeType||'—'}</span>
+    <span class="time-val tt-${_tt.toLowerCase()}" id="tv-${id}">${_tt}</span>
     <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
   </div>`;
 
@@ -4896,21 +4896,20 @@ async function saveFurikaeri() {
 const TIME_TYPES = ['Quick', 'Normal', 'Heavy'];
 function cycleTimeType(id, d) {
   if (!taskState[id]) return;
-  const cur = taskState[id].timeType;
-  const idx = cur ? TIME_TYPES.indexOf(cur) : -1;
-  const newIdx = Math.max(-1, Math.min(TIME_TYPES.length - 1, idx + d));
-  taskState[id].timeType = newIdx < 0 ? null : TIME_TYPES[newIdx];
+  const cur = taskState[id].timeType || 'Normal'; // null（旧データ）はNormalとして扱う
+  const idx = TIME_TYPES.indexOf(cur);
+  const newIdx = Math.max(0, Math.min(TIME_TYPES.length - 1, idx + d));
+  taskState[id].timeType = TIME_TYPES[newIdx];
   const newType = taskState[id].timeType;
-  const ttValCls = newType ? ` tt-${newType.toLowerCase()}` : '';
   for (const prefix of ['tc-', 'gtc-']) {
     const card = document.getElementById(prefix + id);
     if (!card) continue;
     card.classList.remove('tt-quick', 'tt-normal', 'tt-heavy');
-    if (newType) card.classList.add(`tt-${newType.toLowerCase()}`);
+    card.classList.add(`tt-${newType.toLowerCase()}`);
   }
   for (const spanId of [`tv-${id}`, `gtv-${id}`]) {
     const span = document.getElementById(spanId);
-    if (span) { span.textContent = newType || '—'; span.className = `time-val${ttValCls}`; }
+    if (span) { span.textContent = newType; span.className = `time-val tt-${newType.toLowerCase()}`; }
   }
   saveTaskState();
 }
@@ -7016,11 +7015,11 @@ function renderGtdCard(task) {
   };
   if (!taskState[id].links) taskState[id].links = taskState[id].link ? [taskState[id].link] : [];
   const s = taskState[id];
-  const ttClsG = s.timeType ? `tt-${s.timeType.toLowerCase()}` : '';
-  const ttValClsG = s.timeType ? ` tt-${s.timeType.toLowerCase()}` : '';
+  const _ttG = s.timeType || 'Normal';
+  const ttClsG = `tt-${_ttG.toLowerCase()}`;
   const timeTypeHtmlG = `<div class="time-wrap">
     <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
-    <span class="time-val${ttValClsG}" id="gtv-${id}">${s.timeType||'—'}</span>
+    <span class="time-val tt-${_ttG.toLowerCase()}" id="gtv-${id}">${_ttG}</span>
     <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
   </div>`;
 
