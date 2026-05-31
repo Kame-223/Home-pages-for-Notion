@@ -605,7 +605,8 @@ body::before {
 .content-grid.select-mode #fc-container .fc-view-harness,
 .content-grid.select-mode #fc-container .fc-scroller,
 .content-grid.select-mode #fc-container .fc-timegrid-body,
-.content-grid.select-mode #fc-container .fc-scrollgrid-sync-table { background: transparent !important; }
+.content-grid.select-mode #fc-container .fc-scrollgrid-sync-table,
+.content-grid.select-mode #fc-container .fc-timegrid-col { background: transparent !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
 .fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
@@ -5697,7 +5698,7 @@ function applySModeCalLayout() {
     if (diff > 0) aboveFC = diff;
   }
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
-  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH); // スロット37本+colHeader、24:00ラベルはbufferの上に収まる
+  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH + 20); // +20でcal-buf-botをスクローラー内に確実に収める
   updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
 }
 
