@@ -5549,6 +5549,43 @@ function renderFocusTimer() {
   el.classList.toggle('expired', focusExpired);
 }
 
+function renderWorkTimer() {
+  const btn = document.getElementById('focus-worktimer-btn');
+  if (!btn) return;
+  if (!workTimerVisible) { btn.textContent = '⏱'; return; }
+  const h = Math.floor(focusTotalSecs / 3600);
+  const m = Math.floor((focusTotalSecs % 3600) / 60);
+  const s = focusTotalSecs % 60;
+  const timeStr = h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  btn.textContent = `⏱ ${timeStr}`;
+}
+
+function toggleWorkTimerDisplay() {
+  workTimerVisible = !workTimerVisible;
+  renderWorkTimer();
+}
+
+async function saveFocusTotalToNotion(id) {
+  if (!id || focusTotalSecs < 5) return;
+  const addMins = Math.round(focusTotalSecs / 60);
+  if (addMins < 1) return;
+  const prev = taskState[id]?.totalWorkMins || 0;
+  const newTotal = prev + addMins;
+  try {
+    await fetch(`/api/notion?path=pages/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ properties: { '作業時間': { number: newTotal } } })
+    });
+  } catch(e) { console.warn('作業時間Notion保存失敗:', e); }
+  if (taskState[id]) {
+    taskState[id].totalWorkMins = newTotal;
+    saveTaskState();
+  }
+}
+
 function focusTimerExpired() {
   focusExpired = true;
   focusPaused  = true;
@@ -5838,10 +5875,11 @@ function exitFocus() {
   focusPaused  = false;
   focusExpired = false;
   document.getElementById('focus-overlay').classList.remove('open');
-  if (currentFocusId) {
-    if (taskState[currentFocusId]) delete taskState[currentFocusId].savedCountdown;
-    saveTaskState();
-    document.querySelectorAll(`#start-${currentFocusId}`).forEach(el => {
+  const id = currentFocusId;
+  if (id) {
+    if (taskState[id]) delete taskState[id].savedCountdown;
+    saveFocusTotalToNotion(id);
+    document.querySelectorAll(`#start-${id}`).forEach(el => {
       el.textContent = 'Restart';
       el.classList.add('restart');
     });
@@ -5856,9 +5894,11 @@ function completeFocus() {
   focusExpired = false;
   document.getElementById('focus-overlay').classList.remove('open');
   window.dragonReact?.('focusEnd');
-  if (currentFocusId) {
-    if (taskState[currentFocusId]) delete taskState[currentFocusId].savedCountdown;
-    toggleDone(currentFocusId);
+  const id = currentFocusId;
+  if (id) {
+    if (taskState[id]) delete taskState[id].savedCountdown;
+    saveFocusTotalToNotion(id);
+    toggleDone(id);
   }
   currentFocusId = null;
 }
