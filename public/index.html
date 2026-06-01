@@ -1262,11 +1262,13 @@ body::before {
 }
 .btn-start {
   font-size: 13px; padding: 9px 0; border-radius: 9px; width: 80px;
-  border: 0.5px solid rgba(29,158,117,0.4); background: rgba(29,158,117,0.1);
-  cursor: pointer; color: #5DCAA5; font-family: 'Noto Sans JP', sans-serif;
+  border: 0.5px solid var(--border2); background: transparent;
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: color .2s, border-color .2s, background .2s; white-space: nowrap; text-align: center;
 }
-.btn-start.restart { border-color: rgba(239,159,39,0.4); background: rgba(239,159,39,0.1); color: #EF9F27; }
+.btn-start:hover { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.35); color: var(--green); }
+.btn-start.restart { border-color: rgba(239,159,39,0.4); background: transparent; color: #EF9F27; }
+.btn-start.restart:hover { background: rgba(239,159,39,0.12); }
 .btn-done {
   font-size: 10px; padding: 3px 12px; border-radius: 7px;
   border: none; background: var(--purple);
