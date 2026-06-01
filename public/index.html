@@ -1511,17 +1511,17 @@ body::before {
 .focus-overlay {
   position: fixed; inset: 0;
   background: rgba(5,3,15,0.96);
-  display: none; align-items: center; justify-content: center;
+  display: none; align-items: flex-start; justify-content: center;
+  padding-top: 9vh;
   z-index: 1000;
 }
 .focus-overlay.open { display: flex; }
 .focus-modal {
   display: flex; flex-direction: column;
-  align-items: center; gap: 16px;
-  padding: 48px 40px;
-  max-width: 420px; width: 100%;
+  align-items: center; gap: 20px;
+  padding: 24px 40px 44px;
+  max-width: 460px; width: 100%;
   animation: fadeUp .3s ease-out;
-  /* ドーナッツ位置固定：子タスク展開でもここは動かない */
   position: relative; z-index: 1;
 }
 /* 子タスクトグル：modal 内・ボタン直下 */
@@ -1546,8 +1546,9 @@ body::before {
   font-size: 9px; letter-spacing: 0.4em; color: rgba(255,255,255,0.45);
   text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
 }
-.focus-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
-.focus-task { font-size: 20px; font-weight: 400; color: #fff; text-align: center; line-height: 1.5; }
+.focus-tags { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+.focus-modal .tag { font-size: 14px; padding: 4px 14px; }
+.focus-task { font-size: 36px; font-weight: 400; color: #fff; text-align: center; line-height: 1.4; }
 /* 🧸 リンク一覧ボタン */
 .bear-btn {
   display: block; margin: 10px auto 4px; font-size: 22px;
@@ -1607,30 +1608,25 @@ body::before {
 }
 .focus-link-item:hover { background: rgba(55,138,221,0.1); }
 .focus-exit-btn {
-  position: absolute; top: 12px; right: 14px;
-  font-size: 11px; color: var(--text-dim); background: none;
-  border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 10px;
+  position: absolute; top: 16px; right: 16px;
+  font-size: 12px; color: rgba(255,255,255,0.55); background: none;
+  border: 0.5px solid rgba(255,255,255,0.22); border-radius: 7px; padding: 6px 14px;
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
 }
-.focus-exit-btn:hover { color: var(--text); border-color: var(--border2); }
+.focus-exit-btn:hover { color: #fff; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); }
 .focus-timer {
   font-size: 52px; font-weight: 300; color: #fff;
   font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
 }
 .focus-timer.expired { color: var(--amber); }
-/* 時間選択グリッド */
+/* 時間選択（1行3ボタン） */
 #focus-time-select { width: 100%; }
-.focus-time-grid { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-.ftg-row { display: flex; align-items: center; gap: 6px; }
-.ftg-label {
-  font-size: 10px; color: rgba(255,255,255,0.38); font-family: 'JetBrains Mono', monospace;
-  width: 46px; flex-shrink: 0; text-align: right;
-}
+.focus-time-row { display: flex; gap: 8px; width: 100%; }
 .ftg-btn {
-  flex: 1; padding: 10px 0; border-radius: 8px;
+  flex: 1; padding: 16px 0; border-radius: 10px;
   border: 0.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
-  cursor: pointer; color: rgba(255,255,255,0.7); font-family: 'JetBrains Mono', monospace;
-  font-size: 13px; transition: all .15s;
+  cursor: pointer; color: rgba(255,255,255,0.8); font-family: 'JetBrains Mono', monospace;
+  font-size: 16px; transition: all .15s;
 }
 .ftg-btn:hover { background: rgba(127,119,221,0.18); border-color: rgba(127,119,221,0.4); color: #fff; }
 /* タイマーエリア */
@@ -2687,28 +2683,9 @@ body::before {
       <button class="focus-link" onclick="toggleFocusLinkMenu()">作業先を開く →</button>
       <div class="focus-link-menu" id="focus-link-menu"></div>
     </div>
-    <!-- Phase 1: 時間選択グリッド -->
+    <!-- Phase 1: 時間選択（typeに応じた3ボタン、JS で生成） -->
     <div id="focus-time-select">
-      <div class="focus-time-grid">
-        <div class="ftg-row">
-          <div class="ftg-label">Quick</div>
-          <button class="ftg-btn" onclick="startFocusWithTime(300)">5分</button>
-          <button class="ftg-btn" onclick="startFocusWithTime(600)">10分</button>
-          <button class="ftg-btn" onclick="startFocusWithTime(900)">15分</button>
-        </div>
-        <div class="ftg-row">
-          <div class="ftg-label">Normal</div>
-          <button class="ftg-btn" onclick="startFocusWithTime(1800)">30分</button>
-          <button class="ftg-btn" onclick="startFocusWithTime(2700)">45分</button>
-          <button class="ftg-btn" onclick="startFocusWithTime(3600)">60分</button>
-        </div>
-        <div class="ftg-row">
-          <div class="ftg-label">Heavy</div>
-          <button class="ftg-btn" onclick="startFocusWithTime(3600)">1時間</button>
-          <button class="ftg-btn" onclick="startFocusWithTime(7200)">2時間</button>
-          <button class="ftg-btn" onclick="startFocusWithTime(10800)">3時間</button>
-        </div>
-      </div>
+      <div class="focus-time-row" id="focus-time-row"></div>
     </div>
     <!-- Phase 2: タイマー -->
     <div id="focus-timer-area">
@@ -5632,7 +5609,22 @@ function startFocus(id) {
     wrapEl.classList.remove('show');
   }
 
-  // 時間選択グリッドを表示、タイマーエリアを隠す
+  // timeTypeに応じた3ボタンを生成
+  const TIME_OPTIONS = {
+    Quick:  [{label:'5分',  secs:300},  {label:'10分', secs:600},  {label:'15分', secs:900}],
+    Normal: [{label:'30分', secs:1800}, {label:'45分', secs:2700}, {label:'60分', secs:3600}],
+    Heavy:  [{label:'1時間',secs:3600}, {label:'2時間',secs:7200}, {label:'3時間',secs:10800}],
+  };
+  const timeType = s.timeType || 'Normal';
+  const timeOpts = TIME_OPTIONS[timeType] || TIME_OPTIONS.Normal;
+  const rowEl = document.getElementById('focus-time-row');
+  if (rowEl) {
+    rowEl.innerHTML = timeOpts.map(opt =>
+      `<button class="ftg-btn" onclick="startFocusWithTime(${opt.secs})">${opt.label}</button>`
+    ).join('');
+  }
+
+  // 時間選択を表示、タイマーエリアを隠す
   const selectEl = document.getElementById('focus-time-select');
   const timerArea = document.getElementById('focus-timer-area');
   if (selectEl) selectEl.style.display = 'block';
