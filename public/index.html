@@ -1347,12 +1347,13 @@ body::before {
 /* 今日するボタン（大） */
 .btn-pin-big {
   flex: none; width: 90px; height: 43px; font-size: 11px; border-radius: 8px;
-  border: 0.5px solid rgba(29,158,117,0.45); background: rgba(29,158,117,0.15);
-  cursor: pointer; color: var(--green); font-family: 'Noto Sans JP', sans-serif;
+  border: 0.5px solid var(--border2); background: transparent;
+  cursor: pointer; color: var(--text-sub); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s; white-space: nowrap;
 }
+.btn-pin-big:hover { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.35); color: var(--green); }
 .btn-pin-big.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
-.btn-pin-big:hover { background: rgba(29,158,117,0.25); }
+.btn-pin-big.pinned:hover { background: rgba(240,149,149,0.18); }
 
 /* 完了ボタン（大） */
 .btn-done-big {
