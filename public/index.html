@@ -1612,6 +1612,14 @@ body::before {
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
 }
 .focus-exit-btn:hover { color: #fff; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); }
+.focus-worktimer-btn {
+  position: absolute; top: 16px; left: 16px;
+  font-size: 12px; color: rgba(255,255,255,0.55); background: none;
+  border: 0.5px solid rgba(255,255,255,0.22); border-radius: 7px; padding: 6px 14px;
+  cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all .15s;
+  min-width: 40px; text-align: center;
+}
+.focus-worktimer-btn:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.06); }
 .focus-timer {
   font-size: 104px; font-weight: 300; color: #fff;
   font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
@@ -2672,6 +2680,7 @@ body::before {
 
 <!-- 集中モード -->
 <div class="focus-overlay" id="focus-overlay">
+  <button class="focus-worktimer-btn" id="focus-worktimer-btn" onclick="toggleWorkTimerDisplay()">⏱</button>
   <div class="focus-modal">
     <button class="focus-exit-btn" onclick="exitFocus()">✕ 離脱</button>
     <div class="focus-mode-label">集中モード</div>
@@ -5524,6 +5533,8 @@ let focusCountdown   = 0;      // 残り秒数
 let focusPaused      = false;
 let focusExpired     = false;
 let focusLastTickTs  = null;   // 最後にtickした時刻（タブ非表示対策）
+let focusTotalSecs   = 0;      // 今セッションの実作業秒数
+let workTimerVisible = false;  // 総作業時間表示トグル
 
 const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
 const TIME_TYPE_SECS  = { Quick: 900, Normal: 2700, Heavy: 5400 };
@@ -5565,7 +5576,9 @@ function updateFocusDisplay() {
   const elapsed = focusLastTickTs ? Math.max(1, Math.floor((now - focusLastTickTs) / 1000)) : 1;
   focusLastTickTs = now;
   focusCountdown = Math.max(0, focusCountdown - elapsed);
+  focusTotalSecs += elapsed;
   renderFocusTimer();
+  renderWorkTimer();
   // 30秒ごとに残り時間を保存（ページ移動などでも復元できるよう）
   if (++_focusSaveTick % 30 === 0 && taskState[currentFocusId]) {
     taskState[currentFocusId].savedCountdown = focusCountdown;
@@ -5638,7 +5651,10 @@ function startFocus(id) {
   focusExpired = false;
   focusLastTickTs = null;
   focusCountdown = 0;
+  focusTotalSecs = 0;
+  workTimerVisible = false;
   renderFocusTimer();
+  renderWorkTimer();
   window.dragonReact?.('focusStart');
 
   // 子タスクエリアの初期化
@@ -7878,6 +7894,7 @@ async function renderProjectDetail(pid) {
 }
 
 // ===== PROJECT WIZARD =====
+const WIZ_AI_ENABLED = false; // trueにするとAI仕分けを有効化
 let _wiz = { step:1, goal:'', items:[], milestones:[], tasks:[], aiSorted:false };
 let _wizComposing = false;
 let _wizJustComposed = false;
@@ -7993,14 +8010,18 @@ function _wizStep3(c) {
   _wiz.tasks      = _wiz.tasks.filter(t => _wiz.items.includes(t.text));
 
   if (!_wiz.aiSorted) {
-    c.innerHTML = `
-      <div class="wiz-heading">📂 AIが仕分け中…</div>
-      <div class="wiz-sub">ゴールと吐き出しを分析しています</div>
-      <div class="wiz-ai-loading"><div class="wiz-ai-spinner"></div></div>
-      ${_wizActions(true, '次へ →', '', true)}
-    `;
-    _wizAiSort();
-    return;
+    if (!WIZ_AI_ENABLED) {
+      _wiz.aiSorted = true;
+    } else {
+      c.innerHTML = `
+        <div class="wiz-heading">📂 AIが仕分け中…</div>
+        <div class="wiz-sub">ゴールと吐き出しを分析しています</div>
+        <div class="wiz-ai-loading"><div class="wiz-ai-spinner"></div></div>
+        ${_wizActions(true, '次へ →', '', true)}
+      `;
+      _wizAiSort();
+      return;
+    }
   }
 
   const rowHtml = (it) => {
@@ -8019,8 +8040,8 @@ function _wizStep3(c) {
     _wiz.milestones.some(m=>m.text===it) || _wiz.tasks.some(t=>t.text===it)
   );
   c.innerHTML = `
-    <div class="wiz-heading">📂 AIの仕分けを確認する</div>
-    <div class="wiz-sub">AIの提案を修正できます。マイルストーン＝目標・段階　タスク＝具体的作業</div>
+    <div class="wiz-heading">📂 ${WIZ_AI_ENABLED ? 'AIの仕分けを確認する' : 'それぞれを分類する'}</div>
+    <div class="wiz-sub">${WIZ_AI_ENABLED ? 'AIの提案を修正できます。' : ''}マイルストーン＝目標・段階　タスク＝具体的作業</div>
     <div class="wiz-items" style="max-height:280px;overflow-y:auto">${_wiz.items.map(rowHtml).join('')}</div>
     ${_wizActions(true, '次へ →', "_wiz.step++;_renderWiz()", !allSorted)}
   `;
