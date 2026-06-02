@@ -1510,7 +1510,7 @@ body::before {
 /* ===== 集中モード ===== */
 .focus-overlay {
   position: fixed; inset: 0;
-  background: rgba(5,3,15,0.96);
+  background: rgba(10,8,24,1);
   display: none; align-items: center; justify-content: center;
   z-index: 1000;
 }
@@ -1621,7 +1621,7 @@ body::before {
 }
 .focus-worktimer-btn:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.06); }
 .focus-timer {
-  font-size: 104px; font-weight: 300; color: #fff;
+  font-size: 104px; font-weight: 400; color: #fff;
   font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
 }
 .focus-timer.expired { color: var(--amber); }
@@ -1630,11 +1630,12 @@ body::before {
 .focus-time-row { display: flex; gap: 14px; width: 100%; }
 .ftg-btn {
   flex: 1; padding: 26px 0; border-radius: 12px;
-  border: 0.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
-  cursor: pointer; color: rgba(255,255,255,0.8); font-family: 'JetBrains Mono', monospace;
-  font-size: 20px; transition: all .15s;
+  border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08);
+  cursor: pointer; color: #fff; font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 500; letter-spacing: 0.02em; transition: all .15s;
+  text-shadow: 0 0 12px rgba(255,255,255,0.25);
 }
-.ftg-btn:hover { background: rgba(127,119,221,0.18); border-color: rgba(127,119,221,0.4); color: #fff; }
+.ftg-btn:hover { background: rgba(127,119,221,0.25); border-color: rgba(127,119,221,0.6); text-shadow: 0 0 16px rgba(200,195,255,0.5); }
 /* タイマーエリア */
 #focus-timer-area { display: none; width: 100%; flex-direction: column; align-items: center; gap: 14px; }
 .focus-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
@@ -5535,6 +5536,7 @@ let focusExpired     = false;
 let focusLastTickTs  = null;   // 最後にtickした時刻（タブ非表示対策）
 let focusTotalSecs    = 0;      // 今セッションの実作業秒数
 let focusEstimateSecs = 0;      // 今セッションで選択した見積もり秒数
+let focusStartedAt    = 0;      // タイマー開始時刻（ms）
 let workTimerVisible  = false;  // 総作業時間表示トグル
 
 const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
@@ -5724,6 +5726,7 @@ function startFocus(id) {
 function startFocusWithTime(secs) {
   focusCountdown = secs;
   focusEstimateSecs = secs;
+  focusStartedAt = Date.now();
   focusPaused  = false;
   focusExpired = false;
   focusLastTickTs = null;
@@ -5755,6 +5758,9 @@ function startFocusWithTime(secs) {
 
 function addFocusTime(secs) {
   focusCountdown = Math.max(1, focusCountdown + secs);
+  if (focusStartedAt && Date.now() - focusStartedAt <= 10000) {
+    focusEstimateSecs += secs;
+  }
   if (focusExpired) {
     focusExpired = false;
     focusPaused  = false;
