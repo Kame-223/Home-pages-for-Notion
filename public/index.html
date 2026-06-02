@@ -1512,6 +1512,7 @@ body::before {
   position: fixed; inset: 0;
   background: rgba(10,8,24,1);
   display: none; align-items: center; justify-content: center;
+  padding-bottom: 10vh;
   z-index: 1000;
 }
 .focus-overlay.open { display: flex; }
@@ -1656,8 +1657,8 @@ body::before {
 .focus-add-btn:hover { background: rgba(93,202,165,0.1); border-color: rgba(93,202,165,0.5); color: #5DCAA5; }
 .focus-sub-btn {
   font-size: 12px; padding: 10px 18px; border-radius: 10px;
-  border: 0.5px solid rgba(220,80,80,0.5); background: transparent;
-  cursor: pointer; color: rgba(220,80,80,0.85); font-family: 'Noto Sans JP', sans-serif;
+  border: 0.5px solid rgba(220,80,80,0.44); background: transparent;
+  cursor: pointer; color: rgba(220,80,80,0.74); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s;
 }
 .focus-sub-btn:hover { background: rgba(220,80,80,0.15); border-color: rgba(220,80,80,0.75); color: #FF6060; }
@@ -5634,7 +5635,7 @@ let _focusSaveTick = 0;
 function updateFocusDisplay() {
   if (focusPaused || !currentFocusId) return;
   const now = Date.now();
-  const elapsed = focusLastTickTs ? Math.max(1, Math.floor((now - focusLastTickTs) / 1000)) : 1;
+  const elapsed = focusLastTickTs ? Math.max(0, Math.floor((now - focusLastTickTs) / 1000)) : 1;
   focusLastTickTs = now;
   focusCountdown = Math.max(0, focusCountdown - elapsed);
   focusTotalSecs += elapsed;
@@ -7540,16 +7541,35 @@ function refreshDeadlineTags() {
   });
 }
 
+let focusHiddenAt = null;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    // タブ非表示時：カウントダウンを即時保存
+    // タブ非表示：インターバルを止めて時刻を記録（コールバック蓄積防止）
+    if (currentFocusId && !focusPaused && !focusExpired && focusInterval) {
+      clearInterval(focusInterval);
+      focusInterval = null;
+      focusHiddenAt = Date.now();
+    }
     if (currentFocusId && !focusPaused && taskState[currentFocusId]) {
       taskState[currentFocusId].savedCountdown = focusCountdown;
       saveTaskState();
     }
     return;
   }
-  if (currentFocusId && !focusPaused) updateFocusDisplay();
+  // タブ復帰：非表示中の経過時間を一括適用してインターバルを再起動
+  if (currentFocusId && !focusPaused && !focusExpired && focusHiddenAt !== null) {
+    const hiddenSecs = Math.floor((Date.now() - focusHiddenAt) / 1000);
+    if (hiddenSecs > 0) {
+      focusCountdown = Math.max(0, focusCountdown - hiddenSecs);
+      focusTotalSecs += hiddenSecs;
+      renderFocusTimer();
+      renderWorkTimer();
+      if (focusCountdown <= 0) { focusTimerExpired(); focusHiddenAt = null; return; }
+    }
+    focusLastTickTs = Date.now();
+    focusInterval = setInterval(updateFocusDisplay, 1000);
+  }
+  focusHiddenAt = null;
   if (!currentFocusId) loadTasks();
 });
 
