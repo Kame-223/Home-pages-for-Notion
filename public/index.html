@@ -1357,7 +1357,7 @@ body::before {
 .btn-pin-big:hover { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.35); color: var(--green); }
 .btn-pin-big.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
 .btn-pin-big.pinned:hover { background: rgba(240,149,149,0.18); }
-html[data-theme="light"] .btn-pin-big { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.22); }
+html[data-theme="light"] .btn-pin-big { background: #ffffff; border-color: rgba(0,0,0,0.15); }
 
 /* 完了ボタン（大） */
 .btn-done-big {
@@ -5572,9 +5572,10 @@ const TIME_TYPE_SECS  = { Quick: 900, Normal: 2700, Heavy: 5400 };
 function renderFocusTimer() {
   const el = document.getElementById('focus-timer');
   if (!el) return;
-  const h = String(Math.floor(focusCountdown / 3600)).padStart(2, '0');
-  const m = String(Math.floor((focusCountdown % 3600) / 60)).padStart(2, '0');
-  const s = String(focusCountdown % 60).padStart(2, '0');
+  const total = Math.ceil(Math.max(0, focusCountdown));
+  const h = String(Math.floor(total / 3600)).padStart(2, '0');
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const s = String(total % 60).padStart(2, '0');
   el.textContent = h + ':' + m + ':' + s;
   el.classList.toggle('expired', focusExpired);
 }
@@ -5650,15 +5651,12 @@ let _focusSaveTick = 0;
 function updateFocusDisplay() {
   if (focusPaused || !currentFocusId) return;
   const now = Date.now();
-  const elapsed = focusLastTickTs ? Math.max(0, Math.floor((now - focusLastTickTs) / 1000)) : 1;
-  focusLastTickTs = now;
-  focusCountdown = Math.max(0, focusCountdown - elapsed);
-  focusTotalSecs += elapsed;
+  focusCountdown  = focusDeadlineTs ? (focusDeadlineTs - now) / 1000 : 0;
+  focusTotalSecs  = focusWorkAccum + (focusWorkStartTs ? (now - focusWorkStartTs) / 1000 : 0);
   renderFocusTimer();
   renderWorkTimer();
-  // 30秒ごとに残り時間を保存（ページ移動などでも復元できるよう）
   if (++_focusSaveTick % 30 === 0 && taskState[currentFocusId]) {
-    taskState[currentFocusId].savedCountdown = focusCountdown;
+    taskState[currentFocusId].savedCountdown = Math.ceil(Math.max(0, focusCountdown));
     saveTaskState();
   }
   if (focusCountdown <= 0 && !focusExpired) focusTimerExpired();
@@ -5722,13 +5720,16 @@ function startFocus(id) {
   // タイマー変数リセット（共通）
   clearInterval(focusInterval);
   focusInterval = null;
-  focusPaused = false; focusExpired = false; focusLastTickTs = null;
+  focusPaused = false; focusExpired = false;
+  focusDeadlineTs = null; focusWorkStartTs = null; focusWorkAccum = 0;
   focusTotalSecs = 0; focusEstimateSecs = 0; focusStartedAt = 0;
   workTimerVisible = false;
 
   if (hasSaved) {
     // 再開：保存済み残り時間から即タイマー開始
-    focusCountdown = s.savedCountdown;
+    focusCountdown   = s.savedCountdown;
+    focusDeadlineTs  = Date.now() + s.savedCountdown * 1000;
+    focusWorkStartTs = Date.now();
     if (selectEl) selectEl.style.display = 'none';
     if (timerArea) timerArea.style.display = 'flex';
     const rb = document.getElementById('focus-btns-running');
@@ -5766,12 +5767,14 @@ function startFocus(id) {
 }
 
 function startFocusWithTime(secs) {
-  focusCountdown = secs;
+  focusCountdown   = secs;
   focusEstimateSecs = secs;
-  focusStartedAt = Date.now();
-  focusPaused  = false;
-  focusExpired = false;
-  focusLastTickTs = null;
+  focusStartedAt   = Date.now();
+  focusPaused      = false;
+  focusExpired     = false;
+  focusDeadlineTs  = Date.now() + secs * 1000;
+  focusWorkStartTs = Date.now();
+  focusWorkAccum   = 0;
 
   // タイマーエリアに切り替え
   const selectEl = document.getElementById('focus-time-select');
