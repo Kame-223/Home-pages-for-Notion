@@ -1511,8 +1511,7 @@ body::before {
 .focus-overlay {
   position: fixed; inset: 0;
   background: rgba(10,8,24,1);
-  display: none; align-items: flex-start; justify-content: center;
-  padding-top: 10vh;
+  display: none; align-items: center; justify-content: center;
   z-index: 1000;
 }
 .focus-overlay.open { display: flex; }
@@ -1521,8 +1520,8 @@ body::before {
   align-items: center; gap: 20px;
   padding: 24px 48px 44px;
   max-width: 640px; width: 100%;
-  animation: fadeUp .3s ease-out;
   position: relative; z-index: 1;
+  overflow-y: auto; max-height: 82vh;
 }
 /* 子タスクトグル */
 .focus-subtask-toggle {
@@ -1531,13 +1530,14 @@ body::before {
   width: 100%; text-align: center; letter-spacing: 0.05em;
 }
 .focus-subtask-toggle:hover { color: rgba(255,255,255,0.75); }
-/* 展開ボディ：モーダル内インライン配置 */
+/* 展開ボディ：モーダル外fixed配置（JSで位置計算） */
 #focus-subtask-body {
-  width: 100%;
-  background: rgba(255,255,255,0.04);
+  position: fixed;
+  background: rgba(255,255,255,0.06);
   border: 0.5px solid var(--border2);
   border-radius: 10px; padding: 10px 14px;
-  max-height: 40vh; overflow-y: auto;
+  overflow-y: auto;
+  z-index: 1001;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .focus-mode-label {
@@ -1606,10 +1606,11 @@ body::before {
 }
 .focus-link-item:hover { background: rgba(55,138,221,0.1); }
 .focus-exit-btn {
-  position: absolute; top: 16px; right: 16px;
-  font-size: 12px; color: rgba(255,255,255,0.55); background: none;
-  border: 0.5px solid rgba(255,255,255,0.22); border-radius: 7px; padding: 6px 14px;
+  position: fixed; top: 20px; right: 20px;
+  font-size: 24px; color: rgba(255,255,255,0.55); background: none;
+  border: 0.5px solid rgba(255,255,255,0.22); border-radius: 10px; padding: 12px 28px;
   cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s;
+  z-index: 1001;
 }
 .focus-exit-btn:hover { color: #fff; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); }
 .focus-worktimer-btn {
@@ -1655,11 +1656,11 @@ body::before {
 .focus-add-btn:hover { background: rgba(93,202,165,0.1); border-color: rgba(93,202,165,0.5); color: #5DCAA5; }
 .focus-sub-btn {
   font-size: 12px; padding: 10px 18px; border-radius: 10px;
-  border: 0.5px solid rgba(220,80,80,0.15); background: transparent;
-  cursor: pointer; color: rgba(220,80,80,0.35); font-family: 'Noto Sans JP', sans-serif;
+  border: 0.5px solid rgba(220,80,80,0.5); background: transparent;
+  cursor: pointer; color: rgba(220,80,80,0.85); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s;
 }
-.focus-sub-btn:hover { background: rgba(220,80,80,0.1); border-color: rgba(220,80,80,0.5); color: #DC5050; }
+.focus-sub-btn:hover { background: rgba(220,80,80,0.15); border-color: rgba(220,80,80,0.75); color: #FF6060; }
 .focus-done-btn {
   font-size: 12px; padding: 10px 24px; border-radius: 10px;
   border: none; background: var(--purple);
@@ -2689,8 +2690,8 @@ body::before {
 <!-- 集中モード -->
 <div class="focus-overlay" id="focus-overlay">
   <button class="focus-worktimer-btn" id="focus-worktimer-btn" onclick="toggleWorkTimerDisplay()">⏱</button>
+  <button class="focus-exit-btn" onclick="exitFocus()">✕ 離脱</button>
   <div class="focus-modal">
-    <button class="focus-exit-btn" onclick="exitFocus()">✕ 離脱</button>
     <div class="focus-mode-label">集中モード</div>
     <div class="focus-tags" id="focus-tags"></div>
     <div class="focus-task" id="focus-task"></div>
@@ -2724,9 +2725,9 @@ body::before {
         <span id="focus-subtask-label">▶ 子タスク</span>
       </div>
     </div>
-    <div id="focus-subtask-body" style="display:none; width:100%">
-      <div class="subtask-panel" id="focus-stp" style="display:block"></div>
-    </div>
+  </div>
+  <div id="focus-subtask-body" style="display:none">
+    <div class="subtask-panel" id="focus-stp" style="display:block"></div>
   </div>
   <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px">
     <button class="focus-quick-add" onclick="openModal('inbox')">＋ INBOX</button>
@@ -5794,7 +5795,18 @@ function addFocusTime(secs) {
 
 let focusSubtaskOpen = false;
 
-function positionFocusSubtask() { /* no-op: subtask body is now inline in modal */ }
+function positionFocusSubtask() {
+  const toggle = document.getElementById('focus-subtask-wrap');
+  const modal  = document.querySelector('.focus-modal');
+  const body   = document.getElementById('focus-subtask-body');
+  if (!toggle || !modal || !body) return;
+  const tr = toggle.getBoundingClientRect();
+  const mr = modal.getBoundingClientRect();
+  body.style.top       = (tr.bottom + 8) + 'px';
+  body.style.left      = mr.left + 'px';
+  body.style.width     = mr.width + 'px';
+  body.style.maxHeight = (window.innerHeight - tr.bottom - 32) + 'px';
+}
 
 function updateFocusSubtaskLabel(id) {
   const label = document.getElementById('focus-subtask-label');
