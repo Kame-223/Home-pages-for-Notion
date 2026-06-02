@@ -5802,8 +5802,14 @@ function startFocusWithTime(secs) {
 }
 
 function addFocusTime(secs) {
-  focusCountdown = Math.max(1, focusCountdown + secs);
-  if (secs > 0 && focusStartedAt && Date.now() - focusStartedAt <= 10000) {
+  const now = Date.now();
+  if (focusDeadlineTs) {
+    focusDeadlineTs += secs * 1000;
+  } else {
+    focusDeadlineTs = now + Math.max(1, secs) * 1000;
+  }
+  focusCountdown = (focusDeadlineTs - now) / 1000;
+  if (secs > 0 && focusStartedAt && now - focusStartedAt <= 10000) {
     focusEstimateSecs += secs;
   }
   if (focusExpired) {
@@ -5811,9 +5817,9 @@ function addFocusTime(secs) {
       clearInterval(focusBlinkInterval); focusBlinkInterval = null;
       document.getElementById('focus-overlay').style.background = '';
     }
-    focusExpired = false;
-    focusPaused  = false;
-    focusLastTickTs = null;
+    focusExpired     = false;
+    focusPaused      = false;
+    focusWorkStartTs = now;
     const runningBtns = document.getElementById('focus-btns-running');
     const expiredBtns = document.getElementById('focus-btns-expired');
     if (runningBtns) runningBtns.style.display = 'flex';
@@ -5933,17 +5939,27 @@ function toggleFocusLinkMenu() {
 
 function toggleFocusPause() {
   const pauseBtn = document.getElementById('focus-pause-btn');
+  const now = Date.now();
   if (focusPaused) {
-    focusPaused  = false;
-    focusLastTickTs = null;
+    // 再開：deadline を残り秒数から再構築
+    focusPaused      = false;
+    focusDeadlineTs  = now + Math.max(1, focusCountdown) * 1000;
+    focusWorkStartTs = now;
     if (pauseBtn) pauseBtn.textContent = '一時停止';
     clearInterval(focusInterval);
     focusInterval = setInterval(updateFocusDisplay, 1000);
   } else {
-    focusPaused = true;
+    // 一時停止：現在の残り秒数・作業時間をスナップショット
+    if (focusDeadlineTs) focusCountdown = (focusDeadlineTs - now) / 1000;
+    if (focusWorkStartTs) focusWorkAccum += (now - focusWorkStartTs) / 1000;
+    focusTotalSecs   = focusWorkAccum;
+    focusWorkStartTs = null;
+    focusPaused      = true;
     clearInterval(focusInterval);
-    focusInterval = null;
+    focusInterval    = null;
     if (pauseBtn) pauseBtn.textContent = '再開';
+    renderFocusTimer();
+    renderWorkTimer();
   }
 }
 
@@ -7581,35 +7597,26 @@ function refreshDeadlineTags() {
   });
 }
 
-let focusHiddenAt = null;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    // タブ非表示：インターバルを止めて時刻を記録（コールバック蓄積防止）
+    // インターバルを止める（コールバック蓄積防止）。deadlineは変更しないので復帰時に正確に再計算できる
     if (currentFocusId && !focusPaused && !focusExpired && focusInterval) {
       clearInterval(focusInterval);
       focusInterval = null;
-      focusHiddenAt = Date.now();
     }
     if (currentFocusId && !focusPaused && taskState[currentFocusId]) {
-      taskState[currentFocusId].savedCountdown = focusCountdown;
+      taskState[currentFocusId].savedCountdown = Math.ceil(Math.max(0, focusCountdown));
       saveTaskState();
     }
     return;
   }
-  // タブ復帰：非表示中の経過時間を一括適用してインターバルを再起動
-  if (currentFocusId && !focusPaused && !focusExpired && focusHiddenAt !== null) {
-    const hiddenSecs = Math.floor((Date.now() - focusHiddenAt) / 1000);
-    if (hiddenSecs > 0) {
-      focusCountdown = Math.max(0, focusCountdown - hiddenSecs);
-      focusTotalSecs += hiddenSecs;
-      renderFocusTimer();
-      renderWorkTimer();
-      if (focusCountdown <= 0) { focusTimerExpired(); focusHiddenAt = null; return; }
+  // タブ復帰：deadline基準で残り時間を再計算して即表示し、インターバル再起動
+  if (currentFocusId && !focusPaused && !focusExpired) {
+    updateFocusDisplay();
+    if (focusCountdown > 0) {
+      focusInterval = setInterval(updateFocusDisplay, 1000);
     }
-    focusLastTickTs = Date.now();
-    focusInterval = setInterval(updateFocusDisplay, 1000);
   }
-  focusHiddenAt = null;
   if (!currentFocusId) loadTasks();
 });
 
