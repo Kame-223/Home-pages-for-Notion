@@ -4479,7 +4479,7 @@ function renderCard(task, mode='today') {
       <div class="task-title-box" id="tt-${id}">${title}</div>
       <div class="card-side">
         <div style="display:flex;gap:4px">
-          <button class="btn-start ${s.focusSeconds>0?'restart':''}" id="start-${id}" onclick="startFocus('${id}')" style="flex:0 0 auto">${s.focusSeconds>0?'Restart':'Start'}</button>
+          <button class="btn-start ${(s.focusActive||s.focusSeconds>0)?'restart':''}" id="start-${id}" onclick="startFocus('${id}')" style="flex:0 0 auto">${(s.focusActive||s.focusSeconds>0)?'Restart':'Start'}</button>
           <button class="btn-done-big ${s.done?'undo':''}" id="done-${id}" onclick="toggleDone('${id}')">${s.done?'取り消し':'完了'}</button>
         </div>
       </div>
@@ -5698,25 +5698,39 @@ function startFocus(id) {
     ).join('');
   }
 
-  // 時間選択を表示、タイマーエリアを隠す
   const selectEl = document.getElementById('focus-time-select');
   const timerArea = document.getElementById('focus-timer-area');
-  if (selectEl) selectEl.style.display = 'block';
-  if (timerArea) timerArea.style.display = 'none';
+  const hasSaved  = s.focusActive && s.savedCountdown > 0;
 
   document.getElementById('focus-overlay').classList.add('open');
   currentFocusId = id;
 
-  // タイマーリセット
+  // タイマー変数リセット（共通）
   clearInterval(focusInterval);
   focusInterval = null;
-  focusPaused  = false;
-  focusExpired = false;
-  focusLastTickTs = null;
-  focusCountdown = 0;
-  focusTotalSecs = 0;
-  focusEstimateSecs = 0;
+  focusPaused = false; focusExpired = false; focusLastTickTs = null;
+  focusTotalSecs = 0; focusEstimateSecs = 0; focusStartedAt = 0;
   workTimerVisible = false;
+
+  if (hasSaved) {
+    // 再開：保存済み残り時間から即タイマー開始
+    focusCountdown = s.savedCountdown;
+    if (selectEl) selectEl.style.display = 'none';
+    if (timerArea) timerArea.style.display = 'flex';
+    const rb = document.getElementById('focus-btns-running');
+    const eb = document.getElementById('focus-btns-expired');
+    const pb = document.getElementById('focus-pause-btn');
+    if (rb) rb.style.display = 'flex';
+    if (eb) eb.style.display = 'none';
+    if (pb) pb.textContent = '一時停止';
+    focusInterval = setInterval(updateFocusDisplay, 1000);
+  } else {
+    // 通常：時間選択
+    focusCountdown = 0;
+    if (selectEl) selectEl.style.display = 'block';
+    if (timerArea) timerArea.style.display = 'none';
+  }
+
   renderFocusTimer();
   renderWorkTimer();
   window.dragonReact?.('focusStart');
@@ -5925,7 +5939,12 @@ function exitFocus() {
   ov.classList.remove('open');
   const id = currentFocusId;
   if (id) {
-    if (taskState[id]) delete taskState[id].savedCountdown;
+    if (taskState[id]) {
+      // タイマー状態を保存（再開用）
+      taskState[id].savedCountdown = focusCountdown;
+      taskState[id].focusActive    = focusCountdown > 0;
+      saveTaskState();
+    }
     saveFocusTotalToNotion(id);
     document.querySelectorAll(`#start-${id}`).forEach(el => {
       el.textContent = 'Restart';
@@ -5945,7 +5964,10 @@ function completeFocus() {
   window.dragonReact?.('focusEnd');
   const id = currentFocusId;
   if (id) {
-    if (taskState[id]) delete taskState[id].savedCountdown;
+    if (taskState[id]) {
+      delete taskState[id].savedCountdown;
+      taskState[id].focusActive = false;
+    }
     saveFocusTotalToNotion(id);
     toggleDone(id);
   }
