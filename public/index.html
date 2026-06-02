@@ -1653,6 +1653,13 @@ body::before {
   font-weight: 500; transition: all .2s;
 }
 .focus-add-btn:hover { background: rgba(93,202,165,0.1); border-color: rgba(93,202,165,0.5); color: #5DCAA5; }
+.focus-sub-btn {
+  font-size: 12px; padding: 10px 18px; border-radius: 10px;
+  border: 0.5px solid rgba(220,80,80,0.15); background: transparent;
+  cursor: pointer; color: rgba(220,80,80,0.35); font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 500; transition: all .2s;
+}
+.focus-sub-btn:hover { background: rgba(220,80,80,0.1); border-color: rgba(220,80,80,0.5); color: #DC5050; }
 .focus-done-btn {
   font-size: 12px; padding: 10px 24px; border-radius: 10px;
   border: none; background: var(--purple);
@@ -2700,11 +2707,13 @@ body::before {
       <div class="focus-timer" id="focus-timer">00:00:00</div>
       <div class="focus-btns" id="focus-btns-running">
         <button class="focus-pause" id="focus-pause-btn" onclick="toggleFocusPause()">一時停止</button>
+        <button class="focus-sub-btn" onclick="addFocusTime(-300)">-5分</button>
         <button class="focus-add-btn" onclick="addFocusTime(300)">+5分</button>
         <button class="focus-add-btn" onclick="addFocusTime(900)">+15分</button>
         <button class="focus-done-btn" onclick="completeFocus()">完了</button>
       </div>
       <div class="focus-btns" id="focus-btns-expired" style="display:none">
+        <button class="focus-sub-btn" onclick="addFocusTime(-300)">-5分</button>
         <button class="focus-add-btn" onclick="addFocusTime(300)">+5分</button>
         <button class="focus-add-btn" onclick="addFocusTime(900)">+15分</button>
         <button class="focus-done-btn" onclick="completeFocus()">完了</button>
@@ -5760,7 +5769,7 @@ function startFocusWithTime(secs) {
 
 function addFocusTime(secs) {
   focusCountdown = Math.max(1, focusCountdown + secs);
-  if (focusStartedAt && Date.now() - focusStartedAt <= 10000) {
+  if (secs > 0 && focusStartedAt && Date.now() - focusStartedAt <= 10000) {
     focusEstimateSecs += secs;
   }
   if (focusExpired) {
