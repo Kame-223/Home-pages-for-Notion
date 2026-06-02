@@ -1511,7 +1511,8 @@ body::before {
 .focus-overlay {
   position: fixed; inset: 0;
   background: rgba(10,8,24,1);
-  display: none; align-items: center; justify-content: center;
+  display: none; align-items: flex-start; justify-content: center;
+  padding-top: 10vh;
   z-index: 1000;
 }
 .focus-overlay.open { display: flex; }
@@ -1522,7 +1523,6 @@ body::before {
   max-width: 640px; width: 100%;
   animation: fadeUp .3s ease-out;
   position: relative; z-index: 1;
-  overflow-y: auto; max-height: 82vh;
 }
 /* 子タスクトグル */
 .focus-subtask-toggle {
@@ -1537,7 +1537,7 @@ body::before {
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border2);
   border-radius: 10px; padding: 10px 14px;
-  max-height: 30vh; overflow-y: auto;
+  max-height: 40vh; overflow-y: auto;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .focus-mode-label {
@@ -5538,6 +5538,7 @@ let focusTotalSecs    = 0;      // 今セッションの実作業秒数
 let focusEstimateSecs = 0;      // 今セッションで選択した見積もり秒数
 let focusStartedAt    = 0;      // タイマー開始時刻（ms）
 let workTimerVisible  = false;  // 総作業時間表示トグル
+let focusBlinkInterval = null;  // 点滅インターバル（終了時のみ使用）
 
 const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
 const TIME_TYPE_SECS  = { Quick: 900, Normal: 2700, Heavy: 5400 };
@@ -5608,12 +5609,13 @@ function focusTimerExpired() {
   const expiredBtns = document.getElementById('focus-btns-expired');
   if (runningBtns) runningBtns.style.display = 'none';
   if (expiredBtns) expiredBtns.style.display = 'flex';
-  // 点滅エフェクト
+  // 点滅エフェクト（タイマー終了時のみ）
   const overlay = document.getElementById('focus-overlay');
   let cnt = 0;
-  const blink = setInterval(() => {
-    overlay.style.background = cnt % 2 === 0 ? 'rgba(127,119,221,0.35)' : 'rgba(5,3,15,0.96)';
-    if (++cnt >= 8) { clearInterval(blink); overlay.style.background = ''; }
+  if (focusBlinkInterval) { clearInterval(focusBlinkInterval); focusBlinkInterval = null; }
+  focusBlinkInterval = setInterval(() => {
+    overlay.style.background = cnt % 2 === 0 ? 'rgba(127,119,221,0.35)' : 'rgba(10,8,24,1)';
+    if (++cnt >= 8) { clearInterval(focusBlinkInterval); focusBlinkInterval = null; overlay.style.background = ''; }
   }, 200);
   navigator.vibrate?.([300,150,300,150,300]);
 }
@@ -5762,6 +5764,10 @@ function addFocusTime(secs) {
     focusEstimateSecs += secs;
   }
   if (focusExpired) {
+    if (focusBlinkInterval) {
+      clearInterval(focusBlinkInterval); focusBlinkInterval = null;
+      document.getElementById('focus-overlay').style.background = '';
+    }
     focusExpired = false;
     focusPaused  = false;
     focusLastTickTs = null;
@@ -5888,11 +5894,12 @@ function toggleFocusPause() {
 }
 
 function exitFocus() {
-  clearInterval(focusInterval);
-  focusInterval = null;
-  focusPaused  = false;
-  focusExpired = false;
-  document.getElementById('focus-overlay').classList.remove('open');
+  clearInterval(focusInterval); focusInterval = null;
+  if (focusBlinkInterval) { clearInterval(focusBlinkInterval); focusBlinkInterval = null; }
+  focusPaused = false; focusExpired = false;
+  const ov = document.getElementById('focus-overlay');
+  ov.style.background = '';
+  ov.classList.remove('open');
   const id = currentFocusId;
   if (id) {
     if (taskState[id]) delete taskState[id].savedCountdown;
@@ -5906,11 +5913,12 @@ function exitFocus() {
 }
 
 function completeFocus() {
-  clearInterval(focusInterval);
-  focusInterval = null;
-  focusPaused  = false;
-  focusExpired = false;
-  document.getElementById('focus-overlay').classList.remove('open');
+  clearInterval(focusInterval); focusInterval = null;
+  if (focusBlinkInterval) { clearInterval(focusBlinkInterval); focusBlinkInterval = null; }
+  focusPaused = false; focusExpired = false;
+  const ov = document.getElementById('focus-overlay');
+  ov.style.background = '';
+  ov.classList.remove('open');
   window.dragonReact?.('focusEnd');
   const id = currentFocusId;
   if (id) {
