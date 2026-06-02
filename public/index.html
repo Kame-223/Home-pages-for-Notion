@@ -1614,10 +1614,10 @@ body::before {
 .focus-exit-btn:hover { color: #fff; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); }
 .focus-worktimer-btn {
   position: absolute; top: 16px; left: 16px;
-  font-size: 12px; color: rgba(255,255,255,0.55); background: none;
-  border: 0.5px solid rgba(255,255,255,0.22); border-radius: 7px; padding: 6px 14px;
+  font-size: 24px; color: rgba(255,255,255,0.55); background: none;
+  border: 0.5px solid rgba(255,255,255,0.22); border-radius: 10px; padding: 12px 28px;
   cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all .15s;
-  min-width: 40px; text-align: center;
+  min-width: 72px; text-align: center;
 }
 .focus-worktimer-btn:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.06); }
 .focus-timer {
@@ -5533,8 +5533,9 @@ let focusCountdown   = 0;      // 残り秒数
 let focusPaused      = false;
 let focusExpired     = false;
 let focusLastTickTs  = null;   // 最後にtickした時刻（タブ非表示対策）
-let focusTotalSecs   = 0;      // 今セッションの実作業秒数
-let workTimerVisible = false;  // 総作業時間表示トグル
+let focusTotalSecs    = 0;      // 今セッションの実作業秒数
+let focusEstimateSecs = 0;      // 今セッションで選択した見積もり秒数
+let workTimerVisible  = false;  // 総作業時間表示トグル
 
 const FOCUS_STEP_SECS = {'5m':300,'30m':1800,'1h':3600,'2h':7200,'3h+':10800};
 const TIME_TYPE_SECS  = { Quick: 900, Normal: 2700, Heavy: 5400 };
@@ -5569,19 +5570,28 @@ function toggleWorkTimerDisplay() {
 
 async function saveFocusTotalToNotion(id) {
   if (!id || focusTotalSecs < 5) return;
-  const addMins = Math.round(focusTotalSecs / 60);
-  if (addMins < 1) return;
-  const prev = taskState[id]?.totalWorkMins || 0;
-  const newTotal = prev + addMins;
+  const addActualMins   = Math.round(focusTotalSecs / 60);
+  const addEstimateMins = Math.round(focusEstimateSecs / 60);
+  if (addActualMins < 1) return;
+  const prevActual   = taskState[id]?.totalWorkMins    || 0;
+  const prevEstimate = taskState[id]?.totalEstimateMins || 0;
+  const newActual    = prevActual   + addActualMins;
+  const newEstimate  = prevEstimate + addEstimateMins;
   try {
     await fetch(`/api/notion?path=pages/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ properties: { '作業時間': { number: newTotal } } })
+      body: JSON.stringify({
+        properties: {
+          '作業時間':     { number: newActual },
+          '見積もり時間': { number: newEstimate }
+        }
+      })
     });
   } catch(e) { console.warn('作業時間Notion保存失敗:', e); }
   if (taskState[id]) {
-    taskState[id].totalWorkMins = newTotal;
+    taskState[id].totalWorkMins     = newActual;
+    taskState[id].totalEstimateMins = newEstimate;
     saveTaskState();
   }
 }
@@ -5689,6 +5699,7 @@ function startFocus(id) {
   focusLastTickTs = null;
   focusCountdown = 0;
   focusTotalSecs = 0;
+  focusEstimateSecs = 0;
   workTimerVisible = false;
   renderFocusTimer();
   renderWorkTimer();
@@ -5712,6 +5723,7 @@ function startFocus(id) {
 
 function startFocusWithTime(secs) {
   focusCountdown = secs;
+  focusEstimateSecs = secs;
   focusPaused  = false;
   focusExpired = false;
   focusLastTickTs = null;
