@@ -4332,7 +4332,7 @@ function loadTaskState() {
 function saveTaskState() {
   const toSave = {};
   for (const [id, s] of Object.entries(taskState)) {
-    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeType: s.timeType||'Normal', jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate };
+    toSave[id] = { done: s.done, pinned: s.pinned, important: s.important, timeType: s.timeType||'Normal', jikantai: s.jikantai, link: s.link, links: s.links, doneSessionDate: s.doneSessionDate, pinnedSessionDate: s.pinnedSessionDate, focusActive: s.focusActive, savedCountdown: s.savedCountdown, focusSeconds: s.focusSeconds, totalWorkMins: s.totalWorkMins, totalEstimateMins: s.totalEstimateMins };
   }
   localStorage.setItem('taskState', JSON.stringify(toSave));
 }
