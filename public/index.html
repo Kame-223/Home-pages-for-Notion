@@ -142,6 +142,21 @@ html[data-theme="light"] .gtd-slot-header { color: var(--text); background: var(
 html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.55); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.25); box-shadow: inset 0 0 20px rgba(255,255,255,0.3); }
 
+/* ===== ライトモード: GTDドロップダウン ===== */
+html[data-theme="light"] .gtd-dropdown {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+html[data-theme="light"] .gtd-opt { color: rgba(0,0,0,0.72); }
+html[data-theme="light"] .gtd-opt:hover { background: rgba(0,0,0,0.05); }
+html[data-theme="light"] .gtd-opt-fire { color: #dc2626; }
+html[data-theme="light"] .gtd-opt-fire:hover { background: rgba(220,38,38,0.07); }
+html[data-theme="light"] .gtd-opt-trash { color: rgba(0,0,0,0.35); }
+html[data-theme="light"] .gtd-opt-trash:hover { background: rgba(0,0,0,0.04); }
+html[data-theme="light"] .gtd-opt-project { color: #5030A0; }
+html[data-theme="light"] .gtd-opt-project:hover { background: rgba(144,112,192,0.08); }
+
 /* ===== ライトモード: タスク編集モーダル ===== */
 html[data-theme="light"] .task-edit-modal {
   background: #ffffff;
@@ -8572,7 +8587,7 @@ async function _wizFinish() {
 
 <!-- タスク編集モーダル -->
 <div class="task-edit-overlay" id="task-edit-overlay" onclick="closeEditModal()">
-  <div class="task-edit-modal" onclick="event.stopPropagation()">
+  <div class="task-edit-modal" onclick="event.stopPropagation();if(!event.target.closest('.gtd-btn-wrap'))document.getElementById('edit-gtd-dd')?.classList.remove('open')">
     <div class="edit-header">
       <div class="edit-header-left">
         <button class="edit-reset-btn" onclick="resetEditModal()">全リセット</button>
