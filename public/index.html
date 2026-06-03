@@ -6556,6 +6556,11 @@ function openModal(type) {
 }
 function closeModal(type) {
   document.getElementById(`modal-${type}`).classList.remove('open');
+  if (type === 'inbox') {
+    document.getElementById('inbox-props').style.display = 'none';
+    const tb = document.getElementById('inbox-prop-toggle-btn');
+    if (tb) tb.textContent = '＋ プロパティ';
+  }
 }
 async function addToInbox() {
   const btn = document.getElementById('inbox-save-btn');
