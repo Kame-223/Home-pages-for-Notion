@@ -7192,12 +7192,19 @@ function _injectExpandContent(panel, key) {
   div.className = 'gtd-expand-content';
 
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+  const LIMIT = 5;
   if (key === 'next') {
     const tasks = allTasks.filter(t => !isDone(t) && getProp(t,'GTD 種別') === '▶️ 次やる');
-    div.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+    const shown = tasks.slice(0, LIMIT);
+    const rest  = tasks.length - LIMIT;
+    div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+    if (rest > 0) div.innerHTML += `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandOverlayGtdAll(this,'next')">もっと表示（あと${rest}件）</button></div>`;
   } else if (key === 'someday') {
     const tasks = allTasks.filter(t => !isDone(t) && getProp(t,'GTD 種別') === '💫今じゃない');
-    div.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+    const shown = tasks.slice(0, LIMIT);
+    const rest  = tasks.length - LIMIT;
+    div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+    if (rest > 0) div.innerHTML += `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandOverlayGtdAll(this,'someday')">もっと表示（あと${rest}件）</button></div>`;
   } else if (key === 'project') {
     _renderExpandProjectContent(div);
   }
@@ -7274,6 +7281,15 @@ function toggleExpandInbox(btn) {
     placeholder.appendChild(cards);
     btn.textContent = 'INBOXを非表示';
   }
+}
+
+function expandOverlayGtdAll(btn, key) {
+  const isDoneT = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+  const gtdMap = { next: '▶️ 次やる', someday: '💫今じゃない' };
+  const tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdMap[key]);
+  const expandContent = btn.closest('.gtd-expand-content');
+  if (!expandContent) return;
+  expandContent.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
 }
 
 // 旧API互換
