@@ -2300,33 +2300,22 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
   position: absolute; inset: 0;
   background: rgba(245,245,252,0.96);
 }
-.task-overlay-body {
-  position: relative; z-index: 1;
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; padding: 12px;
-  margin-left: 68px;
-  width: calc(70vw - 68px); min-width: calc(820px - 68px);
-  box-sizing: border-box;
-  padding-bottom: 70px;
-  min-height: calc(100vh - 52px);
-}
-/* オーバーレイ左：INBOX sticky */
+.task-overlay-body { position: relative; z-index: 1; }
+/* オーバーレイ列：JSで座標をposition:fixedとして設定 */
 .task-overlay-inbox {
   display: flex; flex-direction: column;
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px; overflow: hidden;
   background: rgba(13,13,26,0.82);
-  position: sticky; top: 12px; align-self: start;
-  max-height: calc(100vh - 82px);
+  position: fixed;
 }
 .task-overlay-inbox-list { flex: 1; overflow-y: auto; padding: 6px; }
-/* オーバーレイ右：展開コンテンツ */
 .task-overlay-right {
   display: flex; flex-direction: column;
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px; overflow: hidden;
   background: rgba(13,13,26,0.82);
-  min-height: 0;
+  position: fixed; overflow-y: auto;
 }
 .overlay-right-header {
   display: flex; align-items: center;
@@ -7103,12 +7092,26 @@ function openOverlay(key) {
   overlayInboxExpanded = false;
   overlayProjectId = null;
   const overlay = document.getElementById('task-overlay');
-  overlay.style.display = 'flex';
-  const grid = document.querySelector('.task-page-grid');
-  const body = overlay.querySelector('.task-overlay-body');
-  if (grid && body) {
-    body.style.marginTop = grid.getBoundingClientRect().top + 'px';
+  // 表示前にパネルの座標を測定してfixed位置に設定
+  const inboxPanel = document.getElementById('task-inbox-col-wrap');
+  const gtdCol    = document.getElementById('task-gtd-col');
+  const oInbox    = overlay.querySelector('.task-overlay-inbox');
+  const oRight    = overlay.querySelector('.task-overlay-right');
+  if (inboxPanel && oInbox) {
+    const r = inboxPanel.getBoundingClientRect();
+    oInbox.style.left = r.left + 'px';
+    oInbox.style.top  = r.top  + 'px';
+    oInbox.style.width = r.width + 'px';
+    oInbox.style.maxHeight = (window.innerHeight - r.top - 52) + 'px';
   }
+  if (gtdCol && oRight) {
+    const r = gtdCol.getBoundingClientRect();
+    oRight.style.left   = r.left   + 'px';
+    oRight.style.top    = r.top    + 'px';
+    oRight.style.width  = r.width  + 'px';
+    oRight.style.height = r.height + 'px';
+  }
+  overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
   _renderOverlayInbox();
   _renderOverlayRight();
@@ -7117,8 +7120,13 @@ function openOverlay(key) {
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-  document.getElementById('task-overlay').style.display = 'none';
+  const overlay = document.getElementById('task-overlay');
+  overlay.style.display = 'none';
   document.body.style.overflow = '';
+  const oInbox = overlay.querySelector('.task-overlay-inbox');
+  const oRight = overlay.querySelector('.task-overlay-right');
+  if (oInbox) oInbox.style.cssText = '';
+  if (oRight) oRight.style.cssText = '';
 }
 
 function showOverlayInbox() {
