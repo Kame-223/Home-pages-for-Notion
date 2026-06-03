@@ -7202,6 +7202,8 @@ function closeOverlay() {
     el.classList.remove('expand-target');
     const content = el.querySelector('.gtd-expand-content');
     if (content) content.remove();
+    const pag = el.querySelector('.expand-pagination-bar');
+    if (pag) pag.remove();
     // gtd-slot-headerのテキストをリセット
     const sh = el.querySelector('.gtd-slot-header');
     if (sh) sh.textContent = slotId === 'gtd-slot-project' ? 'PROJECT' : '';
