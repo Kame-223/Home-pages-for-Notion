@@ -7677,7 +7677,7 @@ function _buildProjectLeftHtml(pid) {
 }
 
 // ===== タスクページ ドラッグ&ドロップ =====
-let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragActive = false;
+let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragActive = false, gtdDragSrcGtd = null;
 
 const GTD_DROP_AREAS = [
   { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
@@ -7713,6 +7713,7 @@ function initGtdDrag() {
         moved = true;
         gtdDragId = id;
         gtdDragEl = card;
+        gtdDragSrcGtd = getProp(task, 'GTD 種別') || '📥 INBOX';
         card.classList.add('gtd-dragging');
         gtdDragGhost = document.createElement('div');
         gtdDragGhost.className = 'gtd-drag-ghost';
@@ -7739,11 +7740,13 @@ function initGtdDrag() {
 }
 
 function updateGtdDropHighlight(cx, cy) {
-  GTD_DROP_AREAS.forEach(({ elId }) => {
+  GTD_DROP_AREAS.forEach(({ elId, gtdVal }) => {
     const el = document.getElementById(elId);
     if (!el) return;
+    // ドラッグ元のパネルはハイライトしない
+    if (gtdVal === gtdDragSrcGtd) { el.classList.remove('gtd-drop-active'); return; }
     const r = el.getBoundingClientRect();
-    const over = cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+    const over = r.width > 0 && cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
     el.classList.toggle('gtd-drop-active', over);
   });
 }
@@ -7755,7 +7758,7 @@ function finishGtdDrag(cx, cy) {
   GTD_DROP_AREAS.forEach(({ elId }) => document.getElementById(elId)?.classList.remove('gtd-drop-active'));
 
   const savedId = gtdDragId;
-  gtdDragId = null; gtdDragEl = null; gtdDragActive = false;
+  gtdDragId = null; gtdDragEl = null; gtdDragActive = false; gtdDragSrcGtd = null;
 
   const target = GTD_DROP_AREAS.find(({ elId }) => {
     const el = document.getElementById(elId);
