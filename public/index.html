@@ -7251,6 +7251,9 @@ function closeOverlay() {
 
   document.body.style.overflow = '';
   renderAll();
+  // overlayMode が null になった後に renderTaskPage を呼ぶことで
+  // !overlayMode ガードが通り INBOX リストが最新状態に更新される
+  if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
 }
 
 function _injectExpandContent(panel, key) {
