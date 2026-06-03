@@ -4351,10 +4351,11 @@ function areaTagCls(area) {
   return 'tag-gray';
 }
 function areaBorderColor(area) {
-  if (area==='課題') return '#9070C0';
-  if (area==='個人') return '#F8D8B0';
-  if (area==='生活') return '#C0E0C0';
-  return 'rgba(255,255,255,0.15)';
+  const light = document.documentElement.dataset.theme === 'light';
+  if (area==='課題') return light ? '#6040B8' : '#9070C0';
+  if (area==='個人') return light ? '#b87a00' : '#F8D8B0';
+  if (area==='生活') return light ? '#3A7840' : '#C0E0C0';
+  return light ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)';
 }
 function subjectTagCls(s) {
   if (s==='ELA') return 'tag-navy';
