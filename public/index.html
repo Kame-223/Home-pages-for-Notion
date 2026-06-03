@@ -753,6 +753,9 @@ body::before {
 .bottom-divider { display: none; }
 .bottom-label-red, .bottom-label-blue { display: none; }
 
+/* Eモード：今日やること=左、スケジュール=右 */
+.content-grid:not(.select-mode) .today-board { order: -1; }
+
 /* ===== 実行モード下段 ===== */
 .day-schedule {
   background: var(--board-bottom);
