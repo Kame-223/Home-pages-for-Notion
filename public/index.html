@@ -7102,7 +7102,13 @@ function openOverlay(key) {
   overlayInboxShown = false;
   overlayInboxExpanded = false;
   overlayProjectId = null;
-  document.getElementById('task-overlay').style.display = 'flex';
+  const overlay = document.getElementById('task-overlay');
+  overlay.style.display = 'flex';
+  const grid = document.querySelector('.task-page-grid');
+  const body = overlay.querySelector('.task-overlay-body');
+  if (grid && body) {
+    body.style.marginTop = grid.getBoundingClientRect().top + 'px';
+  }
   _renderOverlayInbox();
   _renderOverlayRight();
 }
