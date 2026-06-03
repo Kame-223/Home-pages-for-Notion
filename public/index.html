@@ -53,6 +53,10 @@ html[data-theme="light"] .sidebar {
   background: rgba(255,255,255,0.6);
   border-right: 0.5px solid rgba(0,0,0,0.08);
 }
+html[data-theme="light"] .page-wrapper::before {
+  background: rgba(255,255,255,0.6);
+  border-right-color: rgba(0,0,0,0.08);
+}
 html[data-theme="light"] .sb-btn:hover { background: rgba(0,0,0,0.06); }
 html[data-theme="light"] .datetime-widget {
   background: rgba(255,255,255,0.92);
@@ -202,6 +206,15 @@ body::before {
   pointer-events: none;
 }
 .page-wrapper { position: relative; z-index: 1; }
+.page-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 68px;
+  background: rgba(13,13,26,0.75);
+  border-right: 0.5px solid rgba(255,255,255,0.08);
+  z-index: 0;
+}
 
 /* ===== PAGE WRAPPER ===== */
 .page-wrapper {
