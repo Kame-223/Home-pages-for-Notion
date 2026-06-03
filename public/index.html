@@ -1874,6 +1874,9 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 .fr-done-overlay.active { display: flex; }
 .fr-done-check { font-size: 55px; line-height: 1; pointer-events: none; }
 .fr-done-label { font-size: 32px; font-weight: 700; color: var(--text); pointer-events: none; }
+html[data-theme="light"] .fr-label { color: rgba(0,0,0,0.55); }
+html[data-theme="light"] .fr-section-label { color: rgba(0,0,0,0.55); }
+html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 .fr-textarea { resize: none; overflow: hidden; }
 .furikaeri-save {
   font-size: 12px; padding: 8px 20px; border-radius: 8px;
@@ -2626,20 +2629,20 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
             </div>
           </div>
 
-          <div class="fr-section-label">📅 あったこと・感想 <span class="fr-optional">任意</span></div>
+          <div class="fr-section-label">📅 あったこと・感想</div>
           <textarea class="fr-textarea" id="fr-event" placeholder="今日あったことを書こう..."></textarea>
 
-          <div class="fr-section-label">✨ よかったこと <span class="fr-optional">任意</span></div>
+          <div class="fr-section-label">✨ よかったこと</div>
           <textarea class="fr-textarea" id="fr-good" placeholder="書けたら書こう..."></textarea>
 
-          <div class="fr-section-label">☔️ 嫌だったこと <span class="fr-optional">任意</span></div>
+          <div class="fr-section-label">☔️ 嫌だったこと</div>
           <textarea class="fr-textarea" id="fr-bad" placeholder="書けたら書こう..."></textarea>
 
           <div id="weekly-section" class="hidden">
             <div class="fr-weekly-header">🌟 週次レビュー — 1週間おつかれ！ゆっくり振り返ろ〜</div>
-            <div class="fr-section-label">📝 今週の振り返り <span class="fr-optional">任意</span></div>
+            <div class="fr-section-label">📝 今週の振り返り</div>
             <textarea class="fr-textarea" id="fr-weekly" placeholder="今週どうだった？"></textarea>
-            <div class="fr-section-label">🎯 来週の目標 <span class="fr-optional">任意</span></div>
+            <div class="fr-section-label">🎯 来週の目標</div>
             <textarea class="fr-textarea" id="fr-next-week" placeholder="来週は何をしたい？"></textarea>
           </div>
 
