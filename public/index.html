@@ -2308,18 +2308,19 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 }
 /* サイドバーは暗幕より前面に常に */
 .sidebar { position: relative; z-index: 20; }
-/* 展開中にパネルを暗幕の前に浮かせる（backdrop z-index:5 より上の10） */
-.panel-expand-active {
-  position: relative !important;
-  z-index: 10 !important;
-}
-/* 展開中のINBOX sticky */
+/* 展開中: INBOXとGTD列を暗幕(z:5)より前面に出す
+   task-inbox-col は position:sticky 持ち → z-index だけ上げれば OK
+   task-gtd-col も position:sticky → 列ごと z-index を上げる必要がある（子要素のz-indexでは脱出不可） */
 .task-inbox-col.expand-sticky {
   position: sticky;
   top: 12px;
   align-self: start;
   max-height: calc(100vh - 76px);
   overflow-y: auto;
+  z-index: 10;
+}
+.task-gtd-col.expand-col-active {
+  z-index: 10;
 }
 /* 展開中のGTDパネル（右列全体に広がる） */
 .task-gtd-area.expand-target {
@@ -6213,6 +6214,9 @@ function setMode(mode) {
       requestAnimationFrame(addCalBufferOverlays);
       requestAnimationFrame(setupHighlightClipping);
     } else {
+      // Sモードで設定したsched-stickyの固定高さを解除（Eモードは全スロット表示）
+      const schedSticky = document.querySelector('.sched-sticky');
+      if (schedSticky) { schedSticky.style.height = ''; schedSticky.style.maxHeight = ''; }
       fcCalendar.batchRendering(() => {
         fcCalendar.setOption('expandRows', false);
         fcCalendar.setOption('contentHeight', 'auto');
