@@ -3420,6 +3420,9 @@ function gcalEventColor(title, description, calName, isIcu) {
     return { bg:'rgba(192,192,232,0.22)', border:'#C0C0E8', text:'#4444A0' };
   if (/生活|寮/.test(calName))
     return { bg:'rgba(192,224,192,0.22)', border:'#C0E0C0', text:'#3A7040' };
+  // ICUカレンダーでSUBJECTに該当しない予定は紫
+  if (isIcu)
+    return { bg:'rgba(127,119,221,0.18)', border:'#7F77DD', text:'#9F97ED' };
   return { bg:'rgba(248,216,176,0.22)', border:'#F8D8B0', text:'#905020' };
 }
 
