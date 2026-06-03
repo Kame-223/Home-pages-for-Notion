@@ -7507,6 +7507,7 @@ function initGtdDrag() {
 
     const id = card.id?.replace(/^gtc-/, '');
     if (!id) return;
+    e.preventDefault(); // ドラッグ中の文字選択を防ぐ
 
     const task = allTasks.find(t => t.id === id);
     if (!task) return;
