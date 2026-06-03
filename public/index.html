@@ -2098,7 +2098,7 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 12px;
-  padding-bottom: 100vh;
+  padding-bottom: 50vh;
 }
 .task-inbox-col {
   display: flex;
@@ -2293,7 +2293,7 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 /* ===== 展開オーバーレイ ===== */
 #task-overlay {
   position: fixed; inset: 0; z-index: 250;
-  display: flex; align-items: stretch;
+  display: flex; align-items: flex-start;
 }
 .task-overlay-backdrop {
   position: absolute; inset: 0;
@@ -2303,8 +2303,11 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
   position: relative; z-index: 1;
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 12px; padding: 12px;
-  width: 100%; box-sizing: border-box;
+  margin-left: 68px;
+  width: calc(70vw - 68px); min-width: calc(820px - 68px);
+  box-sizing: border-box;
   padding-bottom: 70px;
+  min-height: calc(100vh - 52px);
 }
 /* オーバーレイ左：INBOX sticky */
 .task-overlay-inbox {
