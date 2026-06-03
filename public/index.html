@@ -141,6 +141,7 @@ html[data-theme="light"] .gtd-reveal-btn:hover { background: rgba(0,0,0,0.07); b
 html[data-theme="light"] .gtd-drag-ghost { background: rgba(255,255,255,0.97); color: rgba(0,0,0,0.85); box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
 html[data-theme="light"] .gtd-slot-header { color: var(--text); background: var(--surface2); border-bottom-color: var(--border); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.55); }
+html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active { background: rgba(127,119,221,0.12); border-color: rgba(127,119,221,0.6); }
 
 /* ICUチップ（白ベース→暗色に） */
 /* ===== ライトモード: タスク編集モーダル ===== */
@@ -2267,6 +2268,10 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 /* 右列パネル */
 #task-gtd-col .task-gtd-area {
   background: rgba(255,255,255,0.12);
+}
+#task-gtd-col .task-gtd-area.gtd-drop-active {
+  border-color: rgba(127,119,221,0.7);
+  background: rgba(127,119,221,0.15);
 }
 /* GTDパネル 大ラベル */
 .gtd-panel-name {
