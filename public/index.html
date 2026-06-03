@@ -646,7 +646,7 @@ body::before {
 .content-grid.select-mode .fc-scroller { overflow: hidden !important; }
 .content-grid.select-mode .fc-timegrid-slot { height: 20px !important; }
 .content-grid.select-mode .cal-buf-top { height: 9px; }
-.content-grid.select-mode .cal-buf-bot { height: 20px; background: rgba(0,0,0,0.12) !important; border-top: 2px solid rgba(0,0,0,0.25) !important; }
+.content-grid.select-mode .cal-buf-bot { height: 20px; background: rgba(240,240,246,0.09) !important; border-top: 1px solid rgba(240,240,246,0.14) !important; }
 .content-grid.select-mode #fc-container .fc-view-harness,
 .content-grid.select-mode #fc-container .fc-scroller,
 .content-grid.select-mode #fc-container .fc-timegrid-body,
@@ -714,13 +714,18 @@ body::before {
   touch-action: none;
 }
 .fc-timegrid-col-frame { position: relative; }
+.fc-timegrid-body { position: relative; }
 .cal-buf-top, .cal-buf-bot {
   position: absolute; left: 0; right: 0;
   pointer-events: none; z-index: 20;
-  background: var(--bg, #0a0a0f);
+  background: rgba(240,240,246,0.07);
 }
-.cal-buf-top { top: 0; height: 18px; border-bottom: 1px solid rgba(255,255,255,0.12); }
-.cal-buf-bot { bottom: 0; height: 27px; border-top: 1px solid rgba(255,255,255,0.12); }
+.cal-buf-top { top: 0; height: 18px; border-bottom: 1px solid rgba(240,240,246,0.12); }
+.cal-buf-bot { bottom: 0; height: 27px; border-top: 1px solid rgba(240,240,246,0.12); }
+html[data-theme="light"] .cal-buf-top,
+html[data-theme="light"] .cal-buf-bot { background: rgba(160,162,172,0.14); }
+html[data-theme="light"] .cal-buf-top { border-bottom-color: rgba(140,142,155,0.22); }
+html[data-theme="light"] .cal-buf-bot { border-top-color: rgba(140,142,155,0.22); }
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
 .gcal-kind-chip {
@@ -3145,11 +3150,11 @@ function calToDateStr(d) {
 }
 
 function addCalBufferOverlays() {
-  const frame = document.querySelector('.fc-timegrid-col-frame');
-  if (!frame) return;
-  if (!frame.querySelector('.cal-buf-top')) {
-    const t = document.createElement('div'); t.className = 'cal-buf-top'; frame.appendChild(t);
-    const b = document.createElement('div'); b.className = 'cal-buf-bot'; frame.appendChild(b);
+  const body = document.querySelector('.fc-timegrid-body');
+  if (!body) return;
+  if (!body.querySelector('.cal-buf-top')) {
+    const t = document.createElement('div'); t.className = 'cal-buf-top'; body.appendChild(t);
+    const b = document.createElement('div'); b.className = 'cal-buf-bot'; body.appendChild(b);
   }
 }
 
