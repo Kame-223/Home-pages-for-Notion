@@ -7102,7 +7102,7 @@ function openOverlay(key) {
   const gtdCol   = document.getElementById('task-gtd-col');
   const btmNav   = document.querySelector('.bottom-nav');
   const btmTop   = btmNav ? btmNav.getBoundingClientRect().top : window.innerHeight;
-  const panelH   = btmTop - 12;
+  const panelH   = btmTop - 20;
   const inboxR   = inboxCol ? inboxCol.getBoundingClientRect() : null;
   const gtdR     = gtdCol   ? gtdCol.getBoundingClientRect()   : null;
 
@@ -7110,7 +7110,7 @@ function openOverlay(key) {
   if (inboxCol && inboxR) {
     inboxCol._expandOrigStyle = inboxCol.style.cssText;
     Object.assign(inboxCol.style, {
-      position: 'fixed', top: '12px', left: inboxR.left + 'px',
+      position: 'fixed', top: '20px', left: inboxR.left + 'px',
       width: inboxR.width + 'px', height: panelH + 'px',
       overflowY: 'auto', zIndex: '10', boxSizing: 'border-box'
     });
@@ -7120,7 +7120,7 @@ function openOverlay(key) {
   if (gtdCol && gtdR) {
     gtdCol._expandOrigStyle = gtdCol.style.cssText;
     Object.assign(gtdCol.style, {
-      position: 'fixed', top: '12px', left: gtdR.left + 'px',
+      position: 'fixed', top: '20px', left: gtdR.left + 'px',
       width: gtdR.width + 'px', height: panelH + 'px',
       zIndex: '10', boxSizing: 'border-box', overflow: 'hidden'
     });
