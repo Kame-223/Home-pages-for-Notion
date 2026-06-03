@@ -4202,23 +4202,7 @@ function renderNextList() {
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
     let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
-    if (area === '課題') {
-      const bySubject = {};
-      aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
-      const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
-      subKeys.forEach((sub, i) => {
-        let subTasks = bySubject[sub];
-        if (sub === 'ELA') {
-          subTasks = [...subTasks].sort(byDeadline);
-        } else {
-          subTasks = [...subTasks].sort(byDeadline);
-        }
-        if (i > 0) inner += `<div style="height:14px"></div>`;
-        inner += subTasks.map(t => renderCard(t,'next')).join('');
-      });
-    } else {
-      inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next')).join('');
-    }
+    inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next')).join('');
     html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
@@ -7334,11 +7318,12 @@ function _injectExpandContent(panel, key) {
   const isDoneT = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
 
   if (key === 'next') {
-    const tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === '▶️ 次やる');
+    const byDl = (a, b) => { const ma = dlMs(a), mb = dlMs(b); if (!isFinite(ma)&&!isFinite(mb)) return 0; if (!isFinite(ma)) return 1; if (!isFinite(mb)) return -1; return ma-mb; };
+    const tasks = [...allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === '▶️ 次やる')].sort(byDl);
     const count = _overlayNextCount;
     const shown = tasks.slice(0, count);
     const rest  = tasks.length - count;
-    // エリア別グループ
+    // エリア別グループ（エリア内も締切順）
     const areaOrder = ['課題','個人','生活','ICU','カナダ'];
     const areaSlug = a => a==='課題'?'kadai':a==='個人'?'personal':a==='生活'?'seikatsu':'other';
     const grouped = {};
