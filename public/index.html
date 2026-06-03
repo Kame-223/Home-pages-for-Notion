@@ -2335,24 +2335,8 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
   flex: 1 !important;
   overflow: hidden !important;
 }
-/* 展開中：gtd-reveal-wrap をタイトルヘッダーに変換 */
-.task-gtd-area.expand-target .gtd-reveal-wrap {
-  flex: none;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 0.5px solid rgba(255,255,255,0.1);
-}
-/* 展開中：展開ボタンを非表示 */
-.task-gtd-area.expand-target .gtd-reveal-btn {
-  display: none;
-}
-/* 展開中：パネル名を左寄せヘッダーに */
-.task-gtd-area.expand-target .gtd-panel-name {
-  text-align: left;
-  font-size: 16px;
-}
+/* 展開中：reveal-wrap は非表示（タイトルはgtd-slot-headerに移す） */
+.task-gtd-area.expand-target .gtd-reveal-wrap { display: none; }
 /* 展開中：タスク一覧エリア */
 .gtd-expand-content {
   flex: 1;
@@ -2361,9 +2345,18 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 }
 /* 展開中：プロジェクトパネルの折りたたみ要素を隠す */
 .task-gtd-area.expand-target .proj-mini-grid,
-.task-gtd-area.expand-target .proj-mini-footer {
-  display: none;
+.task-gtd-area.expand-target .proj-mini-footer { display: none; }
+/* 展開時 INBOXプレースホルダー */
+.expand-inbox-placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; flex: 1; padding: 20px;
 }
+.expand-inbox-title {
+  font-size: 18px; font-weight: 700;
+  color: var(--text); text-align: center; letter-spacing: 0.04em;
+}
+.expand-inbox-cards { width: 100%; }
 /* PROJECT詳細オーバーレイ */
 .proj-overlay-list-wrap { flex: 1; overflow-y: auto; position: relative; }
 .proj-overlay-grid { padding: 12px; }
@@ -7155,6 +7148,20 @@ function openOverlay(key) {
     }
   });
 
+  // INBOXパネルをプレースホルダーに変換
+  const inboxHeader = document.querySelector('#task-inbox-col-wrap .task-toggle-header');
+  const inboxList   = document.getElementById('task-inbox-list');
+  if (inboxHeader) { inboxHeader._expandHide = true; inboxHeader.style.display = 'none'; }
+  if (inboxList) {
+    inboxList._expandOrigHTML  = inboxList.innerHTML;
+    inboxList._expandOrigStyle = inboxList.getAttribute('style') || '';
+    inboxList.innerHTML = `<div class="expand-inbox-placeholder">
+      <div class="expand-inbox-title">📥 INBOX</div>
+      <button class="gtd-reveal-btn" onclick="toggleExpandInbox(this)">INBOXを表示</button>
+    </div>`;
+    inboxList.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow-y:auto;';
+  }
+
   document.body.style.overflow = 'hidden';
 }
 
@@ -7189,7 +7196,23 @@ function closeOverlay() {
     el.classList.remove('expand-target');
     const content = el.querySelector('.gtd-expand-content');
     if (content) content.remove();
+    // gtd-slot-headerのテキストをリセット
+    const sh = el.querySelector('.gtd-slot-header');
+    if (sh) sh.textContent = slotId === 'gtd-slot-project' ? 'PROJECT' : '';
   });
+
+  // INBOXパネルを元に戻す
+  const inboxHeader = document.querySelector('#task-inbox-col-wrap .task-toggle-header');
+  if (inboxHeader && inboxHeader._expandHide) {
+    inboxHeader.style.display = '';
+    inboxHeader._expandHide = false;
+  }
+  const inboxList = document.getElementById('task-inbox-list');
+  if (inboxList && inboxList._expandOrigHTML !== undefined) {
+    inboxList.innerHTML = inboxList._expandOrigHTML;
+    inboxList.style.cssText = inboxList._expandOrigStyle || '';
+    inboxList._expandOrigHTML = undefined;
+  }
 
   document.body.style.overflow = '';
   renderAll();
@@ -7198,6 +7221,11 @@ function closeOverlay() {
 function _injectExpandContent(panel, key) {
   const existing = panel.querySelector('.gtd-expand-content');
   if (existing) existing.remove();
+
+  // gtd-slot-headerにタイトルを設定
+  const slotHeader = panel.querySelector('.gtd-slot-header');
+  const titleMap = { next: '▶️ 次やる', someday: '💫 今じゃない', project: 'PROJECT' };
+  if (slotHeader) slotHeader.textContent = titleMap[key] || '';
 
   const div = document.createElement('div');
   div.className = 'gtd-expand-content';
@@ -7257,6 +7285,34 @@ function _renderOverlay() {
   if (!panel) return;
   const content = panel.querySelector('.gtd-expand-content');
   if (content) _injectExpandContent(panel, overlayMode);
+}
+
+function toggleExpandInbox(btn) {
+  const placeholder = btn.closest('.expand-inbox-placeholder');
+  if (!placeholder) return;
+  const title    = placeholder.querySelector('.expand-inbox-title');
+  const existing = placeholder.querySelector('.expand-inbox-cards');
+
+  if (existing) {
+    // カード非表示 → タイトル復活
+    existing.remove();
+    if (title) title.style.display = '';
+    btn.textContent = 'INBOXを表示';
+    placeholder.style.justifyContent = 'center';
+  } else {
+    // カード表示 → タイトル非表示
+    const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+    const tasks  = allTasks.filter(t => !isDone(t) &&
+      (!getProp(t,'GTD 種別') || getProp(t,'GTD 種別') === '📥 INBOX')).slice(0, 5);
+    const cards  = document.createElement('div');
+    cards.className = 'expand-inbox-cards';
+    cards.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+    if (title) title.style.display = 'none';
+    placeholder.style.justifyContent = 'flex-start';
+    placeholder.style.paddingTop = '12px';
+    placeholder.appendChild(cards);
+    btn.textContent = 'INBOXを非表示';
+  }
 }
 
 // 旧API互換
