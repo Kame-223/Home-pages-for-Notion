@@ -6640,7 +6640,7 @@ function removeInboxLink(i) { inboxLinks.splice(i,1); renderInboxLinks(); }
 function toggleInboxProps() {
   const props = document.getElementById('inbox-props');
   const btn   = document.getElementById('inbox-prop-toggle-btn');
-  const isOpen = props.style.display !== 'none';
+  const isOpen = props.style.display === 'flex';
   props.style.display = isOpen ? 'none' : 'flex';
   btn.textContent = isOpen ? '＋ プロパティ' : '− プロパティ';
 }
