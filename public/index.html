@@ -7097,39 +7097,37 @@ function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
 
-  // 暗幕を表示
-  // パネルをfixedで配置する前に位置を測定（スクロール位置に依存しない表示のため）
+  // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
   const gtdCol   = document.getElementById('task-gtd-col');
   const btmNav   = document.querySelector('.bottom-nav');
   const btmTop   = btmNav ? btmNav.getBoundingClientRect().top : window.innerHeight;
   const panelH   = btmTop - 12;
+  const inboxR   = inboxCol ? inboxCol.getBoundingClientRect() : null;
+  const gtdR     = gtdCol   ? gtdCol.getBoundingClientRect()   : null;
 
-  // INBOXパネルを position:fixed で 12px〜ボトムナビ上端に固定
-  if (inboxCol) {
-    const r = inboxCol.getBoundingClientRect();
+  // 測定完了後にまとめて fixed 適用
+  if (inboxCol && inboxR) {
     inboxCol._expandOrigStyle = inboxCol.style.cssText;
     Object.assign(inboxCol.style, {
-      position: 'fixed', top: '12px', left: r.left + 'px',
-      width: r.width + 'px', height: panelH + 'px',
+      position: 'fixed', top: '12px', left: inboxR.left + 'px',
+      width: inboxR.width + 'px', height: panelH + 'px',
       overflowY: 'auto', zIndex: '10', boxSizing: 'border-box'
     });
     inboxCol.classList.add('expand-sticky');
   }
 
-  // GTD列を position:fixed で同じ高さに固定
-  if (gtdCol) {
-    const r = gtdCol.getBoundingClientRect();
+  if (gtdCol && gtdR) {
     gtdCol._expandOrigStyle = gtdCol.style.cssText;
     Object.assign(gtdCol.style, {
-      position: 'fixed', top: '12px', left: r.left + 'px',
-      width: r.width + 'px', height: panelH + 'px',
-      zIndex: '10', boxSizing: 'border-box'
+      position: 'fixed', top: '12px', left: gtdR.left + 'px',
+      width: gtdR.width + 'px', height: panelH + 'px',
+      zIndex: '10', boxSizing: 'border-box', overflow: 'hidden'
     });
     gtdCol.classList.add('expand-col-active');
   }
 
-  // 暗幕を表示（パネルfixed設定後）
+  // 暗幕を表示
   document.getElementById('task-overlay').style.display = 'block';
 
   // 選択パネルだけ展開、他は非表示
