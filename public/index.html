@@ -6481,6 +6481,7 @@ async function saveEditModal() {
 
   closeEditModal();
   renderAll();
+  if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
 
   const props = {
     'GTD 種別': {status: {name: gtdVal}},
@@ -6543,7 +6544,7 @@ async function addToInbox() {
   if (deadline)  props['締切日']      = {date:{start:deadline}};
   if (firstLink) props['作業リンク']  = {url:firstLink};
 
-  // フォームリセットとモーダルクローズを即座に（楽観的UI）
+  // フォームリセットとモーダルクローズを即座に
   document.getElementById('inbox-input').value = '';
   document.querySelectorAll('#inbox-area .edit-chip,#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
   document.getElementById('inbox-deadline-date').value = '';
@@ -6558,22 +6559,46 @@ async function addToInbox() {
   showToast('📥 INBOXに追加しました！', 'rgba(127,119,221,0.92)');
   if (btn) btn.disabled = false;
 
-  // Notion保存はバックグラウンドで実行
-  try {
-    const page = await notionCreate(DB.tasks, props);
-    if (page?.id) {
-      taskState[page.id] = { done:false, pinned:false, important:isImportant,
-        timeType:'Normal', focusSeconds:0, jikantai:null, link:firstLink, links };
-      saveTaskState();
-      allTasks.push(page);
-      try { renderAll(); } catch(e) {}
-      if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+  // 仮タスクを即座にリストに追加（楽観的UI）
+  const tempId = '_tmp_' + Date.now();
+  const tempTask = {
+    id: tempId,
+    properties: {
+      'タイトル':   {type:'title',        title:[{plain_text:title, text:{content:title}}]},
+      'GTD 種別':   {type:'status',       status:{name:'📥 INBOX'}},
+      'エリア':     {type:'select',       select: area     ? {name:area}     : null},
+      '科目':       {type:'multi_select', multi_select: subject ? [{name:subject}] : []},
+      'ELAサブタグ':{type:'select',       select: ela      ? {name:ela}      : null},
+      '締切日':     {type:'date',         date: deadline   ? {start:deadline}: null},
+      '作業リンク': {type:'url',          url: firstLink},
     }
-    loadTasks();
-  } catch(e) {
+  };
+  taskState[tempId] = {done:false, pinned:false, important:isImportant, timeType:'Normal', focusSeconds:0, jikantai:null, link:firstLink, links};
+  allTasks.unshift(tempTask);
+  try { renderAll(); } catch(e) {}
+  if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+
+  // Notion保存はバックグラウンドで実行、完了後に仮IDを本IDへ差し替え
+  notionCreate(DB.tasks, props).then(page => {
+    const idx = allTasks.findIndex(t => t.id === tempId);
+    if (page?.id) {
+      taskState[page.id] = {...taskState[tempId]};
+    }
+    delete taskState[tempId];
+    saveTaskState();
+    if (idx !== -1) { if (page?.id) allTasks[idx] = page; else allTasks.splice(idx, 1); }
+    try { renderAll(); } catch(e) {}
+    if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+  }).catch(e => {
     console.error(e);
+    const idx = allTasks.findIndex(t => t.id === tempId);
+    if (idx !== -1) allTasks.splice(idx, 1);
+    delete taskState[tempId];
+    saveTaskState();
+    try { renderAll(); } catch(e2) {}
+    if (currentPage === 'task') try { renderTaskPage(); } catch(e2) {}
     showToast('❌ 追加に失敗しました', 'rgba(220,50,50,0.92)');
-  }
+  });
 }
 
 let inboxLinks = [];
@@ -7493,8 +7518,9 @@ async function setGtdKind(id, gtdVal) {
   const task = allTasks.find(t => t.id === id);
 
   if (gtdVal === '🔥 今やる') {
+    if (task) task.properties['GTD 種別'] = {type:'status', status:{name:'🔥 今やる'}};
     if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
-    await Promise.all([
+    Promise.all([
       notionUpdate(id, {'GTD 種別': {status: {name: '🔥 今やる'}}}),
       notionUpdate(id, {'ステータス': {status: {name: '完了'}}}),
     ]).catch(console.error);
