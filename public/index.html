@@ -3218,6 +3218,7 @@ function reapplyCalLabelStyles() {
     if (frame) frame.style.overflow = 'visible';
     const text = cushion.textContent?.trim();
     const h = text ? parseInt(text) : NaN;
+    cushion.style.removeProperty('transform');
     cushion.style.removeProperty('color');
     cushion.style.removeProperty('font-weight');
     cushion.style.removeProperty('font-size');
@@ -6231,7 +6232,7 @@ function setMode(mode) {
         fcCalendar.setOption('slotDuration', '00:30:00');
         fcCalendar.setOption('slotLabelInterval', '00:30:00');
       });
-      requestAnimationFrame(() => { addFcExpandBtns(); applySModeCalLayout(); });
+      requestAnimationFrame(() => { addFcExpandBtns(); applySModeCalLayout(); requestAnimationFrame(reapplyCalLabelStyles); });
       requestAnimationFrame(addCalBufferOverlays);
       requestAnimationFrame(setupHighlightClipping);
     } else {
@@ -6246,7 +6247,7 @@ function setMode(mode) {
         fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
         fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
       });
-      requestAnimationFrame(() => { addFcExpandBtns(); fcCalendar.updateSize(); });
+      requestAnimationFrame(() => { addFcExpandBtns(); fcCalendar.updateSize(); requestAnimationFrame(reapplyCalLabelStyles); });
     }
   }
   renderAll();
