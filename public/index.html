@@ -2295,8 +2295,9 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 .proj-mini-footer .gtd-reveal-btn { font-size: 11px; padding: 6px 14px; }
 
 /* ===== 展開モード暗幕 ===== */
+/* #task-overlay は page-wrapper 内に置く → 同じスタッキングコンテキスト内で z-index 競合 */
 #task-overlay {
-  position: fixed; inset: 0; z-index: 250;
+  position: fixed; inset: 0; z-index: 5;
   pointer-events: none;
 }
 .task-overlay-backdrop {
@@ -2305,10 +2306,12 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
   pointer-events: all;
   cursor: default;
 }
-/* 展開中にパネルを暗幕の前に浮かせる */
+/* サイドバーは暗幕より前面に常に */
+.sidebar { position: relative; z-index: 20; }
+/* 展開中にパネルを暗幕の前に浮かせる（backdrop z-index:5 より上の10） */
 .panel-expand-active {
   position: relative !important;
-  z-index: 260 !important;
+  z-index: 10 !important;
 }
 /* 展開中のINBOX sticky */
 .task-inbox-col.expand-sticky {
@@ -2323,14 +2326,23 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
   flex: 1 !important;
   overflow: hidden !important;
 }
-/* 展開中：パネル名ヘッダー行をコンパクトな横並びに */
+/* 展開中：gtd-reveal-wrap をタイトルヘッダーに変換 */
 .task-gtd-area.expand-target .gtd-reveal-wrap {
   flex: none;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-bottom: 0.5px solid rgba(255,255,255,0.1);
+}
+/* 展開中：展開ボタンを非表示 */
+.task-gtd-area.expand-target .gtd-reveal-btn {
+  display: none;
+}
+/* 展開中：パネル名を左寄せヘッダーに */
+.task-gtd-area.expand-target .gtd-panel-name {
+  text-align: left;
+  font-size: 16px;
 }
 /* 展開中：タスク一覧エリア */
 .gtd-expand-content {
@@ -2415,6 +2427,11 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 <body>
 <div id="bg-layer"></div>
 <div class="page-wrapper">
+
+<!-- ===== 展開モード暗幕 (page-wrapper内でパネルと同じスタッキングコンテキスト) ===== -->
+<div id="task-overlay" style="display:none">
+  <div class="task-overlay-backdrop" onclick="closeOverlay()"></div>
+</div>
 
 <!-- サイドバー -->
 <div class="sidebar">
@@ -2670,11 +2687,6 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 
 </div>
 </div><!-- /.page-wrapper -->
-
-<!-- ===== 展開モード暗幕 ===== -->
-<div id="task-overlay" style="display:none">
-  <div class="task-overlay-backdrop" onclick="closeOverlay()"></div>
-</div>
 
 <!-- 固定下部ナビ -->
 <div class="bottom-nav">
@@ -7086,10 +7098,6 @@ function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
 
-  // page-wrapperのスタッキングコンテキストを解除して子要素がz-indexで前面に出られるようにする
-  const pageWrapper = document.querySelector('.page-wrapper');
-  if (pageWrapper) pageWrapper.style.zIndex = 'auto';
-
   // 暗幕を表示
   document.getElementById('task-overlay').style.display = 'block';
 
@@ -7103,8 +7111,6 @@ function openOverlay(key) {
     if (!el) return;
     if (k === key) {
       el.classList.add('panel-expand-active', 'expand-target');
-      const btn = el.querySelector('.gtd-reveal-btn');
-      if (btn) { btn._origOnclick = btn.getAttribute('onclick'); btn.setAttribute('onclick', 'closeOverlay()'); btn.textContent = '✕ 閉じる'; }
       _injectExpandContent(el, key);
     } else {
       el.style.display = 'none';
@@ -7117,10 +7123,6 @@ function openOverlay(key) {
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-
-  // page-wrapperのz-indexを元に戻す
-  const pageWrapper = document.querySelector('.page-wrapper');
-  if (pageWrapper) pageWrapper.style.zIndex = '';
 
   // 暗幕を隠す
   document.getElementById('task-overlay').style.display = 'none';
@@ -7135,8 +7137,6 @@ function closeOverlay() {
     if (!el) return;
     el.style.display = '';
     el.classList.remove('panel-expand-active', 'expand-target');
-    const btn = el.querySelector('.gtd-reveal-btn');
-    if (btn && btn._origOnclick) { btn.setAttribute('onclick', btn._origOnclick); btn._origOnclick = null; }
     const content = el.querySelector('.gtd-expand-content');
     if (content) content.remove();
   });
