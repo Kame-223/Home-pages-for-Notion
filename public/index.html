@@ -7105,16 +7105,20 @@ function openOverlay(key) {
   // 暗幕を表示
   document.getElementById('task-overlay').style.display = 'block';
 
-  // INBOXパネルをフロート
+  // INBOXパネルをフロート（task-inbox-col は position:sticky 持ち → z-index を expand-sticky で付与）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
-  if (inboxCol) inboxCol.classList.add('panel-expand-active', 'expand-sticky');
+  if (inboxCol) inboxCol.classList.add('expand-sticky');
+
+  // GTD列ごと暗幕より前面に（task-gtd-col が sticky stacking context を作るため列自体の z-index を上げる）
+  const gtdCol = document.getElementById('task-gtd-col');
+  if (gtdCol) gtdCol.classList.add('expand-col-active');
 
   // 選択パネルだけ展開、他は非表示
   Object.entries(_OVERLAY_SLOTS).forEach(([k, slotId]) => {
     const el = document.getElementById(slotId);
     if (!el) return;
     if (k === key) {
-      el.classList.add('panel-expand-active', 'expand-target');
+      el.classList.add('expand-target');
       _injectExpandContent(el, key);
     } else {
       el.style.display = 'none';
@@ -7133,20 +7137,23 @@ function closeOverlay() {
 
   // INBOXパネルをリセット
   const inboxCol = document.getElementById('task-inbox-col-wrap');
-  if (inboxCol) inboxCol.classList.remove('panel-expand-active', 'expand-sticky');
+  if (inboxCol) inboxCol.classList.remove('expand-sticky');
+
+  // GTD列をリセット
+  const gtdCol = document.getElementById('task-gtd-col');
+  if (gtdCol) gtdCol.classList.remove('expand-col-active');
 
   // GTDパネルをすべて元に戻す
   Object.entries(_OVERLAY_SLOTS).forEach(([k, slotId]) => {
     const el = document.getElementById(slotId);
     if (!el) return;
     el.style.display = '';
-    el.classList.remove('panel-expand-active', 'expand-target');
+    el.classList.remove('expand-target');
     const content = el.querySelector('.gtd-expand-content');
     if (content) content.remove();
   });
 
   document.body.style.overflow = '';
-  // 展開ボタンのテキストをrenderAllで更新
   renderAll();
 }
 
