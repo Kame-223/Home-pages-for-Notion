@@ -111,7 +111,7 @@ html[data-theme="light"] .btn-change-prop:hover { background: rgba(0,0,0,0.08); 
 /* カレンダー整時ライン・ラベル */
 html[data-theme="light"] .fc-timegrid-slot-label-cushion { color: rgba(0,0,0,0.5) !important; }
 html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":00:00"] { border-top-color: rgba(0,0,0,0.18) !important; }
-html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top: 1px dashed rgba(0,0,0,0.1) !important; }
+html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top-color: transparent !important; }
 html[data-theme="light"] .fc-theme-standard td,
 html[data-theme="light"] .fc-theme-standard th,
 html[data-theme="light"] .fc-theme-standard .fc-scrollgrid { border-color: rgba(0,0,0,0.1) !important; }
@@ -677,8 +677,8 @@ body::before {
 .fc-timegrid-slot-label { border-bottom: none !important; }
 /* 整時（:00）の線 */
 .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":00:00"] { border-top-color: rgba(255,255,255,0.25) !important; }
-/* 半整時（:30）の線 - 点線 */
-.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top: 1px dashed rgba(255,255,255,0.15) !important; }
+/* 半整時（:30）の線 - 非表示 */
+.fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top-color: transparent !important; }
 /* 15分線（minor）は非表示 */
 .fc-timegrid-slot.fc-timegrid-slot-minor { border-top-color: transparent !important; }
 /* 24:00スロットは最小高さに */
