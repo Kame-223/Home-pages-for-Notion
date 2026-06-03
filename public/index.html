@@ -2291,41 +2291,55 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 }
 .proj-mini-footer .gtd-reveal-btn { font-size: 11px; padding: 6px 14px; }
 
-/* ===== 展開オーバーレイ ===== */
+/* ===== 展開モード暗幕 ===== */
 #task-overlay {
   position: fixed; inset: 0; z-index: 250;
-  display: flex; align-items: flex-start;
+  pointer-events: none;
 }
 .task-overlay-backdrop {
   position: absolute; inset: 0;
-  background: rgba(245,245,252,0.96);
+  background: rgba(10,8,30,0.55);
+  pointer-events: all;
+  cursor: default;
 }
-.task-overlay-body { position: relative; z-index: 1; }
-/* オーバーレイ列：JSで座標をposition:fixedとして設定 */
-.task-overlay-inbox {
-  display: flex; flex-direction: column;
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px; overflow: hidden;
-  background: rgba(13,13,26,0.82);
-  position: fixed;
+/* 展開中にパネルを暗幕の前に浮かせる */
+.panel-expand-active {
+  position: relative !important;
+  z-index: 260 !important;
 }
-.task-overlay-inbox-list { flex: 1; overflow-y: auto; padding: 6px; }
-.task-overlay-right {
-  display: flex; flex-direction: column;
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px; overflow: hidden;
-  background: rgba(13,13,26,0.82);
-  position: fixed; overflow-y: auto;
+/* 展開中のINBOX sticky */
+.task-inbox-col.expand-sticky {
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  max-height: calc(100vh - 76px);
+  overflow-y: auto;
 }
-.overlay-right-header {
-  display: flex; align-items: center;
-  padding: 8px 12px; font-size: 10px; font-weight: 600;
-  letter-spacing: 0.18em; color: var(--text-sub);
-  border-bottom: 0.5px solid rgba(255,255,255,0.08);
-  background: rgba(13,13,26,0.5);
-  text-transform: uppercase; flex-shrink: 0;
+/* 展開中のGTDパネル（右列全体に広がる） */
+.task-gtd-area.expand-target {
+  flex: 1 !important;
+  overflow: hidden !important;
 }
-.overlay-right-list { flex: 1; overflow-y: auto; padding: 6px; }
+/* 展開中：パネル名ヘッダー行をコンパクトな横並びに */
+.task-gtd-area.expand-target .gtd-reveal-wrap {
+  flex: none;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 0.5px solid rgba(255,255,255,0.1);
+}
+/* 展開中：タスク一覧エリア */
+.gtd-expand-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+/* 展開中：プロジェクトパネルの折りたたみ要素を隠す */
+.task-gtd-area.expand-target .proj-mini-grid,
+.task-gtd-area.expand-target .proj-mini-footer {
+  display: none;
+}
 /* PROJECT詳細オーバーレイ */
 .proj-overlay-list-wrap { flex: 1; overflow-y: auto; position: relative; }
 .proj-overlay-grid { padding: 12px; }
@@ -2654,30 +2668,9 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 </div>
 </div><!-- /.page-wrapper -->
 
-<!-- ===== 展開オーバーレイ ===== -->
+<!-- ===== 展開モード暗幕 ===== -->
 <div id="task-overlay" style="display:none">
   <div class="task-overlay-backdrop" onclick="closeOverlay()"></div>
-  <div class="task-overlay-body">
-
-    <!-- 左：INBOX sticky -->
-    <div class="task-overlay-inbox">
-      <div class="task-toggle-header" style="cursor:default">
-        <span>📥 INBOX<span class="task-count" id="overlay-inbox-count"></span></span>
-      </div>
-      <div class="task-overlay-inbox-list" id="overlay-inbox-content">
-        <div class="gtd-reveal-wrap">
-          <button class="gtd-reveal-btn" onclick="showOverlayInbox()">INBOXを表示</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 右：展開コンテンツ -->
-    <div class="task-overlay-right">
-      <div class="overlay-right-header" id="overlay-right-header"></div>
-      <div class="overlay-right-list" id="overlay-right-list"></div>
-    </div>
-
-  </div>
 </div>
 
 <!-- 固定下部ナビ -->
@@ -7081,123 +7074,99 @@ function showPage(page) {
 
 // ===== タスクページ 展開オーバーレイ =====
 let overlayMode = null;         // null | 'next' | 'someday' | 'project'
-let overlayInboxShown = false;
-let overlayInboxExpanded = false;
 let overlayProjectId = null;
 let projMiniExpanded = false;
 
+const _OVERLAY_SLOTS = { next: 'gtd-slot-next', someday: 'gtd-slot-someday', project: 'gtd-slot-project' };
+
 function openOverlay(key) {
   overlayMode = key;
-  overlayInboxShown = false;
-  overlayInboxExpanded = false;
   overlayProjectId = null;
-  const overlay = document.getElementById('task-overlay');
-  // 表示前にパネルの座標を測定してfixed位置に設定
-  const inboxPanel = document.getElementById('task-inbox-col-wrap');
-  const gtdCol    = document.getElementById('task-gtd-col');
-  const oInbox    = overlay.querySelector('.task-overlay-inbox');
-  const oRight    = overlay.querySelector('.task-overlay-right');
-  if (inboxPanel && oInbox) {
-    const r = inboxPanel.getBoundingClientRect();
-    oInbox.style.left = r.left + 'px';
-    oInbox.style.top  = r.top  + 'px';
-    oInbox.style.width = r.width + 'px';
-    oInbox.style.maxHeight = (window.innerHeight - r.top - 52) + 'px';
-  }
-  if (gtdCol && oRight) {
-    const r = gtdCol.getBoundingClientRect();
-    oRight.style.left   = r.left   + 'px';
-    oRight.style.top    = r.top    + 'px';
-    oRight.style.width  = r.width  + 'px';
-    oRight.style.height = r.height + 'px';
-  }
-  overlay.style.display = 'flex';
+
+  // page-wrapperのスタッキングコンテキストを解除して子要素がz-indexで前面に出られるようにする
+  const pageWrapper = document.querySelector('.page-wrapper');
+  if (pageWrapper) pageWrapper.style.zIndex = 'auto';
+
+  // 暗幕を表示
+  document.getElementById('task-overlay').style.display = 'block';
+
+  // INBOXパネルをフロート
+  const inboxCol = document.getElementById('task-inbox-col-wrap');
+  if (inboxCol) inboxCol.classList.add('panel-expand-active', 'expand-sticky');
+
+  // 選択パネルだけ展開、他は非表示
+  Object.entries(_OVERLAY_SLOTS).forEach(([k, slotId]) => {
+    const el = document.getElementById(slotId);
+    if (!el) return;
+    if (k === key) {
+      el.classList.add('panel-expand-active', 'expand-target');
+      const btn = el.querySelector('.gtd-reveal-btn');
+      if (btn) { btn._origOnclick = btn.getAttribute('onclick'); btn.setAttribute('onclick', 'closeOverlay()'); btn.textContent = '✕ 閉じる'; }
+      _injectExpandContent(el, key);
+    } else {
+      el.style.display = 'none';
+    }
+  });
+
   document.body.style.overflow = 'hidden';
-  _renderOverlayInbox();
-  _renderOverlayRight();
 }
 
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-  const overlay = document.getElementById('task-overlay');
-  overlay.style.display = 'none';
+
+  // page-wrapperのz-indexを元に戻す
+  const pageWrapper = document.querySelector('.page-wrapper');
+  if (pageWrapper) pageWrapper.style.zIndex = '';
+
+  // 暗幕を隠す
+  document.getElementById('task-overlay').style.display = 'none';
+
+  // INBOXパネルをリセット
+  const inboxCol = document.getElementById('task-inbox-col-wrap');
+  if (inboxCol) inboxCol.classList.remove('panel-expand-active', 'expand-sticky');
+
+  // GTDパネルをすべて元に戻す
+  Object.entries(_OVERLAY_SLOTS).forEach(([k, slotId]) => {
+    const el = document.getElementById(slotId);
+    if (!el) return;
+    el.style.display = '';
+    el.classList.remove('panel-expand-active', 'expand-target');
+    const btn = el.querySelector('.gtd-reveal-btn');
+    if (btn && btn._origOnclick) { btn.setAttribute('onclick', btn._origOnclick); btn._origOnclick = null; }
+    const content = el.querySelector('.gtd-expand-content');
+    if (content) content.remove();
+  });
+
   document.body.style.overflow = '';
-  const oInbox = overlay.querySelector('.task-overlay-inbox');
-  const oRight = overlay.querySelector('.task-overlay-right');
-  if (oInbox) oInbox.style.cssText = '';
-  if (oRight) oRight.style.cssText = '';
+  // 展開ボタンのテキストをrenderAllで更新
+  renderAll();
 }
 
-function showOverlayInbox() {
-  overlayInboxShown = true;
-  _renderOverlayInbox();
-}
+function _injectExpandContent(panel, key) {
+  const existing = panel.querySelector('.gtd-expand-content');
+  if (existing) existing.remove();
 
-function expandOverlayInbox() {
-  overlayInboxExpanded = true;
-  _renderOverlayInbox();
-}
+  const div = document.createElement('div');
+  div.className = 'gtd-expand-content';
 
-function collapseOverlayInbox() {
-  overlayInboxExpanded = false;
-  _renderOverlayInbox();
-}
-
-function _renderOverlay() {
-  _renderOverlayInbox();
-  _renderOverlayRight();
-}
-
-function _renderOverlayInbox() {
-  const col = document.getElementById('overlay-inbox-content');
-  const countEl = document.getElementById('overlay-inbox-count');
-  if (!col) return;
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
-  const inboxTasks = allTasks.filter(t => !isDone(t) && getProp(t,'GTD 種別') === '📥 INBOX');
-  if (countEl) countEl.textContent = inboxTasks.length ? `(${inboxTasks.length})` : '';
-  if (!overlayInboxShown) {
-    col.innerHTML = `<div class="gtd-reveal-wrap"><button class="gtd-reveal-btn" onclick="showOverlayInbox()">INBOXを表示</button></div>`;
-    return;
+  if (key === 'next') {
+    const tasks = allTasks.filter(t => !isDone(t) && getProp(t,'GTD 種別') === '▶️ 次やる');
+    div.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+  } else if (key === 'someday') {
+    const tasks = allTasks.filter(t => !isDone(t) && getProp(t,'GTD 種別') === '💫今じゃない');
+    div.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+  } else if (key === 'project') {
+    _renderExpandProjectContent(div);
   }
-  const show = overlayInboxExpanded ? inboxTasks : inboxTasks.slice(0, 5);
-  const remaining = inboxTasks.length - 5;
-  col.innerHTML = show.length
-    ? show.map(renderGtdCard).join('')
-    : '<div class="section-empty">INBOXは空です 🎉</div>';
-  if (remaining > 0 && !overlayInboxExpanded) {
-    col.insertAdjacentHTML('beforeend',
-      `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandOverlayInbox()">もっと見る（あと${remaining}件）</button></div>`);
-  } else if (overlayInboxExpanded && inboxTasks.length > 5) {
-    col.insertAdjacentHTML('beforeend',
-      `<div class="next-show-more"><button class="next-show-less-btn" onclick="collapseOverlayInbox()">▲ 表示数を減らす</button></div>`);
-  }
+  panel.appendChild(div);
 }
 
-function _renderOverlayRight() {
-  const header = document.getElementById('overlay-right-header');
-  const list   = document.getElementById('overlay-right-list');
-  if (!header || !list) return;
-  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
-  const getGtd = t => getProp(t,'GTD 種別');
-  if (overlayMode === 'next') {
-    const tasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '▶️ 次やる');
-    header.textContent = `▶️ 次やる（${tasks.length}件）`;
-    list.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
-  } else if (overlayMode === 'someday') {
-    const tasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '💫今じゃない');
-    header.textContent = `💫 今じゃない（${tasks.length}件）`;
-    list.innerHTML = tasks.length ? tasks.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
-  } else if (overlayMode === 'project') {
-    header.textContent = 'PROJECT';
-    _renderOverlayProjectContent(list);
-  }
-}
-
-function _renderOverlayProjectContent(list) {
+function _renderExpandProjectContent(container) {
   if (!_projCache) {
-    list.innerHTML = '<div class="section-empty">読み込み中...</div>';
-    _loadProjects().then(() => _renderOverlayProjectContent(list));
+    container.innerHTML = '<div class="section-empty">読み込み中...</div>';
+    _loadProjects().then(() => _renderExpandProjectContent(container));
     return;
   }
   const projGrid = `<div class="proj-mini-grid proj-overlay-grid">${
@@ -7211,21 +7180,31 @@ function _renderOverlayProjectContent(list) {
   if (overlayProjectId) {
     if (!_msCache) {
       _loadMilestones().then(() => {
-        const l = document.getElementById('overlay-right-list');
-        if (l) _renderOverlayProjectContent(l);
+        const panel = document.getElementById('gtd-slot-project');
+        const c = panel && panel.querySelector('.gtd-expand-content');
+        if (c) _renderExpandProjectContent(c);
       });
     }
     detailHtml = `
       <div class="proj-overlay-scrim" onclick="openOverlayProject('${overlayProjectId}')"></div>
       <div class="proj-overlay-detail">${_buildProjectLeftHtml(overlayProjectId)}</div>`;
   }
-  list.innerHTML = `<div style="position:relative">${projGrid}${detailHtml}</div>`;
+  container.innerHTML = `<div style="position:relative">${projGrid}${detailHtml}</div>`;
 }
 
 function openOverlayProject(id) {
   overlayProjectId = (overlayProjectId === id) ? null : id;
-  const list = document.getElementById('overlay-right-list');
-  if (list) _renderOverlayProjectContent(list);
+  const panel = document.getElementById('gtd-slot-project');
+  const container = panel && panel.querySelector('.gtd-expand-content');
+  if (container) _renderExpandProjectContent(container);
+}
+
+function _renderOverlay() {
+  if (!overlayMode) return;
+  const panel = document.getElementById(_OVERLAY_SLOTS[overlayMode]);
+  if (!panel) return;
+  const content = panel.querySelector('.gtd-expand-content');
+  if (content) _injectExpandContent(panel, overlayMode);
 }
 
 // 旧API互換
