@@ -7099,6 +7099,20 @@ function showPage(page) {
   });
   if (page === 'task') renderTaskPage();
   if (page === 'project') renderProjectList();
+  if (page === 'home') {
+    // display:none中にサイズ計測できなかったFullCalendarのレイアウトを再計算
+    requestAnimationFrame(() => {
+      fcCalendar?.updateSize();
+      requestAnimationFrame(() => {
+        reapplyCalLabelStyles();
+        addCalBufferOverlays();
+        setupHighlightClipping();
+        if (currentMode === 'select') applySModeCalLayout();
+        addFcExpandBtns();
+      });
+    });
+    renderAll();
+  }
 }
 
 // ===== タスクページ 展開オーバーレイ =====
