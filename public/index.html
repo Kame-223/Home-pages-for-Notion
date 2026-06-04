@@ -113,8 +113,7 @@ html[data-theme="light"] .fc-timegrid-slot-label-cushion { color: rgba(0,0,0,0.5
 html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label):not(.fc-timegrid-slot-minor)[data-time$=":00:00"] { border-top-color: rgba(0,0,0,0.18) !important; }
 html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-minor)[data-time$=":30:00"] { border-top-color: transparent !important; }
 /* 編集不可バッファスロット（5:30・24:00）をグレーに */
-html[data-theme="light"] .fc-timegrid-slot-label[data-time="05:30:00"],
-html[data-theme="light"] .fc-timegrid-slot:not(.fc-timegrid-slot-label)[data-time="05:30:00"],
+html[data-theme="light"] .fc-timegrid-slots tr:first-child td,
 html[data-theme="light"] .fc-timegrid-slots tr:last-child td { background: rgba(0,0,0,0.04) !important; }
 html[data-theme="light"] .fc-theme-standard td,
 html[data-theme="light"] .fc-theme-standard th,
@@ -692,8 +691,7 @@ body::before {
 /* 24:00スロットは最小高さに */
 .fc-timegrid-slots tr:last-child td { height: 4px !important; overflow: hidden; font-size: 0; }
 /* 編集不可バッファスロット（5:30・24:00）をグレーに */
-.fc-timegrid-slot-label[data-time="05:30:00"],
-.fc-timegrid-slot:not(.fc-timegrid-slot-label)[data-time="05:30:00"],
+.fc-timegrid-slots tr:first-child td,
 .fc-timegrid-slots tr:last-child td { background: rgba(255,255,255,0.1) !important; }
 
 /* GCalフロートパネル */
