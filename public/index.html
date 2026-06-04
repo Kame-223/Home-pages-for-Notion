@@ -664,9 +664,10 @@ body::before {
 .fc-daygrid-day-number, .fc-daygrid-more-link { color: var(--text-sub) !important; text-decoration: none !important; }
 .fc-event { font-size: 10px !important; border-top-color: rgba(255,255,255,0.4) !important; border-right-color: rgba(255,255,255,0.4) !important; border-bottom-color: rgba(255,255,255,0.4) !important; border-left-width: 3px !important; box-shadow: none !important; }
 .fc-event-title { color: inherit !important; }
-.fc-event-time { font-size: 17px !important; }
+.fc-timegrid-event .fc-event-time { font-size: 17px !important; }
 .fc-event .fc-event-main { color: inherit !important; }
 .fc-timegrid-event { border-radius: 4px !important; box-shadow: none !important; }
+.fc-timegrid-event-harness { background: var(--surface) !important; }
 .fc-timegrid-event-harness-inset .fc-timegrid-event { box-shadow: none !important; }
 .fc-timegrid-now-indicator-line { border-color: var(--red) !important; }
 .fc-timegrid-now-indicator-arrow { border-top-color: var(--red) !important; border-bottom-color: var(--red) !important; }
@@ -3418,17 +3419,17 @@ function renderFullCalendar() {
 function gcalEventColor(title, description, calName, isIcu) {
   const kind = description?.match(/\[KIND:([^\]]+)\]/)?.[1];
   if (kind === '当日行動' || calName === '当日行動' || /当日行動/.test(title))
-    return { bg:'rgba(196,196,196,1)', border:'rgba(196,196,196,0.45)', text:'#909090' };
+    return { bg:'rgba(196,196,196,0.30)', border:'rgba(196,196,196,0.45)', text:'#909090' };
   if (/ELA|ER4|S&L4|RCA|ATS4|ARW/.test(title))
-    return { bg:'rgba(160,200,232,1)', border:'#A0C8E8', text:'#3570A0' };
+    return { bg:'rgba(160,200,232,0.30)', border:'#A0C8E8', text:'#3570A0' };
   if (/教育学|教育原理|Constitutional|憲法|Sociology|社会学|\bPE\b/.test(title))
-    return { bg:'rgba(192,192,232,1)', border:'#C0C0E8', text:'#4444A0' };
+    return { bg:'rgba(192,192,232,0.30)', border:'#C0C0E8', text:'#4444A0' };
   if (/生活|寮/.test(calName))
-    return { bg:'rgba(192,224,192,1)', border:'#C0E0C0', text:'#3A7040' };
+    return { bg:'rgba(192,224,192,0.30)', border:'#C0E0C0', text:'#3A7040' };
   // ICUカレンダーでSUBJECTに該当しない予定は水色
   if (isIcu)
-    return { bg:'rgba(160,200,232,1)', border:'#A0C8E8', text:'#3570A0' };
-  return { bg:'rgba(248,216,176,1)', border:'#F8D8B0', text:'#905020' };
+    return { bg:'rgba(160,200,232,0.30)', border:'#A0C8E8', text:'#3570A0' };
+  return { bg:'rgba(248,216,176,0.30)', border:'#F8D8B0', text:'#905020' };
 }
 
 async function fetchGCalEvents(info, success, failure) {
