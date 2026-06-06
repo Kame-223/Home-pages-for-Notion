@@ -665,7 +665,7 @@ body::before {
 .fc .fc-button:hover { background: var(--surface) !important; color: var(--text) !important; }
 .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--purple) !important; border-color: var(--purple) !important; color: white !important; }
 .fc-daygrid-day-number, .fc-daygrid-more-link { color: var(--text-sub) !important; text-decoration: none !important; }
-.fc-event { font-size: 10px !important; border-top-color: rgba(255,255,255,0.4) !important; border-right-color: rgba(255,255,255,0.4) !important; border-bottom-color: rgba(255,255,255,0.4) !important; border-left-width: 3px !important; box-shadow: none !important; }
+.fc-event { font-size: 10px !important; border-top-color: transparent !important; border-right-color: transparent !important; border-bottom-color: transparent !important; border-left-width: 4px !important; box-shadow: none !important; }
 .fc-event-title { color: inherit !important; }
 .fc-timegrid-event .fc-event-time { font-size: 12px !important; }
 .fc-event .fc-event-main { color: inherit !important; }
@@ -3443,18 +3443,13 @@ function renderFullCalendar() {
 
 function gcalEventColor(title, description, calName, isIcu) {
   const kind = description?.match(/\[KIND:([^\]]+)\]/)?.[1];
-  if (kind === '当日行動' || calName === '当日行動' || /当日行動/.test(title))
-    return { bg:'rgba(196,196,196,0.20)', border:'rgba(196,196,196,0.45)', text:'#909090' };
-  if (/ELA|ER4|S&L4|RCA|ATS4|ARW/.test(title))
-    return { bg:'rgba(160,200,232,0.20)', border:'#A0C8E8', text:'#3570A0' };
-  if (/教育学|教育原理|Constitutional|憲法|Sociology|社会学|\bPE\b/.test(title))
-    return { bg:'rgba(192,192,232,0.20)', border:'#C0C0E8', text:'#4444A0' };
-  if (/生活|寮/.test(calName))
-    return { bg:'rgba(192,224,192,0.20)', border:'#C0E0C0', text:'#3A7040' };
-  // ICUカレンダーでSUBJECTに該当しない予定は水色
-  if (isIcu)
-    return { bg:'rgba(160,200,232,0.20)', border:'#A0C8E8', text:'#3570A0' };
-  return { bg:'rgba(248,216,176,0.20)', border:'#F8D8B0', text:'#905020' };
+  if (kind === '当日行動' || /当日行動/.test(title) || /当日行動/.test(calName))
+    return { bg:'#F7F3F2', border:'#C4C4C4', text:'#707070' };
+  if (/ELA|ER4|S&L|RCA|ATS|ARW/.test(title))
+    return { bg:'#D8F2FA', border:'#BFAAF6', text:'#5040A0' };
+  if (/教育原理|Constitutional|憲法|Sociology|社会学|\bPE\b/.test(title) || isIcu)
+    return { bg:'#F7E5FB', border:'#CCA3F6', text:'#7040A0' };
+  return { bg:'#FDE2C7', border:'#F6A377', text:'#A05020' };
 }
 
 async function fetchGCalEvents(info, success, failure) {
