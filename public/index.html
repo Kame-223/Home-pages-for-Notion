@@ -3394,8 +3394,8 @@ function renderFullCalendar() {
       const eNd = e.getDate() !== vd.getDate();
       const sh = s.getHours(), sm = s.getMinutes();
       const eh = e.getHours(), em = e.getMinutes();
-      if (!_calEarly  && !sNd && sh === 5 && sm >= 30) return false;
-      if (_calEarly   && !sNd && sh === 2 && sm >= 30) return false;
+      if (!_calEarly  && !sNd && sh < 6) return false;
+      if (_calEarly   && !sNd && sh < 3) return false;
       if (!_calLatenight && sNd) return false;
       if (_calLatenight  && sNd && sh >= 3) return false;
       if (!_calLatenight && eNd && (eh > 0 || em > 0)) return false;
@@ -3408,8 +3408,8 @@ function renderFullCalendar() {
       const eNd = e.getDate() !== vd.getDate();
       const sh = s.getHours(), sm = s.getMinutes();
       const eh = e.getHours(), em = e.getMinutes();
-      if (!_calEarly  && !sNd && sh === 5 && sm >= 30) return false;
-      if (_calEarly   && !sNd && sh === 2 && sm >= 30) return false;
+      if (!_calEarly  && !sNd && sh < 6) return false;
+      if (_calEarly   && !sNd && sh < 3) return false;
       if (!_calLatenight && sNd) return false;
       if (_calLatenight  && sNd && sh >= 3) return false;
       if (!_calLatenight && eNd && (eh > 0 || em > 0)) return false;
