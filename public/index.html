@@ -3866,10 +3866,12 @@ function submitGCalEvent() {
 
   // ── 楽観的更新: API完了前に即座に表示 ──
   if (fcCalendar) {
-    const { bg, border, text } = gcalEventColor(title, description, kind === '当日行動' ? '当日行動' : '');
     if (gcalEditingId) {
       const fcEv = fcCalendar.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
       if (fcEv) {
+        const evCalName = fcEv.extendedProps?.calName || '';
+        const evIsIcu = !!(fcEv.extendedProps?.useToken2);
+        const { bg, border, text } = gcalEventColor(title, description, evCalName, evIsIcu);
         fcEv.setProp('title', title);
         fcEv.setStart(start); fcEv.setEnd(end);
         fcEv.setProp('backgroundColor', bg);
@@ -3877,6 +3879,7 @@ function submitGCalEvent() {
         fcEv.setProp('textColor', text);
       }
     } else if (_calOptEventId) {
+      const { bg, border, text } = gcalEventColor(title, description, kind === '当日行動' ? '当日行動' : '');
       // プレビューイベント既存 → 色のみ更新（タイトル・時刻は既にライブ同期済み）
       const fcEv = fcCalendar.getEventById(_calOptEventId);
       if (fcEv) {
@@ -3886,10 +3889,11 @@ function submitGCalEvent() {
         fcEv.setProp('textColor', text);
       }
     } else {
+      const { bg: nbg, border: nborder, text: ntext } = gcalEventColor(title, description, kind === '当日行動' ? '当日行動' : '');
       fcCalendar.addEvent({
         id: '_opt_' + Date.now(),
         title, start, end,
-        backgroundColor: bg, borderColor: border, textColor: text,
+        backgroundColor: nbg, borderColor: nborder, textColor: ntext,
         extendedProps: { description, location, calendarId: 'primary', eventId: null, useToken2: false },
       });
     }
