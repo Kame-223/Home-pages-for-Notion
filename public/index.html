@@ -732,7 +732,7 @@ body::before {
 .cal-buf-top { top: 0; height: 18px; border-bottom: 1px solid rgba(240,240,246,0.12); }
 .cal-buf-bot { bottom: 0; height: 27px; border-top: 1px solid rgba(240,240,246,0.12); }
 html[data-theme="light"] .cal-buf-top,
-html[data-theme="light"] .cal-buf-bot { background: rgba(160,162,172,0.14); }
+html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 html[data-theme="light"] .cal-buf-top { border-bottom-color: rgba(140,142,155,0.22); }
 html[data-theme="light"] .cal-buf-bot { border-top-color: rgba(140,142,155,0.22); }
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
@@ -3365,15 +3365,17 @@ function renderFullCalendar() {
       const m = arg.date.getMinutes();
       const viewDate = fcCalendar?.getDate();
       const isNextDay = viewDate && arg.date.getDate() !== viewDate.getDate();
+      const isLightTheme = document.documentElement.dataset.theme === 'light';
+      const bufBg = isLightTheme ? '#f5f5f5' : 'rgba(255,255,255,0.1)';
       let bg = 'rgba(70,60,140,0.12)', restricted = false;
       if (!_calEarly && !isNextDay && h === 5 && m >= 30) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
+        bg = bufBg; restricted = true;
       } else if (_calEarly && !isNextDay && h === 2 && m >= 30) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
+        bg = bufBg; restricted = true;
       } else if (!_calLatenight && isNextDay && h === 0) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
+        bg = bufBg; restricted = true;
       } else if (_calLatenight && isNextDay && h === 3) {
-        bg = 'rgba(0,0,0,0.3)'; restricted = true;
+        bg = bufBg; restricted = true;
       } else if (isNextDay) {
         bg = 'rgba(0,0,0,0.3)';
       } else if (h >= 6 && h < 12) {
