@@ -728,11 +728,12 @@ body::before {
   position: absolute; left: 0; right: 0;
   pointer-events: all; cursor: not-allowed; z-index: 20;
   background: rgba(240,240,246,0.07);
+  border-left: 1px solid rgba(255,255,255,0.1);
 }
 .cal-buf-top { top: 0; height: 18px; }
 .cal-buf-bot { bottom: 0; height: 27px; }
 html[data-theme="light"] .cal-buf-top,
-html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
+html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; border-left-color: rgba(0,0,0,0.1); }
 .gcal-time-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .gcal-kind-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
 .gcal-kind-chip {
