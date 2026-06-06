@@ -726,7 +726,7 @@ body::before {
 .fc-timegrid-body { position: relative; }
 .cal-buf-top, .cal-buf-bot {
   position: absolute; left: 0; right: 0;
-  pointer-events: none; z-index: 20;
+  pointer-events: all; cursor: not-allowed; z-index: 20;
   background: rgba(240,240,246,0.07);
 }
 .cal-buf-top { top: 0; height: 18px; border-bottom: 1px solid rgba(240,240,246,0.12); }
@@ -3387,15 +3387,32 @@ function renderFullCalendar() {
         if (labelTd) labelTd.style.background = bg;
       }
     },
-    selectAllow: () => true,
+    selectAllow: (info) => {
+      const s = info.start, e = info.end, vd = fcCalendar.getDate();
+      const sNd = s.getDate() !== vd.getDate();
+      const eNd = e.getDate() !== vd.getDate();
+      const sh = s.getHours(), sm = s.getMinutes();
+      const eh = e.getHours(), em = e.getMinutes();
+      if (!_calEarly  && !sNd && sh === 5 && sm >= 30) return false;
+      if (_calEarly   && !sNd && sh === 2 && sm >= 30) return false;
+      if (!_calLatenight && sNd) return false;
+      if (_calLatenight  && sNd && sh >= 3) return false;
+      if (!_calLatenight && eNd && (eh > 0 || em > 0)) return false;
+      if (_calLatenight  && eNd && (eh * 60 + em > 180)) return false;
+      return true;
+    },
     eventAllow: (dropInfo) => {
-      const s = dropInfo.start, vd = fcCalendar.getDate();
-      const nd = s.getDate() !== vd.getDate();
-      const h = s.getHours(), m = s.getMinutes();
-      if (!_calEarly && !nd && h === 5 && m >= 30) return false;
-      if (_calEarly && !nd && h === 2 && m >= 30) return false;
-      if (!_calLatenight && nd) return false;
-      if (_calLatenight && nd && h === 3) return false;
+      const s = dropInfo.start, e = dropInfo.end, vd = fcCalendar.getDate();
+      const sNd = s.getDate() !== vd.getDate();
+      const eNd = e.getDate() !== vd.getDate();
+      const sh = s.getHours(), sm = s.getMinutes();
+      const eh = e.getHours(), em = e.getMinutes();
+      if (!_calEarly  && !sNd && sh === 5 && sm >= 30) return false;
+      if (_calEarly   && !sNd && sh === 2 && sm >= 30) return false;
+      if (!_calLatenight && sNd) return false;
+      if (_calLatenight  && sNd && sh >= 3) return false;
+      if (!_calLatenight && eNd && (eh > 0 || em > 0)) return false;
+      if (_calLatenight  && eNd && (eh * 60 + em > 180)) return false;
       return true;
     },
     events: fetchGCalEvents,
