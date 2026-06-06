@@ -3166,7 +3166,7 @@ function addCalBufferOverlays() {
   }
 }
 
-let _lastValidMirrorTransform = null;
+let _calDragActive = false;
 
 function _calIsEditableY(clientY) {
   const topBuf = document.querySelector('.cal-buf-top');
@@ -3177,20 +3177,18 @@ function _calIsEditableY(clientY) {
   return clientY > tr.bottom && clientY < br.top;
 }
 
-function _calDragTrack(e) {
-  const mirror = document.querySelector('.fc-event-mirror');
-  if (!mirror) return;
+function _calDragCapture(e) {
+  if (!_calDragActive) return;
   const container = document.getElementById('fc-container');
   if (!container) return;
   const r = container.getBoundingClientRect();
   const inPanel = e.clientX >= r.left && e.clientX <= r.right &&
                   e.clientY >= r.top  && e.clientY <= r.bottom;
-  if (inPanel && _calIsEditableY(e.clientY)) {
-    _lastValidMirrorTransform = mirror.style.transform;
-  } else if (_lastValidMirrorTransform !== null) {
-    mirror.style.transform = _lastValidMirrorTransform;
+  if (!inPanel || !_calIsEditableY(e.clientY)) {
+    e.stopImmediatePropagation();
   }
 }
+document.addEventListener('pointermove', _calDragCapture, { capture: true });
 
 let _hlObserver = null;
 function setupHighlightClipping() {
@@ -3462,8 +3460,8 @@ function renderFullCalendar() {
       openGCalPanel(null, calToDateStr(start), calToDateStr(end), null);
     },
     eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
-    eventDragStart: () => { _lastValidMirrorTransform = null; document.addEventListener('pointermove', _calDragTrack); },
-    eventDragStop:  () => { _lastValidMirrorTransform = null; document.removeEventListener('pointermove', _calDragTrack); },
+    eventDragStart: () => { _calDragActive = true; },
+    eventDragStop:  () => { _calDragActive = false; },
     eventDrop: (info) => { moveGCalEvent(info.event); },
     eventResize: (info) => { moveGCalEvent(info.event); },
   });
