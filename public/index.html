@@ -3013,6 +3013,7 @@ let fcCalendar = null;
 let gcalEditingId = null;
 let gcalCalendarId = 'primary';
 let gcalUseToken2 = false;
+let _kindCalId = null; // 当日行動カレンダーのID（個人アカウントから取得）
 
 function initGoogleCalendar() {
   const inIframe = window.self !== window.top;
@@ -3472,6 +3473,10 @@ async function fetchGCalEvents(info, success, failure) {
       if (listRes.status === 401) return null; // 期限切れ
       const listData = await listRes.json();
       const cals = listData.items || [];
+      if (prefix === 'p_') {
+        const kindCal = cals.find(c => c.summary === '当日行動');
+        if (kindCal) _kindCalId = kindCal.id;
+      }
       const evArrays = await Promise.all(cals.map(async (cal) => {
         try {
           const res = await fetch(
@@ -3497,7 +3502,7 @@ async function fetchGCalEvents(info, success, failure) {
               extendedProps: {
                 description, location: e.location || '',
                 calendarId: cal.id, eventId: e.id,
-                useToken2: isIcu,
+                useToken2: isIcu, calName: cal.summary,
               },
             };
           });
@@ -3575,7 +3580,8 @@ function openGCalPanel(fcEvent, startStr, endStr, anchorEl) {
   document.getElementById('gcal-ev-end').value = toLocalDatetimeInput(fcEvent ? fcEvent.endStr : endStr);
   document.getElementById('gcal-ev-location').value = fcEvent?.extendedProps?.location || '';
   const rawDesc = fcEvent?.extendedProps?.description || '';
-  const kind = parseGCalKindFromDesc(rawDesc);
+  const calName = fcEvent?.extendedProps?.calName || '';
+  const kind = parseGCalKindFromDesc(rawDesc) || (/当日行動/.test(calName) ? '当日行動' : null);
   document.getElementById('gcal-ev-desc').value = rawDesc.replace(/\[KIND:[^\]]+\]\n?/, '');
   document.querySelectorAll('#gcal-kind-chips .gcal-kind-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.kind === kind);
@@ -3861,7 +3867,7 @@ function submitGCalEvent() {
 
   // ── 楽観的更新: API完了前に即座に表示 ──
   if (fcCalendar) {
-    const { bg, border, text } = gcalEventColor(title, description);
+    const { bg, border, text } = gcalEventColor(title, description, kind === '当日行動' ? '当日行動' : '');
     if (gcalEditingId) {
       const fcEv = fcCalendar.getEvents().find(e => e.extendedProps?.eventId === gcalEditingId);
       if (fcEv) {
@@ -3894,9 +3900,11 @@ function submitGCalEvent() {
   const token = gcalUseToken2 ? gToken2 : gToken;
   const calId = encodeURIComponent(gcalCalendarId);
   const method = gcalEditingId ? 'PUT' : 'POST';
+  const newCalId = (kind === '当日行動' && _kindCalId)
+    ? encodeURIComponent(_kindCalId) : 'primary';
   const url = gcalEditingId
     ? `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`
-    : `https://www.googleapis.com/calendar/v3/calendars/primary/events`;
+    : `https://www.googleapis.com/calendar/v3/calendars/${newCalId}/events`;
   fetch(url, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) })
     .then(() => { if (fcCalendar) fcCalendar.refetchEvents(); })
     .catch(e => { console.error('gcal save error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
