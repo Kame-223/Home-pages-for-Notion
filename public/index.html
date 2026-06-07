@@ -3684,6 +3684,22 @@ function selectGCalKind(kind, e) {
   if (lbl) lbl.textContent = k;
   const dd = document.getElementById('gcal-kind-dropdown');
   if (dd) dd.style.display = 'none';
+
+  // ユーザー操作による変更時のみカレンダー上の色を即時更新
+  if (e && fcCalendar) {
+    const title = document.getElementById('gcal-ev-title')?.value.trim() || '新しい予定';
+    const userDesc = document.getElementById('gcal-ev-desc')?.value.trim() || '';
+    const kindTag = (k === '当日行動' || k === '学校') ? `[KIND:${k}]` : '';
+    const desc = [kindTag, userDesc].filter(Boolean).join('\n');
+    const { bg, border, text } = gcalEventColor(title, desc, k === '当日行動' ? '当日行動' : '', k === '学校');
+    if (_calOptEventId) {
+      const fcEv = fcCalendar.getEventById(_calOptEventId);
+      if (fcEv) { fcEv.setProp('backgroundColor', bg); fcEv.setProp('borderColor', border); fcEv.setProp('textColor', text); }
+    } else if (gcalEditingId) {
+      const fcEv = fcCalendar.getEvents().find(ev => ev.extendedProps?.eventId === gcalEditingId);
+      if (fcEv) { fcEv.setProp('backgroundColor', bg); fcEv.setProp('borderColor', border); fcEv.setProp('textColor', text); }
+    }
+  }
 }
 
 function toggleGCalKindDropdown(e) {
