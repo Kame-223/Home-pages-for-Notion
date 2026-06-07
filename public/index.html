@@ -641,6 +641,7 @@ body::before {
 
 /* FullCalendar ダークテーマ */
 #fc-container { overflow: hidden; transform: translate(0, 0); }
+#fc-container.fc-dragging .fc-event-mirror { visibility: visible !important; }
 .fc { font-family: 'Noto Sans JP', sans-serif !important; font-size: 11px; }
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
@@ -3190,6 +3191,20 @@ function _calDragCapture(e) {
 }
 document.addEventListener('pointermove', _calDragCapture, { capture: true });
 
+function _calDragLeaveCapture(e) {
+  if (!_calDragActive) return;
+  const container = document.getElementById('fc-container');
+  if (!container || !container.contains(e.target)) return;
+  const r = container.getBoundingClientRect();
+  const inPanel = e.clientX >= r.left && e.clientX <= r.right &&
+                  e.clientY >= r.top  && e.clientY <= r.bottom;
+  if (!inPanel || !_calIsEditableY(e.clientY)) {
+    e.stopImmediatePropagation();
+  }
+}
+document.addEventListener('pointerleave', _calDragLeaveCapture, { capture: true });
+document.addEventListener('pointerout',   _calDragLeaveCapture, { capture: true });
+
 let _hlObserver = null;
 function setupHighlightClipping() {
   if (_hlObserver) { _hlObserver.disconnect(); _hlObserver = null; }
@@ -3460,8 +3475,8 @@ function renderFullCalendar() {
       openGCalPanel(null, calToDateStr(start), calToDateStr(end), null);
     },
     eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
-    eventDragStart: () => { _calDragActive = true; },
-    eventDragStop:  () => { _calDragActive = false; },
+    eventDragStart: () => { _calDragActive = true;  document.getElementById('fc-container')?.classList.add('fc-dragging'); },
+    eventDragStop:  () => { _calDragActive = false; document.getElementById('fc-container')?.classList.remove('fc-dragging'); },
     eventDrop: (info) => { moveGCalEvent(info.event); },
     eventResize: (info) => { moveGCalEvent(info.event); },
   });
