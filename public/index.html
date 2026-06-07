@@ -3195,15 +3195,40 @@ function _calDragLeaveCapture(e) {
   if (!_calDragActive) return;
   const container = document.getElementById('fc-container');
   if (!container || !container.contains(e.target)) return;
-  const r = container.getBoundingClientRect();
-  const inPanel = e.clientX >= r.left && e.clientX <= r.right &&
-                  e.clientY >= r.top  && e.clientY <= r.bottom;
-  if (!inPanel || !_calIsEditableY(e.clientY)) {
-    e.stopImmediatePropagation();
-  }
+  e.stopImmediatePropagation();
 }
 document.addEventListener('pointerleave', _calDragLeaveCapture, { capture: true });
 document.addEventListener('pointerout',   _calDragLeaveCapture, { capture: true });
+
+let _mirrorObserver = null, _mirrorSnap = null, _mirrorLock = false;
+
+function _startMirrorGuard() {
+  const mirror = document.querySelector('.fc-event-mirror');
+  if (!mirror) { if (_calDragActive) requestAnimationFrame(_startMirrorGuard); return; }
+  if (_mirrorObserver) return;
+  _mirrorSnap = null; _mirrorLock = false;
+  _mirrorObserver = new MutationObserver(() => {
+    if (!_calDragActive || _mirrorLock) return;
+    const container = document.getElementById('fc-container');
+    const cr = container?.getBoundingClientRect();
+    const mr = mirror.getBoundingClientRect();
+    const isHidden = mirror.style.visibility === 'hidden';
+    const isOut = cr && mr.height > 0 && (mr.top < cr.top - 5 || mr.bottom > cr.bottom + 5);
+    const inBuf = mr.height > 0 && !_calIsEditableY(mr.top + mr.height / 2);
+    if (isHidden || isOut || inBuf) {
+      if (_mirrorSnap) {
+        _mirrorLock = true;
+        mirror.style.top  = _mirrorSnap.top;
+        mirror.style.left = _mirrorSnap.left;
+        if (isHidden) mirror.style.visibility = 'visible';
+        requestAnimationFrame(() => { _mirrorLock = false; });
+      }
+    } else if (!isHidden && mr.height > 0) {
+      _mirrorSnap = { top: mirror.style.top, left: mirror.style.left };
+    }
+  });
+  _mirrorObserver.observe(mirror, { attributes: true, attributeFilter: ['style'] });
+}
 
 let _hlObserver = null;
 function setupHighlightClipping() {
@@ -3475,8 +3500,18 @@ function renderFullCalendar() {
       openGCalPanel(null, calToDateStr(start), calToDateStr(end), null);
     },
     eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
-    eventDragStart: () => { _calDragActive = true;  document.getElementById('fc-container')?.classList.add('fc-dragging'); },
-    eventDragStop:  () => { _calDragActive = false; document.getElementById('fc-container')?.classList.remove('fc-dragging'); },
+    eventDragStart: () => {
+      _calDragActive = true;
+      document.getElementById('fc-container')?.classList.add('fc-dragging');
+      _mirrorSnap = null;
+      requestAnimationFrame(_startMirrorGuard);
+    },
+    eventDragStop: () => {
+      _calDragActive = false;
+      document.getElementById('fc-container')?.classList.remove('fc-dragging');
+      if (_mirrorObserver) { _mirrorObserver.disconnect(); _mirrorObserver = null; }
+      _mirrorSnap = null;
+    },
     eventDrop: (info) => { moveGCalEvent(info.event); },
     eventResize: (info) => { moveGCalEvent(info.event); },
   });
