@@ -3587,8 +3587,8 @@ function renderFullCalendar() {
       if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
       _mirrorSnap = null;
     },
-    eventDrop: (info) => { moveGCalEvent(info.event); },
-    eventResize: (info) => { moveGCalEvent(info.event); },
+    eventDrop: (info) => { moveGCalEvent(info.event); _syncPanelFromFcEvent(info.event); },
+    eventResize: (info) => { moveGCalEvent(info.event); _syncPanelFromFcEvent(info.event); },
   });
   fcCalendar.render();
 }
@@ -3827,7 +3827,6 @@ function openGCalPanel(fcEvent, startStr, endStr, anchorEl) {
     _calHandleStartMs = sMs;
     _calHandleEndMs = eMs;
     requestAnimationFrame(() => {
-      showCalSelHandles(sMs, eMs);
       positionGCalPanel(anchorEl || document.querySelector('.fc-highlight'));
     });
     setTimeout(() => document.getElementById('gcal-ev-title')?.focus(), 80);
@@ -4203,16 +4202,33 @@ function deleteGCalEvent() {
 }
 
 function moveGCalEvent(event) {
-  // FCがすでに表示を更新済み → バックグラウンドでAPIに保存するだけ
+  const eventId = event.extendedProps?.eventId;
+  if (!eventId) return; // 楽観的イベント（_opt_*）はAPIに保存しない
   const eventBody = { summary: event.title, start: { dateTime: event.start.toISOString() }, end: { dateTime: event.end.toISOString() } };
   if (event.extendedProps?.location) eventBody.location = event.extendedProps.location;
   if (event.extendedProps?.description) eventBody.description = event.extendedProps.description;
-  const eventId = event.extendedProps?.eventId || event.id;
   const calId = encodeURIComponent(event.extendedProps?.calendarId || 'primary');
   const token = event.extendedProps?.useToken2 ? gToken2 : gToken;
   fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}`,
     { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) })
     .catch(e => { console.error('gcal move error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
+}
+
+function _syncPanelFromFcEvent(fcEv) {
+  const panel = document.getElementById('gcal-panel');
+  if (!panel || panel.style.display === 'none') return;
+  const evId = fcEv.extendedProps?.eventId;
+  const isEdit = evId && evId === gcalEditingId;
+  const isOpt  = fcEv.id === _calOptEventId;
+  if (!isEdit && !isOpt) return;
+  const dtStart = toLocalDatetimeInput(fcEv.startStr);
+  const dtEnd   = toLocalDatetimeInput(fcEv.endStr);
+  document.getElementById('gcal-ev-date').value       = dtStart.slice(0, 10);
+  document.getElementById('gcal-ev-time-start').value = dtStart.slice(11, 16);
+  document.getElementById('gcal-ev-time-end').value   = dtEnd.slice(11, 16);
+  gcalUpdateDuration();
+  _calHandleStartMs = fcEv.start.getTime();
+  _calHandleEndMs   = fcEv.end.getTime();
 }
 
 // ===== 週間スケジュール設定 =====
