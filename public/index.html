@@ -3293,20 +3293,27 @@ let _mirrorSnap = null, _rafId = null, _ownGhost = null;
 function _ghostDragLoop() {
   if (!_calDragActive) { _rafId = null; return; }
 
-  // Track fc-event-mirror viewport position when in a valid editable slot
+  // Track fc-event-mirror position; hide it when it enters a buffer zone
   const mirror = document.querySelector('.fc-event-mirror');
   if (mirror) {
     const mr = mirror.getBoundingClientRect();
-    if (mr.height > 0 && _calIsEditableY(mr.top + mr.height / 2)) {
-      _mirrorSnap = { top: mr.top + 'px', left: mr.left + 'px' };
+    if (mr.height > 0) {
+      if (_calIsEditableY(mr.top + mr.height / 2)) {
+        _mirrorSnap = { top: mr.top + 'px', left: mr.left + 'px' };
+        mirror.style.opacity = '';   // restore visibility in editable zone
+      } else {
+        mirror.style.opacity = '0';  // hide when mirror drifts into buffer zone
+      }
     }
   }
 
-  // Show own ghost at last valid position when cursor is outside editable zone
-  // (fc-event-mirror stays frozen in DOM for right/up/down, so FC's body ghost stays hidden;
-  //  for left the time-label area causes FC to remove fc-event-mirror, same result needed)
+  // Show own ghost at last valid snap position when:
+  // - cursor is outside the editable zone (buffer zone or outside panel), OR
+  // - mirror has been hidden because it moved into a buffer zone, OR
+  // - mirror is gone (cursor left FC's time-label area)
   if (_ownGhost && _mirrorSnap) {
-    const showGhost = _cursorOutsideEditable || !mirror;
+    const mirrorHidden = mirror && mirror.style.opacity === '0';
+    const showGhost = _cursorOutsideEditable || !mirror || mirrorHidden;
     if (showGhost) {
       _ownGhost.style.top     = _mirrorSnap.top;
       _ownGhost.style.left    = _mirrorSnap.left;
