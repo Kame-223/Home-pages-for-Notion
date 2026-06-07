@@ -2882,9 +2882,9 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
   <div class="gcal-sec gcal-sec-time">
     <div class="gcal-time-row" id="gcal-time-row">
       <svg class="gcal-icon-svg" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M10 6.5v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      <input id="gcal-ev-time-start" type="time" class="gcal-time-input" onchange="gcalUpdateDuration()"/>
+      <input id="gcal-ev-time-start" type="text" class="gcal-time-input" maxlength="5" placeholder="--:--" autocomplete="off" onchange="gcalUpdateDuration()"/>
       <span class="gcal-arrow">→</span>
-      <input id="gcal-ev-time-end" type="time" class="gcal-time-input" onchange="gcalUpdateDuration()"/>
+      <input id="gcal-ev-time-end" type="text" class="gcal-time-input" maxlength="5" placeholder="--:--" autocomplete="off" onchange="gcalUpdateDuration()"/>
       <span id="gcal-duration-label" class="gcal-duration"></span>
     </div>
     <div class="gcal-date-row">
@@ -4042,23 +4042,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 時刻inputのクリックで全選択（即削除・打ち直しのため）
+  // 時刻input: クリック全選択・数字のみ入力・自動HH:MM整形
   const _tsEl = document.getElementById('gcal-ev-time-start');
   const _teEl = document.getElementById('gcal-ev-time-end');
-  if (_tsEl) _tsEl.addEventListener('click', () => _tsEl.select());
-  if (_teEl) _teEl.addEventListener('click', () => _teEl.select());
-
-  // start focus → 時計アイコン非表示、end focus → 所要時間ラベル非表示
-  const _clockIcon = document.querySelector('#gcal-time-row .gcal-icon-svg');
-  const _durLabel  = document.getElementById('gcal-duration-label');
-  if (_tsEl && _clockIcon) {
-    _tsEl.addEventListener('focus', () => { _clockIcon.style.opacity = '0'; });
-    _tsEl.addEventListener('blur',  () => { _clockIcon.style.opacity = ''; });
+  function _gcalFmtTime(input) {
+    const raw = input.value.replace(/[^0-9]/g, '').slice(0, 4);
+    input.value = raw.length >= 3 ? raw.slice(0, 2) + ':' + raw.slice(2) : raw;
+    gcalUpdateDuration();
   }
-  if (_teEl && _durLabel) {
-    _teEl.addEventListener('focus', () => { _durLabel.style.opacity = '0'; });
-    _teEl.addEventListener('blur',  () => { _durLabel.style.opacity = ''; });
+  function _gcalTimeKeyFilter(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const pass = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter'];
+    if (!pass.includes(e.key) && !/^[0-9]$/.test(e.key)) e.preventDefault();
   }
+  [_tsEl, _teEl].forEach(el => {
+    if (!el) return;
+    el.addEventListener('click',   () => el.select());
+    el.addEventListener('keydown', _gcalTimeKeyFilter);
+    el.addEventListener('input',   () => _gcalFmtTime(el));
+  });
 
   const titleInput = document.getElementById('gcal-ev-title');
   if (!titleInput) return;
