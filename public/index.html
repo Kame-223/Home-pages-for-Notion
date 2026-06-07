@@ -4057,7 +4057,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   [_tsEl, _teEl].forEach(el => {
     if (!el) return;
-    el.addEventListener('click',   () => el.select());
+    el.addEventListener('focus',   () => el.select());
     el.addEventListener('keydown', _gcalTimeKeyFilter);
     el.addEventListener('input',   () => _gcalFmtTime(el));
   });
