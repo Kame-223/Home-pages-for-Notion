@@ -3265,11 +3265,12 @@ function _calDragCapture(e) {
   const r = container.getBoundingClientRect();
   const inPanel = e.clientX >= r.left && e.clientX <= r.right &&
                   e.clientY >= r.top  && e.clientY <= r.bottom;
-  _cursorOutsideEditable = !inPanel;
-  // Only freeze FC when cursor leaves the panel entirely.
-  // Buffer zone moves are now processed by FC normally so fc-event-mirror
-  // shows where the event would land; eventDrop will clamp the time.
-  if (!inPanel) {
+  const inEditable = inPanel && _calIsEditableY(e.clientY);
+  _cursorOutsideEditable = !inEditable;
+  // Freeze FC in buffer zones and outside the panel so fc-event-mirror
+  // stays at the last valid position (= visual boundary cue).
+  // eventAllow:()=>true + _clampAndMoveGCalEvent handle the actual drop.
+  if (!inEditable) {
     e.stopImmediatePropagation();
   }
 }
