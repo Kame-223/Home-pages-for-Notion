@@ -736,13 +736,15 @@ html[data-theme="light"] .gcal-sec { border-color: #ebebeb; }
 .gcal-time-input {
   border: none; outline: none; background: transparent;
   font-size: 14px; color: var(--text); font-family: 'Noto Sans JP', sans-serif;
-  width: 54px; cursor: pointer; flex-shrink: 0;
+  width: 50px; cursor: pointer; flex-shrink: 0;
 }
+.gcal-time-input::-webkit-calendar-picker-indicator { display: none; }
 .gcal-date-input {
   border: none; outline: none; background: transparent;
   font-size: 14px; color: var(--text); font-family: 'Noto Sans JP', sans-serif;
   cursor: pointer; flex: 1;
 }
+.gcal-date-input::-webkit-calendar-picker-indicator { opacity: 0; width: 0; padding: 0; margin: 0; }
 .gcal-arrow { color: var(--text-dim); font-size: 12px; }
 .gcal-duration { font-size: 12px; color: var(--accent); flex-shrink: 0; }
 .gcal-allday-btn {
