@@ -641,7 +641,7 @@ body::before {
 
 /* FullCalendar ダークテーマ */
 #fc-container { overflow: hidden; transform: translate(0, 0); }
-#fc-container.fc-dragging .fc-event-mirror { visibility: visible !important; }
+body.fc-dragging-active .fc-event-mirror { display: block !important; }
 .fc { font-family: 'Noto Sans JP', sans-serif !important; font-size: 11px; }
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
@@ -3209,21 +3209,24 @@ function _startMirrorGuard() {
   _mirrorSnap = null; _mirrorLock = false;
   _mirrorObserver = new MutationObserver(() => {
     if (!_calDragActive || _mirrorLock) return;
-    const container = document.getElementById('fc-container');
-    const cr = container?.getBoundingClientRect();
+    // CSS forces display:block so getBoundingClientRect() works even when FC sets display:none
+    const isHidden = mirror.style.display === 'none';
     const mr = mirror.getBoundingClientRect();
-    const isHidden = mirror.style.visibility === 'hidden';
-    const isOut = cr && mr.height > 0 && (mr.top < cr.top - 5 || mr.bottom > cr.bottom + 5);
-    const inBuf = mr.height > 0 && !_calIsEditableY(mr.top + mr.height / 2);
-    if (isHidden || isOut || inBuf) {
+    const cr = document.getElementById('fc-container')?.getBoundingClientRect();
+    const midX = mr.left + mr.width / 2;
+    const midY = mr.top + mr.height / 2;
+    const valid = cr && mr.height > 0 &&
+                  midX >= cr.left - 10 && midX <= cr.right + 10 &&
+                  _calIsEditableY(midY);
+    if (isHidden || !valid) {
       if (_mirrorSnap) {
         _mirrorLock = true;
         mirror.style.top  = _mirrorSnap.top;
         mirror.style.left = _mirrorSnap.left;
-        if (isHidden) mirror.style.visibility = 'visible';
+        if (isHidden) mirror.style.display = '';
         requestAnimationFrame(() => { _mirrorLock = false; });
       }
-    } else if (!isHidden && mr.height > 0) {
+    } else {
       _mirrorSnap = { top: mirror.style.top, left: mirror.style.left };
     }
   });
@@ -3502,13 +3505,13 @@ function renderFullCalendar() {
     eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
     eventDragStart: () => {
       _calDragActive = true;
-      document.getElementById('fc-container')?.classList.add('fc-dragging');
+      document.body.classList.add('fc-dragging-active');
       _mirrorSnap = null;
       requestAnimationFrame(_startMirrorGuard);
     },
     eventDragStop: () => {
       _calDragActive = false;
-      document.getElementById('fc-container')?.classList.remove('fc-dragging');
+      document.body.classList.remove('fc-dragging-active');
       if (_mirrorObserver) { _mirrorObserver.disconnect(); _mirrorObserver = null; }
       _mirrorSnap = null;
     },
