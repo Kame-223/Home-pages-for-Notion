@@ -642,7 +642,7 @@ body::before {
 
 /* FullCalendar ダークテーマ */
 #fc-container { overflow: hidden; transform: translate(0, 0); }
-body.fc-dragging-active .fc-event-mirror { display: block !important; }
+body.fc-dragging-active .fc-timegrid-event.fc-event-mirror { z-index: 25 !important; }
 .fc { font-family: 'Noto Sans JP', sans-serif !important; font-size: 11px; }
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
@@ -3251,7 +3251,9 @@ function _calDragCapture(e) {
     e.stopImmediatePropagation();
   }
 }
-document.addEventListener('pointermove', _calDragCapture, { capture: true });
+// window capture (not document) to fire before FC's own listeners regardless of their target
+window.addEventListener('pointermove', _calDragCapture, { capture: true });
+window.addEventListener('mousemove',   _calDragCapture, { capture: true });
 
 function _calDragLeaveCapture(e) {
   if (!_calDragActive) return;
@@ -3259,40 +3261,35 @@ function _calDragLeaveCapture(e) {
   if (!container || !container.contains(e.target)) return;
   e.stopImmediatePropagation();
 }
-document.addEventListener('pointerleave', _calDragLeaveCapture, { capture: true });
-document.addEventListener('pointerout',   _calDragLeaveCapture, { capture: true });
+window.addEventListener('pointerleave', _calDragLeaveCapture, { capture: true });
+window.addEventListener('pointerout',   _calDragLeaveCapture, { capture: true });
 
-let _mirrorObserver = null, _mirrorSnap = null, _mirrorLock = false;
+let _mirrorSnap = null, _rafId = null;
 
-function _startMirrorGuard() {
+function _ghostDragLoop() {
+  if (!_calDragActive) return;
+
+  // Track fc-event-mirror viewport position when it's in a valid editable slot
   const mirror = document.querySelector('.fc-event-mirror');
-  if (!mirror) { if (_calDragActive) requestAnimationFrame(_startMirrorGuard); return; }
-  if (_mirrorObserver) return;
-  _mirrorSnap = null; _mirrorLock = false;
-  _mirrorObserver = new MutationObserver(() => {
-    if (!_calDragActive || _mirrorLock) return;
-    // CSS forces display:block so getBoundingClientRect() works even when FC sets display:none
-    const isHidden = mirror.style.display === 'none';
+  if (mirror) {
     const mr = mirror.getBoundingClientRect();
-    const cr = document.getElementById('fc-container')?.getBoundingClientRect();
-    const midX = mr.left + mr.width / 2;
-    const midY = mr.top + mr.height / 2;
-    const valid = cr && mr.height > 0 &&
-                  midX >= cr.left - 10 && midX <= cr.right + 10 &&
-                  _calIsEditableY(midY);
-    if (isHidden || !valid) {
-      if (_mirrorSnap) {
-        _mirrorLock = true;
-        mirror.style.top  = _mirrorSnap.top;
-        mirror.style.left = _mirrorSnap.left;
-        if (isHidden) mirror.style.display = '';
-        requestAnimationFrame(() => { _mirrorLock = false; });
-      }
-    } else {
-      _mirrorSnap = { top: mirror.style.top, left: mirror.style.left };
+    if (mr.height > 0 && _calIsEditableY(mr.top + mr.height / 2)) {
+      _mirrorSnap = { top: mr.top + 'px', left: mr.left + 'px' };
     }
-  });
-  _mirrorObserver.observe(mirror, { attributes: true, attributeFilter: ['style'] });
+  }
+
+  // When body ghost becomes visible (cursor in invalid zone, no fc-event-mirror),
+  // snap it to the last valid mirror position instead of following the cursor
+  if (_mirrorSnap) {
+    const ghost = Array.from(document.body.children)
+      .find(el => el.classList.contains('fc-event-dragging'));
+    if (ghost && ghost.style.display !== 'none') {
+      ghost.style.top  = _mirrorSnap.top;
+      ghost.style.left = _mirrorSnap.left;
+    }
+  }
+
+  _rafId = requestAnimationFrame(_ghostDragLoop);
 }
 
 let _hlObserver = null;
@@ -3569,12 +3566,12 @@ function renderFullCalendar() {
       _calDragActive = true;
       document.body.classList.add('fc-dragging-active');
       _mirrorSnap = null;
-      requestAnimationFrame(_startMirrorGuard);
+      _rafId = requestAnimationFrame(_ghostDragLoop);
     },
     eventDragStop: () => {
       _calDragActive = false;
       document.body.classList.remove('fc-dragging-active');
-      if (_mirrorObserver) { _mirrorObserver.disconnect(); _mirrorObserver = null; }
+      if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
       _mirrorSnap = null;
     },
     eventDrop: (info) => { moveGCalEvent(info.event); },
