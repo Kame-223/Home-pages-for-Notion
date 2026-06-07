@@ -3929,6 +3929,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function submitGCalEvent() {
+  const capturedOptId = _calOptEventId; // 非同期前にキャプチャ（refetch前のremoveで使用）
   const title = document.getElementById('gcal-ev-title').value.trim() || '新しい予定';
   const start = new Date(document.getElementById('gcal-ev-start').value).toISOString();
   const end = new Date(document.getElementById('gcal-ev-end').value).toISOString();
@@ -3985,8 +3986,19 @@ function submitGCalEvent() {
     ? `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`
     : `https://www.googleapis.com/calendar/v3/calendars/${newCalId}/events`;
   fetch(url, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(eventBody) })
-    .then(() => { if (fcCalendar) fcCalendar.refetchEvents(); })
-    .catch(e => { console.error('gcal save error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
+    .then(() => {
+      if (fcCalendar) {
+        if (capturedOptId) fcCalendar.getEventById(capturedOptId)?.remove();
+        fcCalendar.refetchEvents();
+      }
+    })
+    .catch(e => {
+      console.error('gcal save error:', e);
+      if (fcCalendar) {
+        if (capturedOptId) fcCalendar.getEventById(capturedOptId)?.remove();
+        fcCalendar.refetchEvents();
+      }
+    });
 }
 
 function deleteGCalEvent() {
