@@ -641,9 +641,9 @@ body::before {
 .sched-add-btn:hover { color: var(--text); border-color: var(--border2); }
 
 /* FullCalendar ダークテーマ */
-#fc-container { overflow: hidden; transform: translate(0, 0); }
+#fc-container { transform: translate(0, 0); }
 body.fc-dragging-active .fc-timegrid-event.fc-event-mirror { z-index: 25 !important; }
-body.fc-dragging-active-outside > .fc-event-dragging { display: block !important; }
+body.fc-dragging-active > .fc-event-dragging { display: none !important; }
 .fc { font-family: 'Noto Sans JP', sans-serif !important; font-size: 11px; }
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: var(--border) !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
@@ -3270,12 +3270,12 @@ function _calDragLeaveCapture(e) {
 window.addEventListener('pointerleave', _calDragLeaveCapture, { capture: true });
 window.addEventListener('pointerout',   _calDragLeaveCapture, { capture: true });
 
-let _mirrorSnap = null, _rafId = null;
+let _mirrorSnap = null, _rafId = null, _ownGhost = null;
 
 function _ghostDragLoop() {
   if (!_calDragActive) { _rafId = null; return; }
 
-  // Track fc-event-mirror viewport position when it's in a valid editable slot
+  // Track fc-event-mirror viewport position when in a valid editable slot
   const mirror = document.querySelector('.fc-event-mirror');
   if (mirror) {
     const mr = mirror.getBoundingClientRect();
@@ -3284,19 +3284,17 @@ function _ghostDragLoop() {
     }
   }
 
-  // Force body ghost visible and pinned to last valid mirror position
-  // when cursor is outside the editable zone (all 4 directions)
-  if (_mirrorSnap) {
-    const ghost = Array.from(document.body.children)
-      .find(el => el.classList.contains('fc-event-dragging'));
-    if (ghost) {
-      if (_cursorOutsideEditable) {
-        document.body.classList.add('fc-dragging-active-outside');
-        ghost.style.top  = _mirrorSnap.top;
-        ghost.style.left = _mirrorSnap.left;
-      } else {
-        document.body.classList.remove('fc-dragging-active-outside');
-      }
+  // Show own ghost at last valid position when cursor is outside editable zone
+  // (fc-event-mirror stays frozen in DOM for right/up/down, so FC's body ghost stays hidden;
+  //  for left the time-label area causes FC to remove fc-event-mirror, same result needed)
+  if (_ownGhost && _mirrorSnap) {
+    const showGhost = _cursorOutsideEditable || !mirror;
+    if (showGhost) {
+      _ownGhost.style.top     = _mirrorSnap.top;
+      _ownGhost.style.left    = _mirrorSnap.left;
+      _ownGhost.style.display = 'block';
+    } else {
+      _ownGhost.style.display = 'none';
     }
   }
 
@@ -3573,18 +3571,28 @@ function renderFullCalendar() {
       openGCalPanel(null, calToDateStr(start), calToDateStr(end), null);
     },
     eventClick: (info) => openGCalPanel(info.event, null, null, info.el),
-    eventDragStart: () => {
+    eventDragStart: (info) => {
       _calDragActive = true;
       document.body.classList.add('fc-dragging-active');
       _mirrorSnap = null;
+      _cursorOutsideEditable = false;
+      // Create our own ghost: clone source element with explicit dimensions
+      const rect = info.el.getBoundingClientRect();
+      _ownGhost = info.el.cloneNode(true);
+      Object.assign(_ownGhost.style, {
+        position: 'fixed', zIndex: '9998', pointerEvents: 'none',
+        display: 'none', margin: '0', boxSizing: 'border-box',
+        width: rect.width + 'px', height: rect.height + 'px',
+      });
+      document.body.appendChild(_ownGhost);
       _rafId = requestAnimationFrame(_ghostDragLoop);
     },
     eventDragStop: () => {
       _calDragActive = false;
       _cursorOutsideEditable = false;
       document.body.classList.remove('fc-dragging-active');
-      document.body.classList.remove('fc-dragging-active-outside');
       if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+      if (_ownGhost) { _ownGhost.remove(); _ownGhost = null; }
       _mirrorSnap = null;
     },
     eventDrop: (info) => { moveGCalEvent(info.event); _syncPanelFromFcEvent(info.event); },
