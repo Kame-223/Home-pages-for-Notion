@@ -3088,6 +3088,7 @@ const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar';
 let gToken = null;   // 個人アカウント
 let gToken2 = null;  // ICUアカウント
 let fcCalendar = null;
+const _fcEventEls = new Map();
 let gcalEditingId = null;
 let gcalCalendarId = 'primary';
 let gcalUseToken2 = false;
@@ -3601,8 +3602,31 @@ function renderFullCalendar() {
     },
     eventDrop: (info) => { _clampAndMoveGCalEvent(info.event); },
     eventResize: (info) => { _clampAndMoveGCalEvent(info.event); },
+    eventDidMount: (info) => {
+      applyPastStyle(info.el, info.event);
+      _fcEventEls.set(info.event.id, { el: info.el, event: info.event });
+    },
+    eventWillUnmount: (info) => {
+      _fcEventEls.delete(info.event.id);
+    },
   });
   fcCalendar.render();
+  setInterval(() => {
+    _fcEventEls.forEach(({ el, event }) => applyPastStyle(el, event));
+  }, 60000);
+}
+
+function applyPastStyle(el, event) {
+  const now = new Date();
+  let isPast;
+  if (event.allDay) {
+    const todayMidnight = new Date(now); todayMidnight.setHours(0, 0, 0, 0);
+    isPast = (event.end || event.start) <= todayMidnight;
+  } else {
+    isPast = (event.end || event.start) < now;
+  }
+  el.style.opacity = isPast ? '0.45' : '';
+  el.style.filter  = isPast ? 'grayscale(30%)' : '';
 }
 
 function gcalEventColor(title, description, calName, isIcu) {
