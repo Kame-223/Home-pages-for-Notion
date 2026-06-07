@@ -3251,9 +3251,11 @@ function _calDragCapture(e) {
   const r = container.getBoundingClientRect();
   const inPanel = e.clientX >= r.left && e.clientX <= r.right &&
                   e.clientY >= r.top  && e.clientY <= r.bottom;
-  const inEditable = inPanel && _calIsEditableY(e.clientY);
-  _cursorOutsideEditable = !inEditable;
-  if (!inEditable) {
+  _cursorOutsideEditable = !inPanel;
+  // Only freeze FC when cursor leaves the panel entirely.
+  // Buffer zone moves are now processed by FC normally so fc-event-mirror
+  // shows where the event would land; eventDrop will clamp the time.
+  if (!inPanel) {
     e.stopImmediatePropagation();
   }
 }
@@ -3537,20 +3539,7 @@ function renderFullCalendar() {
       if (_calLatenight  && eNd && (eh * 60 + em > 180)) return false;
       return true;
     },
-    eventAllow: (dropInfo) => {
-      const s = dropInfo.start, e = dropInfo.end, vd = fcCalendar.getDate();
-      const sNd = s.getDate() !== vd.getDate();
-      const eNd = e.getDate() !== vd.getDate();
-      const sh = s.getHours(), sm = s.getMinutes();
-      const eh = e.getHours(), em = e.getMinutes();
-      if (!_calEarly  && !sNd && sh < 6) return false;
-      if (_calEarly   && !sNd && sh < 3) return false;
-      if (!_calLatenight && sNd) return false;
-      if (_calLatenight  && sNd && sh >= 3) return false;
-      if (!_calLatenight && eNd && (eh > 0 || em > 0)) return false;
-      if (_calLatenight  && eNd && (eh * 60 + em > 180)) return false;
-      return true;
-    },
+    eventAllow: () => true,
     events: fetchGCalEvents,
     select: (info) => {
       if (_calDraggingHandles) return;
@@ -3595,8 +3584,8 @@ function renderFullCalendar() {
       if (_ownGhost) { _ownGhost.remove(); _ownGhost = null; }
       _mirrorSnap = null;
     },
-    eventDrop: (info) => { moveGCalEvent(info.event); _syncPanelFromFcEvent(info.event); },
-    eventResize: (info) => { moveGCalEvent(info.event); _syncPanelFromFcEvent(info.event); },
+    eventDrop: (info) => { _clampAndMoveGCalEvent(info.event); },
+    eventResize: (info) => { _clampAndMoveGCalEvent(info.event); },
   });
   fcCalendar.render();
 }
@@ -4207,6 +4196,41 @@ function deleteGCalEvent() {
   fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${gcalEditingId}`,
     { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
     .catch(e => { console.error('gcal delete error:', e); if (fcCalendar) fcCalendar.refetchEvents(); });
+}
+
+function _clampAndMoveGCalEvent(event) {
+  const vd = fcCalendar?.getDate();
+  if (vd) {
+    const dur = event.end - event.start;
+    let start = new Date(event.start);
+    let end   = new Date(event.end);
+    const sNd = start.getDate() !== vd.getDate();
+
+    // Top buffer zone → clamp start up to first editable slot
+    const minH = _calEarly ? 3 : 6;
+    if (!sNd && start.getHours() < minH) {
+      start = new Date(vd.getFullYear(), vd.getMonth(), vd.getDate(), minH);
+      end   = new Date(start.getTime() + dur);
+    }
+
+    // Bottom buffer zone → clamp so end ≤ midnight (or 3am in latenight)
+    const maxEndH = _calLatenight ? 27 : 24;  // hours past midnight of vd
+    const maxEnd = new Date(vd.getFullYear(), vd.getMonth(), vd.getDate(), maxEndH);
+    if (end > maxEnd) {
+      end   = new Date(maxEnd);
+      start = new Date(end.getTime() - dur);
+      if (start.getHours() < minH && start.getDate() === vd.getDate()) {
+        start = new Date(vd.getFullYear(), vd.getMonth(), vd.getDate(), minH);
+      }
+    }
+
+    if (start.getTime() !== event.start.getTime() || end.getTime() !== event.end.getTime()) {
+      event.setStart(start, { maintainDuration: false });
+      event.setEnd(end);
+    }
+  }
+  moveGCalEvent(event);
+  _syncPanelFromFcEvent(event);
 }
 
 function moveGCalEvent(event) {
