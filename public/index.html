@@ -8314,7 +8314,8 @@ window.onload = () => {
   initTheme();
   todayTaskOrder = loadTodayOrder();
   preloadSubtaskCache(); // 子タスク進捗をカード描画前に復元
-  // setupBackground(); // 背景画像表示を一旦停止中（再開する場合はコメントを外す）
+  // setupBackground(); // 時間帯ローテーション背景は停止中（再開する場合はコメントを外す）
+  document.getElementById('bg-layer').style.backgroundImage = "url('/backgrounds/fixed-space.jpg')"; // 固定背景（一時的）
   setupBanner();
   setupDatetime();
   document.querySelector('.content-grid').classList.add('select-mode');
