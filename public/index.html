@@ -177,8 +177,8 @@ html[data-theme="light"] .edit-chips:has(.edit-chip.active) .edit-chip:not(.acti
 html[data-theme="light"] .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.4); }
 html[data-theme="light"] .edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
 html[data-theme="light"] .edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
-html[data-theme="light"] .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(144,112,192,0.12); --chip-color: #5030A0; --chip-border: rgba(144,112,192,0.35); }
-html[data-theme="light"] .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(248,216,176,0.2);  --chip-color: #A06820; --chip-border: rgba(248,216,176,0.5); }
+html[data-theme="light"] .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
+html[data-theme="light"] .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
 html[data-theme="light"] .edit-chip[data-val="ELA"],
 html[data-theme="light"] .edit-chip[data-val="ER4"],
 html[data-theme="light"] .edit-chip[data-val="S&L4"],
@@ -204,7 +204,7 @@ html[data-theme="light"] .card-group-header.area-personal { color: #b87a00; back
 html[data-theme="light"] .card-group-header.area-seikatsu { color: #3A7840; background: rgba(58,120,64,0.10);  }
 html[data-theme="light"] .card-group-header.area-other    { color: rgba(0,0,0,0.45); }
 /* セクションヘッダー（今日やること・持ち越し・次やること） */
-html[data-theme="light"] .section-header.green { color: #0f7a5a; background: rgba(15,122,90,0.07); border-bottom-color: rgba(15,122,90,0.18); }
+html[data-theme="light"] .section-header.green { color: #0f7a5a; border-bottom-color: rgba(15,122,90,0.18); }
 html[data-theme="light"] .section-header.red   { color: #c03030; background: rgba(192,48,48,0.06); border-bottom-color: rgba(192,48,48,0.18); }
 html[data-theme="light"] .section-header.blue  { color: #1a60b0; background: rgba(26,96,176,0.07); border-bottom-color: rgba(26,96,176,0.18); }
 /* タスクページ展開オーバーレイのエリアヘッダー */
@@ -569,7 +569,7 @@ body::before {
   text-transform: none; transition: all .15s;
 }
 .cal-edit-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
-.section-header.green { color: var(--green); border-bottom-color: rgba(29,158,117,0.2); background: rgba(29,158,117,0.04); }
+.section-header.green { color: var(--green); border-bottom-color: rgba(29,158,117,0.2); }
 .section-header.red { color: #F09595; border-bottom-color: rgba(240,149,149,0.2); background: rgba(240,149,149,0.04); }
 .section-header.blue { color: #85B7EB; border-bottom-color: rgba(133,183,235,0.2); background: rgba(133,183,235,0.04); }
 .next-filter-btns { display: flex; gap: 3px; margin-left: auto; }
@@ -966,9 +966,6 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   transition: background .2s, border-color .2s, opacity .2s, transform .2s;
   contain: layout;
 }
-.task-card.area-kadai    { border-left-color: #9070C0; }
-.task-card.area-personal { border-left-color: #F8D8B0; }
-.task-card.area-seikatsu { border-left-color: #C0E0C0; }
 .card-group { margin-bottom: 36px; }
 .card-group-header {
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
@@ -1543,8 +1540,8 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.18); --chip-color: #A09AE8; --chip-border: rgba(127,119,221,0.4); }
 .edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
 .edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
-.edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(144,112,192,0.2);  --chip-color: #C0A0E8; --chip-border: rgba(144,112,192,0.5); }
-.edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(248,216,176,0.15); --chip-color: #F0C880; --chip-border: rgba(248,216,176,0.4); }
+.edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
+.edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
 .edit-chip[data-val="ELA"]     { --chip-bg: rgba(160,200,232,0.18); --chip-color: #A0C8E8; --chip-border: rgba(160,200,232,0.45); }
 .edit-chip[data-val="ER4"],
 .edit-chip[data-val="S&L4"],
