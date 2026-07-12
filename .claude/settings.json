@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Edit(*)",
+      "Read(*)",
       "Bash(git *)"
     ],
     "deny": [
