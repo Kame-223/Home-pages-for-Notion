@@ -177,9 +177,8 @@ html[data-theme="light"] .edit-chips:has(.edit-chip.active) .edit-chip:not(.acti
 html[data-theme="light"] .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.4); }
 html[data-theme="light"] .edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
 html[data-theme="light"] .edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
-html[data-theme="light"] .edit-chip[data-val="課題"]    { --chip-bg: rgba(144,112,192,0.12); --chip-color: #5030A0; --chip-border: rgba(144,112,192,0.35); }
-html[data-theme="light"] .edit-chip[data-val="個人"]    { --chip-bg: rgba(248,216,176,0.2);  --chip-color: #A06820; --chip-border: rgba(248,216,176,0.5); }
-html[data-theme="light"] .edit-chip[data-val="生活"]    { --chip-bg: rgba(192,224,192,0.2);  --chip-color: #3A7840; --chip-border: rgba(192,224,192,0.5); }
+html[data-theme="light"] .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(144,112,192,0.12); --chip-color: #5030A0; --chip-border: rgba(144,112,192,0.35); }
+html[data-theme="light"] .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(248,216,176,0.2);  --chip-color: #A06820; --chip-border: rgba(248,216,176,0.5); }
 html[data-theme="light"] .edit-chip[data-val="ELA"],
 html[data-theme="light"] .edit-chip[data-val="ER4"],
 html[data-theme="light"] .edit-chip[data-val="S&L4"],
@@ -1544,9 +1543,8 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.18); --chip-color: #A09AE8; --chip-border: rgba(127,119,221,0.4); }
 .edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
 .edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
-.edit-chip[data-val="課題"]    { --chip-bg: rgba(144,112,192,0.2);  --chip-color: #C0A0E8; --chip-border: rgba(144,112,192,0.5); }
-.edit-chip[data-val="個人"]    { --chip-bg: rgba(248,216,176,0.15); --chip-color: #F0C880; --chip-border: rgba(248,216,176,0.4); }
-.edit-chip[data-val="生活"]    { --chip-bg: rgba(192,224,192,0.15); --chip-color: #90C890; --chip-border: rgba(192,224,192,0.4); }
+.edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(144,112,192,0.2);  --chip-color: #C0A0E8; --chip-border: rgba(144,112,192,0.5); }
+.edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(248,216,176,0.15); --chip-color: #F0C880; --chip-border: rgba(248,216,176,0.4); }
 .edit-chip[data-val="ELA"]     { --chip-bg: rgba(160,200,232,0.18); --chip-color: #A0C8E8; --chip-border: rgba(160,200,232,0.45); }
 .edit-chip[data-val="ER4"],
 .edit-chip[data-val="S&L4"],
@@ -2585,7 +2583,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div class="prog-bar"><div class="prog-fill" id="prog-total-fill" style="width:0%;background:var(--purple)"></div></div>
     </div>
     <div class="prog-card">
-      <div class="prog-label">課題</div>
+      <div class="prog-label">OFFICIAL</div>
       <div class="prog-val" id="prog-task">—</div>
       <div class="prog-sub" id="prog-task-sub">読み込み中</div>
       <div class="prog-bar"><div class="prog-fill" id="prog-task-fill" style="width:0%;background:var(--green)"></div></div>
@@ -2939,9 +2937,8 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div class="edit-field">
         <span class="edit-field-label">AREA</span>
         <div class="edit-chips" id="inbox-area">
-          <button class="edit-chip" data-val="課題" onclick="toggleInboxChip(this,'inbox-area',false)">課題</button>
-          <button class="edit-chip" data-val="個人" onclick="toggleInboxChip(this,'inbox-area',false)">個人</button>
-          <button class="edit-chip" data-val="生活" onclick="toggleInboxChip(this,'inbox-area',false)">生活</button>
+          <button class="edit-chip" data-val="OFFICIAL" onclick="toggleInboxChip(this,'inbox-area',false)">OFFICIAL</button>
+          <button class="edit-chip" data-val="PRIVATE" onclick="toggleInboxChip(this,'inbox-area',false)">PRIVATE</button>
         </div>
       </div>
       <div class="edit-field">
@@ -4524,7 +4521,7 @@ function getProp(page, name) {
 
 // ===== 次やる フィルター =====
 let nextFilter = 'prop';
-const AREA_ORDER = ['課題','個人','生活'];
+const AREA_ORDER = ['OFFICIAL','PRIVATE'];
 const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','PE','その他'];
 const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 
@@ -4620,11 +4617,11 @@ function renderNextList() {
   tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
-  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu'};
+  const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
     let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
-    if (area === '課題') {
+    if (area === 'OFFICIAL') {
       const bySubject = {};
       aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
       const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
@@ -4736,15 +4733,14 @@ function deadlineTag(dateStr, isDone, isImportant) {
 }
 
 function areaBorderCls(area) {
-  if (area==='課題') return 'area-kadai';
-  if (area==='個人') return 'area-personal';
-  if (area==='生活') return 'area-seikatsu';
+  if (area==='OFFICIAL') return 'area-kadai';
+  if (area==='PRIVATE') return 'area-personal';
   return '';
 }
 
 function groupByArea(tasks, renderFn) {
-  const order = ['課題','個人','生活','その他'];
-  const clsMap = {'課題':'area-kadai','個人':'area-personal','生活':'area-seikatsu','その他':'area-other'};
+  const order = ['OFFICIAL','PRIVATE','その他'];
+  const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal','その他':'area-other'};
   const groups = {};
   tasks.forEach(t => {
     const a = getProp(t,'エリア') || 'その他';
@@ -4759,16 +4755,14 @@ function groupByArea(tasks, renderFn) {
 }
 
 function areaTagCls(area) {
-  if (area==='課題') return 'tag-magenta';
-  if (area==='個人') return 'tag-rose';
-  if (area==='生活') return 'tag-olive';
+  if (area==='OFFICIAL') return 'tag-magenta';
+  if (area==='PRIVATE') return 'tag-rose';
   return 'tag-gray';
 }
 function areaBorderColor(area) {
   const light = document.documentElement.dataset.theme === 'light';
-  if (area==='課題') return light ? '#6040B8' : '#9070C0';
-  if (area==='個人') return light ? '#b87a00' : '#F8D8B0';
-  if (area==='生活') return light ? '#3A7840' : '#C0E0C0';
+  if (area==='OFFICIAL') return light ? '#6040B8' : '#9070C0';
+  if (area==='PRIVATE') return light ? '#b87a00' : '#F8D8B0';
   return light ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)';
 }
 function subjectTagCls(s) {
@@ -4886,7 +4880,7 @@ function renderCard(task, mode='today') {
     <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
   </div>`;
 
-  const effectiveArea = area || (subjects?.length ? '課題' : null);
+  const effectiveArea = area || (subjects?.length ? 'OFFICIAL' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
   const isDeadlineToday = (() => {
     if (!deadline || s.done) return false;
@@ -4897,12 +4891,12 @@ function renderCard(task, mode='today') {
     const dlLocal = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
     return Math.round((dlLocal - todayLocal) / 86400000) === 0;
   })();
-  const subjectToShow = (effectiveArea === '課題') ? (subjects?.[0] || null) : null;
-  const elaToShow = (effectiveArea === '課題' && subjectToShow === 'ELA') ? ela : null;
+  const subjectToShow = (effectiveArea === 'OFFICIAL') ? (subjects?.[0] || null) : null;
+  const elaToShow = (effectiveArea === 'OFFICIAL' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    (area && area !== '課題') ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    (area && area !== 'OFFICIAL') ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     (subjectToShow && !elaToShow) ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
@@ -5220,14 +5214,14 @@ function updateProgress() {
   if (pct === 100 && todayAll.length > 0 && lastProgressPct < 100) celebrate();
   lastProgressPct = pct;
 
-  const kadai = todayAll.filter(t=>getProp(t,'エリア')==='課題');
+  const kadai = todayAll.filter(t=>getProp(t,'エリア')==='OFFICIAL');
   const kdone = kadai.filter(isDoneToday).length;
   const kpct = kadai.length ? Math.round(kdone/kadai.length*100) : 0;
   document.getElementById('prog-task').textContent = kpct+'%';
   document.getElementById('prog-task-sub').textContent = `${kdone}/${kadai.length}完了`;
   document.getElementById('prog-task-fill').style.width = kpct+'%';
 
-  const other = todayAll.filter(t=>getProp(t,'エリア')!=='課題');
+  const other = todayAll.filter(t=>getProp(t,'エリア')!=='OFFICIAL');
   const odone = other.filter(isDoneToday).length;
   const opct = other.length ? Math.round(odone/other.length*100) : 0;
   document.getElementById('prog-other').textContent = opct+'%';
@@ -6131,7 +6125,7 @@ function startFocus(id) {
   const area = getProp(task,'エリア');
   const subjects = getProp(task,'科目')||[];
   const link = s.link || getProp(task,'作業リンク');
-  const subjectF = (area === '課題') ? (subjects?.[0] || null) : null;
+  const subjectF = (area === 'OFFICIAL') ? (subjects?.[0] || null) : null;
   const focusTagsHtml = [
     area ? `<span class="tag ${areaTagCls(area)}">${area}</span>` : '',
     subjectF ? `<span class="tag ${subjectTagCls(subjectF)}">${subjectF}</span>` : '',
@@ -6866,14 +6860,14 @@ function toggleEditChip(el, groupId, multi) {
 
   if (nowActive) {
     if (groupId === 'edit-subject') {
-      // SUBJECT選択 → AREAを強制的に課題に
+      // SUBJECT選択 → AREAを強制的にOFFICIALに
       document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.remove('active'));
-      document.querySelector('#edit-area .edit-chip[data-val="課題"]')?.classList.add('active');
+      document.querySelector('#edit-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
     }
     if (groupId === 'edit-ela') {
-      // ELA SUBTAG選択 → AREAを課題・SUBJECTをELAに強制
+      // ELA SUBTAG選択 → AREAをOFFICIAL・SUBJECTをELAに強制
       document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.remove('active'));
-      document.querySelector('#edit-area .edit-chip[data-val="課題"]')?.classList.add('active');
+      document.querySelector('#edit-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
       document.querySelectorAll('#edit-subject .edit-chip').forEach(c => c.classList.remove('active'));
       document.querySelector('#edit-subject .edit-chip[data-val="ELA"]')?.classList.add('active');
     }
@@ -6882,7 +6876,7 @@ function toggleEditChip(el, groupId, multi) {
   if (groupId === 'edit-area') {
     // AREA変更 → 以下をリセット
     const newArea = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
-    if (newArea !== '課題') {
+    if (newArea !== 'OFFICIAL') {
       document.querySelectorAll('#edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
     }
   }
@@ -6898,9 +6892,9 @@ function updateEditChipCascade() {
 
   subjectEl.classList.remove('disabled');
   elaEl.classList.remove('disabled');
-  subjectEl.classList.toggle('dimmed', !!area && area !== '課題');
-  // AREAが課題以外、またはSUBJECTがELA以外のときにELAを暗くする
-  elaEl.classList.toggle('dimmed', (!!area && area !== '課題') || (!!subject && subject !== 'ELA'));
+  subjectEl.classList.toggle('dimmed', !!area && area !== 'OFFICIAL');
+  // AREAがOFFICIAL以外、またはSUBJECTがELA以外のときにELAを暗くする
+  elaEl.classList.toggle('dimmed', (!!area && area !== 'OFFICIAL') || (!!subject && subject !== 'ELA'));
 }
 
 async function saveEditModal() {
@@ -6913,7 +6907,7 @@ async function saveEditModal() {
   const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
   let subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val || null;
   let ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
-  if (area !== '課題') { subject = null; ela = null; }
+  if (area !== 'OFFICIAL') { subject = null; ela = null; }
   if (subject !== 'ELA') { ela = null; }
   const subjects = subject ? [subject] : [];
   const dlDate = document.getElementById('edit-deadline-date').value;
@@ -7106,18 +7100,18 @@ function toggleInboxChip(el, groupId, multi) {
   if (nowActive) {
     if (groupId === 'inbox-subject') {
       document.querySelectorAll('#inbox-area .edit-chip').forEach(c=>c.classList.remove('active'));
-      document.querySelector('#inbox-area .edit-chip[data-val="課題"]')?.classList.add('active');
+      document.querySelector('#inbox-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
     }
     if (groupId === 'inbox-ela') {
       document.querySelectorAll('#inbox-area .edit-chip').forEach(c=>c.classList.remove('active'));
-      document.querySelector('#inbox-area .edit-chip[data-val="課題"]')?.classList.add('active');
+      document.querySelector('#inbox-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
       document.querySelectorAll('#inbox-subject .edit-chip').forEach(c=>c.classList.remove('active'));
       document.querySelector('#inbox-subject .edit-chip[data-val="ELA"]')?.classList.add('active');
     }
   }
   if (groupId === 'inbox-area') {
     const newArea = document.querySelector('#inbox-area .edit-chip.active')?.dataset.val;
-    if (newArea !== '課題') {
+    if (newArea !== 'OFFICIAL') {
       document.querySelectorAll('#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
     }
   }
@@ -7130,8 +7124,8 @@ function updateInboxChipCascade() {
   const subjectEl = document.getElementById('inbox-subject');
   const elaEl     = document.getElementById('inbox-ela');
   if (!subjectEl || !elaEl) return;
-  subjectEl.classList.toggle('dimmed', !!area && area !== '課題');
-  elaEl.classList.toggle('dimmed', (!!area && area !== '課題') || (!!subject && subject !== 'ELA'));
+  subjectEl.classList.toggle('dimmed', !!area && area !== 'OFFICIAL');
+  elaEl.classList.toggle('dimmed', (!!area && area !== 'OFFICIAL') || (!!subject && subject !== 'ELA'));
 }
 
 // ===== キーボードショートカット =====
@@ -7756,8 +7750,8 @@ function _injectExpandContent(panel, key) {
     const shown = tasks.slice(0, count);
     const rest  = tasks.length - count;
     // エリア別グループ（エリア内も締切順）
-    const areaOrder = ['課題','個人','生活','ICU','カナダ'];
-    const areaSlug = a => a==='課題'?'kadai':a==='個人'?'personal':a==='生活'?'seikatsu':'other';
+    const areaOrder = ['OFFICIAL','PRIVATE','ICU','カナダ'];
+    const areaSlug = a => a==='OFFICIAL'?'kadai':a==='PRIVATE'?'personal':'other';
     const grouped = {};
     shown.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (grouped[a] = grouped[a]||[]).push(t); });
     const orderedAreas = [...areaOrder.filter(a => grouped[a]), ...Object.keys(grouped).filter(a => !areaOrder.includes(a))];
@@ -7913,14 +7907,14 @@ function renderGtdCard(task) {
     <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
   </div>`;
 
-  const effectiveAreaG = area || (subjects?.length ? '課題' : null);
+  const effectiveAreaG = area || (subjects?.length ? 'OFFICIAL' : null);
   const dt = deadlineTag(deadline, false, false);
-  const subjectToShow = (effectiveAreaG === '課題') ? (subjects?.[0] || null) : null;
-  const elaToShow = (effectiveAreaG === '課題' && subjectToShow === 'ELA') ? ela : null;
+  const subjectToShow = (effectiveAreaG === 'OFFICIAL') ? (subjects?.[0] || null) : null;
+  const elaToShow = (effectiveAreaG === 'OFFICIAL' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    (area && area !== '課題') ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    (area && area !== 'OFFICIAL') ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
     (subjectToShow && !elaToShow) ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
@@ -9064,9 +9058,8 @@ async function _wizFinish() {
     <div class="edit-field">
       <span class="edit-field-label">AREA</span>
       <div class="edit-chips" id="edit-area">
-        <button class="edit-chip" data-val="課題" onclick="toggleEditChip(this,'edit-area',false)">課題</button>
-        <button class="edit-chip" data-val="個人" onclick="toggleEditChip(this,'edit-area',false)">個人</button>
-        <button class="edit-chip" data-val="生活" onclick="toggleEditChip(this,'edit-area',false)">生活</button>
+        <button class="edit-chip" data-val="OFFICIAL" onclick="toggleEditChip(this,'edit-area',false)">OFFICIAL</button>
+        <button class="edit-chip" data-val="PRIVATE" onclick="toggleEditChip(this,'edit-area',false)">PRIVATE</button>
       </div>
     </div>
     <div class="edit-field">
