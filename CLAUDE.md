@@ -1,65 +1,48 @@
-# Home-pages-for-Notion 引き継ぎメモ
+# Life Re-Design System
 
-## プロジェクト概要
-ADHDの大学生（ICU）の自分専用ホームページ。NotionをDBとして使い、Vercel上で公開。
+Notion連携の個人用ライフデザインシステム。GitHub `Kame-223/Home-pages-for-Notion` → Vercel自動デプロイ。
+単一ファイル `public/index.html` + プロキシ（notion.js / ai.js / fetch-title.js）。
 
-- **GitHub**: Kame-223/Home-pages-for-Notion
-- **Vercel**: https://home-pages-for-notion-n5f9.vercel.app
-- **デプロイ**: git push → Vercel自動（1〜2分）
-- **メインファイル**: `public/index.html`（全コード1ファイル）
-- **APIプロキシ**: `api/notion.js`、`api/fetch-title.js`
+## 参照ファイル（毎回は読まない。必要なときだけ）
 
-## Notion DB
-- タスク: `3294c1ec140d838499ae0131fc67976d`
-- 振り返り: `76f4c1ec140d8375aa5b81c589f9b247`（タイトルプロパティ名は「名前」）
-- プロジェクト: `8584c1ec140d83b29e26019b60fe7a3e`
+- `PHILOSOPHY.md` — なぜこう作るか。UX判断で迷ったときだけ読む。
+- `docs/00-index.md` — 設計書の目次。
+- `docs/chapter1-philosophy.md` 〜 `docs/chapter6-emode.md` — 各章の詳細。**今作業している章のファイルだけ読む。他の章は開かない。**
+- `docs/implementation-notes.md` — 実装済み機能・カラー設定・Notion DB IDなど、現在のコード実装状況のメモ。
 
-## 実装済み機能（完成）
-- サイドバー・哲学バナー・日時ウィジェット
-- 選択モード / 実行モード切替
-- 進捗バー（ピン済みタスクのみ）
-- 今日やること / やり残し / 次やること
-- タスクカード（AREA・SUBJECT・ELA・DEADLINE・LINKS・時間帯・時間見積もり）
-- Importantモード（赤背景・確認ダイアログ・締切カウントダウン強化）
-- 締切：日時まで設定可・カウントダウン表示・Important時は秒数まで
-- クマボタン（リンク一覧・favicon＋タイトル自動取得）
-- ＋INBOX → Notion保存
-- 次やるフィルター（プロパティ順 / 締切順）
-- 振り返り（気分・体調・自動保存・3時リセット・ドラゴン）
-- Googleカレンダー（個人＋ICU・色分け・時間帯背景）
-- 背景：1日3回切替（6時・12時・18時）
-- **Eモード「今日やること」スクロール追従**（完成）
+## 作業の進め方
 
-## カラー設定（2026-06 リニューアル済み）
-### AREAタグ・カードボーダー・グループヘッダー
-- 課題 → `#9070C0`（紫）
-- 個人 → `#F8D8B0`（ピーチ）※旧ICUを統合
-- 生活 → `#C0E0C0`（ミント）※旧カナダを統合
+- 単一セッションで進める。並行ターミナルは使わない。
+- 次のいずれかに当てはまる作業は、必ず Plan Mode を通す：3ファイル以上にまたがる／新しいNotionプロパティやDB構造を追加する／既存の関数の挙動を変える。それ以外（誤字修正・1行の値変更・スタイルの微調整）は直接でよい。
+- Plan Modeの計画が5ステップを超える場合は、1ステップごとに止めて見せる。5ステップ以下は最後まで通してよい。
+- 実行を承認する前に、それが何をするコマンドか日本語で一行説明する。
+- 訂正が2回続いたら、3回目に入る前にセッションを仕切り直す（`/clear`）。
+- 各ステップの完了ごとに Git コミットする。
+- 通常の `git push` は確認不要で自動実行してよい。ファイル削除・上書きなど、より大胆な破壊的操作は事前確認が必須。
 
-### SUBJECTタグ
-- ELA（ER4/S&L4/RCA/ATS4/ARW含む）→ `#A0C8E8`（スカイブルー）
-- それ以外のSUBJECT → グレー統一（`tag-gray`）
+## 判断の担当
 
-### カレンダーイベント色（優先順位順）
-1. 当日行動（KIND or calName or title）→ `#C4C4C4`（薄いグレー）
-2. ELA/ER4/S&L4/RCA/ATS4/ARW → `#A0C8E8`
-3. 教育原理/憲法/社会学/PE → `#C0C0E8`
-4. calNameに「生活」「寮」を含む → `#C0E0C0`
-5. その他（個人カレンダー） → `#F8D8B0`
+- コード内部の実装方法（変数名、関数分割、ライブラリ選定）は Claude が決めてよい。
+- 画面に表示される見た目・文言・操作の手触りに関わる変更は、必ずコウセイに選択肢を2〜3個、日本語で提示してから進める。ここは Claude が一次判定しない。迷ったら `PHILOSOPHY.md` を読んでから提示する。
 
-## 未完了・継続中
-- カレンダー課題2: Deleteキーでイベント削除（未実装）
-- カレンダー課題3: タスクをドラッグしてカレンダーに追加（未実装）
+## 禁止事項
 
-## Eモード「今日やること」スクロール追従の仕組み
-- `today-board`（board）: CSS そのまま（ダーク背景）、`overflow:visible` のみ追加
-- `today-board-inner`（inner）: sticky **外す**、`height:100%`、`overflow:visible`
-- `.section-header`（ヘッダー）: sticky なし → カレンダーヘッダーと同タイミングで流れる
-- `#today-tasks`（tc）: `position:sticky; top:headerH(≈38px)` → ヘッダーが消えるにつれ 0→38px のスペースが生まれ固定
-- board が page と一緒にスクロールするため「panel の底が自然に流れる」ように見える
+- `.env` ファイル、シークレット、認証情報の読み書き
+- `git push --force`
+- 確認なしでの破壊的操作（削除・上書き）
 
-## 重要な実装メモ
-- `taskState`はlocalStorageに保存（done/pinned/important/jikantai/timeIdx/links）
-- 振り返りは3時リセット、frPageIdで重複保存防止
-- `day-schedule-content` IDは存在しない→renderAllでnullチェック済み
-- git push前の確認不要（自動でpushしてよい）
+## `/goal` の使用条件
+
+- 設計・思想を固める作業では使わない。
+- 実装フェーズで、`docs/chapter*.md` に受け入れ基準が明文化された機能にのみ使う。
+
+## サブエージェント
+
+- 使う場合は個数の上限を必ず明記する。「複数使っていい」のような曖昧な許可は出さない。
+- コストが並列数に対してほぼ掛け算で増えるため、詳細は `ADVANCED.md` を参照。
+
+---
+
+## 既知の問題（失敗ログ）
+
+**この節は、実際に起きた不具合・誤りを見つけるたびに一行足していく。まだ空でもよい。**
