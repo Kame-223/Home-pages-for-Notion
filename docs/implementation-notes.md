@@ -62,13 +62,20 @@ ADHDの大学生（ICU）の自分専用ホームページ。NotionをDBとし�
 | 🔥 今すぐやる | 1分以内で片付くタスク | 旧「🔥 今やる」。選択すると自動的に完了扱い |
 | 📧 待ち | 対応待ち | 今回のグリッド化の対象外、現状維持 |
 
-ラベルは大文字＝該当（重要/緊急）・小文字＝非該当、該当する文字を太字で表示（例：`💫 <b>I</b>u`）。
+ラベルは大文字＝該当（重要/緊急）・小文字＝非該当。該当する文字は太字＋上線（`.gtd-cap`）、非該当は下線（`.gtd-low`）で表示（例：`💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span>`）。
 
 ### UI構造
-- `.task-gtd-grid`：4象限（IU/Iu/iU/iu）を2×2 CSS Gridで配置。既存のドラッグ&ドロップ基盤（`GTD_DROP_AREAS`、ポインターイベントベース）をそのまま流用
-- `.gtd-area-imasugu`：グリッド下の横長スロット（「🔥 今すぐやる」用）
+- `.task-gtd-grid`：4象限（IU/Iu/iU/iu）を、個別の枠を持たない1つの大きな枠＋内側の仕切り線（右辺・下辺のborderのみ）で表現。背景`rgba(255,255,255,0.8)`、仕切り線は黒。既存のドラッグ&ドロップ基盤（`GTD_DROP_AREAS`、ポインターイベントベース）はそのまま流用
+- `#gtd-slot-imasugu`（`.gtd-area-imasugu`）：グリッド下の横長スロット。炎の背景画像（`public/backgrounds/imasugu-flame-v2.png`）のみで、ボタン・ラベルなし。ドロップされたタスクは即座に「🔥 今すぐやる」に分類され完了扱いになる、展開・一覧機能を持たない純粋なドロップ地点
 - `gtd-slot-project`：既存のPROJECTスロットは変更なし、GTD 種別とは無関係の別軸として維持
-- `_OVERLAY_SLOTS`/`_OVERLAY_GTD_MAP`/`_overlayListCounts`：展開オーバーレイの表示・ページネーションを5区分（impurg/imp/urg/trash/imasugu）+ projectに対応する形で汎用化
+
+### 展開（一覧表示）の仕組み（2026-07 刷新）
+以前は展開時にINBOX列・GTD列双方の座標を`getBoundingClientRect()`で測定して`position:fixed`に焼き付け、INBOXを1件ずつのページ送りUIに変形させる複雑な仕組みだったが、「固くて見にくい」ため全面刷新した。
+
+- `.task-gtd-col`内に常設・普段非表示の`#gtd-expand-panel`を1つ用意。展開時は`task-gtd-col`に`.gtd-expanded`クラスを付与し、CSSで「4象限グリッド/今すぐやる/PROJECTを隠し、`#gtd-expand-panel`を表示」に切り替えるだけ（座標測定なし）
+- `#gtd-expand-panel`は`z-index:10`で暗幕（`#task-overlay`, z-index:5）より前面に浮かせる。INBOXは何も変形させず、z-indexも上げないため暗幕の下に自然に沈み、操作不可になる（追加のpointer-events制御は不要）
+- 閉じるときは`.gtd-expanded`除去＋`#task-overlay`非表示のみ。開く前の状態をキャッシュ・復元する処理は撤廃
+- `_OVERLAY_GTD_MAP`/`_overlayListCounts`：展開一覧のGTD値対応表とページネーション件数（impurg/imp/urg/trashの4区分。imasuguは展開機能自体を持たないため対象外）
 
 ## 未完了・継続中
 - カレンダー課題2: Deleteキーでイベント削除（未実装）
