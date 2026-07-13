@@ -2452,8 +2452,13 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 /* 展開中のGTDパネル（右列全体に広がる） */
 .task-gtd-area.expand-target {
+  /* 4象限グリッド化でGrid内の要素になったため flex:1 が効かない。
+     Grid/Flexの制約を無視してtask-gtd-col（position:fixedで高さ確定済み）いっぱいに重ねる */
+  position: absolute !important;
+  inset: 0 !important;
   flex: 1 !important;
   overflow: hidden !important;
+  z-index: 1;
 }
 /* 展開中：reveal-wrap は非表示（タイトルはgtd-slot-headerに移す） */
 .task-gtd-area.expand-target .gtd-reveal-wrap { display: none; }
