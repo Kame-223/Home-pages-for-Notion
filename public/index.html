@@ -2605,8 +2605,9 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
     </div>
 
     <!-- 星形NEXTボタン (Sモード 中央列上段) -->
+    <!-- 一時的に機能停止中（onclickを外しているだけなので、復活させる場合は onclick="starNextClick()" を戻す） -->
     <div class="s-star-col" id="s-star-col">
-      <button class="star-btn" id="star-next-btn" onclick="starNextClick()" title="今日やることへ">
+      <button class="star-btn" id="star-next-btn" title="今日やることへ">
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="nextStarGrad" cx="38%" cy="30%" r="68%">
