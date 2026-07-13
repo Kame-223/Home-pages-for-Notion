@@ -422,7 +422,7 @@ body::before {
 }
 .content-grid.select-mode .today-board { grid-column: 1; grid-row: 2; order: unset; }
 .content-grid.select-mode .s-star-col {
-  display: block !important; grid-column: 2; grid-row: 1 / -1;
+  display: none !important; grid-column: 2; grid-row: 1 / -1;
   position: relative;
 }
 .content-grid.select-mode .s-orb-col {
@@ -958,7 +958,6 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .task-card {
   background: var(--surface2);
   border: 0.5px solid var(--border2);
-  border-left: 5px solid #ffffff;
   border-radius: 12px;
   padding: 11px 14px;
   margin-bottom: 8px;
