@@ -2217,10 +2217,10 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   gap: 0;
   flex: 3;
   min-height: 0;
-  border: 0.5px solid rgba(255,255,255,0.12);
+  border: 1.5px solid #000000;
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(10,8,20,0.72);
+  background: #ffffff;
 }
 /* グリッド内の4マスは個別の枠・角丸をやめ、仕切り線（＋字）だけで4等分する */
 .task-gtd-grid .task-gtd-area {
@@ -2228,13 +2228,21 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   border-radius: 0;
   background: transparent;
 }
-.task-gtd-grid .task-gtd-area:nth-child(1) { border-right: 0.5px solid rgba(255,255,255,0.12); border-bottom: 0.5px solid rgba(255,255,255,0.12); }
-.task-gtd-grid .task-gtd-area:nth-child(2) { border-bottom: 0.5px solid rgba(255,255,255,0.12); }
-.task-gtd-grid .task-gtd-area:nth-child(3) { border-right: 0.5px solid rgba(255,255,255,0.12); }
+.task-gtd-grid .task-gtd-area:nth-child(1) { border-right: 1.5px solid #000000; border-bottom: 1.5px solid #000000; }
+.task-gtd-grid .task-gtd-area:nth-child(2) { border-bottom: 1.5px solid #000000; }
+.task-gtd-grid .task-gtd-area:nth-child(3) { border-right: 1.5px solid #000000; }
+/* 白背景での文字・ボタンの視認性を確保 */
+.task-gtd-grid .gtd-panel-name { color: #000000; }
+.task-gtd-grid .gtd-reveal-btn { color: rgba(0,0,0,0.65); border-color: rgba(0,0,0,0.35); background: rgba(0,0,0,0.04); }
+.task-gtd-grid .gtd-reveal-btn:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.55); }
 .gtd-area-imasugu {
   flex: 0 0 auto;
   min-height: 56px;
   max-height: 84px;
+}
+/* .task-gtd-areaのbackground一括指定が後から効いて画像を消してしまうため、
+   ID指定で優先度を上げて確実に背景画像を適用する */
+#gtd-slot-imasugu {
   background-image: url('/backgrounds/imasugu-flame.png');
   background-size: cover;
   background-position: center;
