@@ -2210,6 +2210,19 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   position: sticky; top: 12px; align-self: start;
   height: calc(100vh - 76px);
 }
+.task-gtd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  flex: 3;
+  min-height: 0;
+}
+.gtd-area-imasugu {
+  flex: 0 0 auto;
+  min-height: 56px;
+  max-height: 84px;
+}
 .task-section {
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
@@ -2738,21 +2751,51 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <!-- 右：GTDパネル（sticky） -->
       <div class="task-gtd-col" id="task-gtd-col">
 
-        <!-- 次やる -->
-        <div class="task-gtd-area" id="gtd-slot-next" data-gtd="▶️ 次やる">
-          <div class="gtd-slot-header"></div>
-          <div class="gtd-reveal-wrap">
-            <div class="gtd-panel-name">▶️ 次やる</div>
-            <button class="gtd-reveal-btn" id="gtd-next-expand-btn" onclick="openOverlay('next')">展開（0件）</button>
+        <!-- 4象限グリッド -->
+        <div class="task-gtd-grid">
+          <!-- 重要×緊急 -->
+          <div class="task-gtd-area" id="gtd-slot-impurg" data-gtd="▶️ IU">
+            <div class="gtd-slot-header"></div>
+            <div class="gtd-reveal-wrap">
+              <div class="gtd-panel-name">▶️ <b>IU</b></div>
+              <button class="gtd-reveal-btn" id="gtd-impurg-expand-btn" onclick="openOverlay('impurg')">展開（0件）</button>
+            </div>
+          </div>
+
+          <!-- 重要×非緊急 -->
+          <div class="task-gtd-area" id="gtd-slot-imp" data-gtd="💫 Iu">
+            <div class="gtd-slot-header"></div>
+            <div class="gtd-reveal-wrap">
+              <div class="gtd-panel-name">💫 <b>I</b>u</div>
+              <button class="gtd-reveal-btn" id="gtd-imp-expand-btn" onclick="openOverlay('imp')">展開（0件）</button>
+            </div>
+          </div>
+
+          <!-- 非重要×緊急 -->
+          <div class="task-gtd-area" id="gtd-slot-urg" data-gtd="💨 iU">
+            <div class="gtd-slot-header"></div>
+            <div class="gtd-reveal-wrap">
+              <div class="gtd-panel-name">💨 i<b>U</b></div>
+              <button class="gtd-reveal-btn" id="gtd-urg-expand-btn" onclick="openOverlay('urg')">展開（0件）</button>
+            </div>
+          </div>
+
+          <!-- 非重要×非緊急 -->
+          <div class="task-gtd-area" id="gtd-slot-trash" data-gtd="🗑 iu">
+            <div class="gtd-slot-header"></div>
+            <div class="gtd-reveal-wrap">
+              <div class="gtd-panel-name">🗑 iu</div>
+              <button class="gtd-reveal-btn" id="gtd-trash-expand-btn" onclick="openOverlay('trash')">展開（0件）</button>
+            </div>
           </div>
         </div>
 
-        <!-- 今じゃない -->
-        <div class="task-gtd-area" id="gtd-slot-someday" data-gtd="💫今じゃない">
+        <!-- 今すぐやる -->
+        <div class="task-gtd-area gtd-area-imasugu" id="gtd-slot-imasugu" data-gtd="🔥 今すぐやる">
           <div class="gtd-slot-header"></div>
           <div class="gtd-reveal-wrap">
-            <div class="gtd-panel-name">💫 今じゃない</div>
-            <button class="gtd-reveal-btn" id="gtd-someday-expand-btn" onclick="openOverlay('someday')">展開（0件）</button>
+            <div class="gtd-panel-name">🔥 今すぐやる</div>
+            <button class="gtd-reveal-btn" id="gtd-imasugu-expand-btn" onclick="openOverlay('imasugu')">展開（0件）</button>
           </div>
         </div>
 
