@@ -2220,7 +2220,7 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   border: 1.5px solid #000000;
   border-radius: 10px;
   overflow: hidden;
-  background: #cccccc;
+  background: rgba(255,255,255,0.8);
 }
 /* グリッド内の4マスは個別の枠・角丸をやめ、仕切り線（＋字）だけで4等分する */
 .task-gtd-grid .task-gtd-area {
@@ -2813,12 +2813,8 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           </div>
         </div>
 
-        <!-- 今すぐやる -->
-        <div class="task-gtd-area gtd-area-imasugu" id="gtd-slot-imasugu" data-gtd="🔥 今すぐやる">
-          <div class="gtd-reveal-wrap">
-            <button class="gtd-reveal-btn" id="gtd-imasugu-expand-btn" onclick="openOverlay('imasugu')">展開（0件）</button>
-          </div>
-        </div>
+        <!-- 今すぐやる：ドロップ専用（展開・一覧は無し、落とした瞬間に完了扱い） -->
+        <div class="task-gtd-area gtd-area-imasugu" id="gtd-slot-imasugu" data-gtd="🔥 今すぐやる"></div>
 
         <!-- PROJECT -->
         <div class="task-gtd-area" id="gtd-slot-project">
@@ -7635,9 +7631,9 @@ let overlayProjectId = null;
 let projMiniExpanded = false;
 let _overlayInboxCount = 0;    // 0=大タイトル表示, >0=カード表示件数
 
-const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu', imasugu: '🔥 今すぐやる' };
-const _overlayListCounts = { impurg: 5, imp: 5, urg: 5, trash: 5, imasugu: 5 }; // 各区分の表示件数（最小5）
-const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', imasugu: 'gtd-slot-imasugu', project: 'gtd-slot-project' };
+const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu' };
+const _overlayListCounts = { impurg: 5, imp: 5, urg: 5, trash: 5 }; // 各区分の表示件数（最小5）
+const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
 
 function openOverlay(key) {
   overlayMode = key;
@@ -7789,7 +7785,7 @@ function _injectExpandContent(panel, key) {
   if (existingPag) existingPag.remove();
 
   const slotHeader = panel.querySelector('.gtd-slot-header');
-  const titleMap = { impurg: '▶️ <b class="gtd-cap">IU</b>', imp: '💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span>', urg: '💨 <span class="gtd-low">i</span><b class="gtd-cap">U</b>', trash: '🗑 <span class="gtd-low">iu</span>', imasugu: '🔥 今すぐやる', project: 'PROJECT' };
+  const titleMap = { impurg: '▶️ <b class="gtd-cap">IU</b>', imp: '💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span>', urg: '💨 <span class="gtd-low">i</span><b class="gtd-cap">U</b>', trash: '🗑 <span class="gtd-low">iu</span>', project: 'PROJECT' };
   if (slotHeader) slotHeader.innerHTML = titleMap[key] || '';
 
   const div = document.createElement('div');
