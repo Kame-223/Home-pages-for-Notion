@@ -62,21 +62,13 @@ ADHDの大学生（ICU）の自分専用ホームページ。NotionをDBとし�
 | 🔥 今すぐやる | 1分以内で片付くタスク | 旧「🔥 今やる」。選択すると自動的に完了扱い |
 | 📧 待ち | 対応待ち | 今回のグリッド化の対象外、現状維持 |
 
-ラベルは大文字＝該当（重要/緊急）・小文字＝非該当。該当する文字は太字＋上線（`.gtd-cap`）、非該当は下線（`.gtd-low`）で表示（例：`💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span>`）。
+ラベルは大文字＝該当（重要/緊急）・小文字＝非該当、該当する文字を太字で表示（例：`💫 <b>I</b>u`）。
 
 ### UI構造
-- `.task-gtd-grid`：4象限（IU/Iu/iU/iu）を、個別の枠を持たない1つの大きな枠＋内側の仕切り線（右辺・下辺のborderのみ）で表現。背景`rgba(255,255,255,0.8)`、仕切り線は黒。既存のドラッグ&ドロップ基盤（`GTD_DROP_AREAS`、ポインターイベントベース）はそのまま流用
-- `#gtd-slot-imasugu`（`.gtd-area-imasugu`）：グリッド下の横長スロット。炎の背景画像（`public/backgrounds/imasugu-flame-v2.png`）のみで、ボタン・ラベルなし。ドロップされたタスクは即座に「🔥 今すぐやる」に分類され完了扱いになる、展開・一覧機能を持たない純粋なドロップ地点
+- `.task-gtd-grid`：4象限（IU/Iu/iU/iu）を2×2 CSS Gridで配置。既存のドラッグ&ドロップ基盤（`GTD_DROP_AREAS`、ポインターイベントベース）をそのまま流用
+- `.gtd-area-imasugu`：グリッド下の横長スロット（「🔥 今すぐやる」用）
 - `gtd-slot-project`：既存のPROJECTスロットは変更なし、GTD 種別とは無関係の別軸として維持
-
-### 展開（一覧表示）の仕組み（2026-07 刷新、暗幕方式は撤去済み）
-最初のバージョンはINBOX列・GTD列双方の座標を`getBoundingClientRect()`で測定して`position:fixed`に焼き付け、INBOXを1件ずつのページ送りUIに変形させる複雑な仕組みだった。次に`z-index`で暗幕より前面に浮かせる方式に変えたが、`.task-gtd-col`の`position:sticky`が独自のスタッキングコンテキストを作りz-indexが効かず、パネルごと操作不能になるバグが発生。**運用要件（展開パネルからINBOXへタスクをドラッグして戻す）にも合わないため、暗幕そのものを撤去**し、現在は以下の形になっている。
-
-- `.task-gtd-col`内に常設・普段非表示の`#gtd-expand-panel`を1つ用意。展開時は`task-gtd-col`に`.gtd-expanded`クラスを付与し、CSSで「4象限グリッド/今すぐやる/PROJECTを隠し、`#gtd-expand-panel`を表示」に切り替えるだけ（座標測定・z-index操作なし）
-- 暗幕（`#task-overlay`）は完全撤去。代わりに`document.body`へ`.gtd-expanded-mode`を付与し、**サイドバー・バナー・下部バーだけ**を`filter:brightness(0.45)`で減光（`pointer-events:none`で誤操作も防止）。task-page-grid（INBOX・展開パネル）には一切オーバーレイを被せないため、z-index競合が構造的に起きない
-- INBOXは展開中も変形させず常時操作可能。表示だけ`.inbox-simplified`クラスで「INBOX」というタイトルのみに簡略化する（一覧は隠すが、ドロップ判定は`GTD_DROP_AREAS`のコンテナ矩形判定のままなので影響を受けない）。展開パネルのタスクカードを既存のドラッグ機構でINBOXへドラッグすれば、GTD 種別が📥INBOXに戻る
-- 閉じる操作はEscapeキー、またはサイドバー・バナー・下部バー（減光された部分）のクリックで`closeOverlay()`が呼ばれる。明示的な閉じるボタンは無い
-- `_OVERLAY_GTD_MAP`/`_overlayListCounts`：展開一覧のGTD値対応表とページネーション件数（impurg/imp/urg/trashの4区分。imasuguは展開機能自体を持たないため対象外）
+- `_OVERLAY_SLOTS`/`_OVERLAY_GTD_MAP`/`_overlayListCounts`：展開オーバーレイの表示・ページネーションを5区分（impurg/imp/urg/trash/imasugu）+ projectに対応する形で汎用化
 
 ## 未完了・継続中
 - カレンダー課題2: Deleteキーでイベント削除（未実装）
