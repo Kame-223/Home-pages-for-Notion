@@ -2220,7 +2220,7 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   border: 1.5px solid #000000;
   border-radius: 10px;
   overflow: hidden;
-  background: #ffffff;
+  background: #cccccc;
 }
 /* グリッド内の4マスは個別の枠・角丸をやめ、仕切り線（＋字）だけで4等分する */
 .task-gtd-grid .task-gtd-area {
@@ -2243,7 +2243,7 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 /* .task-gtd-areaのbackground一括指定が後から効いて画像を消してしまうため、
    ID指定で優先度を上げて確実に背景画像を適用する */
 #gtd-slot-imasugu {
-  background-image: url('/backgrounds/imasugu-flame.png');
+  background-image: url('/backgrounds/imasugu-flame-v2.png');
   background-size: cover;
   background-position: center;
 }
@@ -2415,6 +2415,9 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   padding: 0; letter-spacing: 0.04em;
   flex-shrink: 0;
 }
+/* 大文字＝該当（重要/緊急）には上線、小文字＝非該当には下線 */
+.gtd-cap { text-decoration: overline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+.gtd-low { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
 /* PROJECTパネル フッター */
 .proj-mini-footer {
   display: flex; align-items: center; justify-content: center;
@@ -2780,7 +2783,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           <!-- 重要×緊急 -->
           <div class="task-gtd-area" id="gtd-slot-impurg" data-gtd="▶️ IU">
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">▶️ <b>IU</b></div>
+              <div class="gtd-panel-name">▶️ <b class="gtd-cap">IU</b></div>
               <button class="gtd-reveal-btn" id="gtd-impurg-expand-btn" onclick="openOverlay('impurg')">展開（0件）</button>
             </div>
           </div>
@@ -2788,7 +2791,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           <!-- 重要×非緊急 -->
           <div class="task-gtd-area" id="gtd-slot-imp" data-gtd="💫 Iu">
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">💫 <b>I</b>u</div>
+              <div class="gtd-panel-name">💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span></div>
               <button class="gtd-reveal-btn" id="gtd-imp-expand-btn" onclick="openOverlay('imp')">展開（0件）</button>
             </div>
           </div>
@@ -2796,7 +2799,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           <!-- 非重要×緊急 -->
           <div class="task-gtd-area" id="gtd-slot-urg" data-gtd="💨 iU">
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">💨 i<b>U</b></div>
+              <div class="gtd-panel-name">💨 <span class="gtd-low">i</span><b class="gtd-cap">U</b></div>
               <button class="gtd-reveal-btn" id="gtd-urg-expand-btn" onclick="openOverlay('urg')">展開（0件）</button>
             </div>
           </div>
@@ -2804,7 +2807,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           <!-- 非重要×非緊急 -->
           <div class="task-gtd-area" id="gtd-slot-trash" data-gtd="🗑 iu">
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">🗑 iu</div>
+              <div class="gtd-panel-name">🗑 <span class="gtd-low">iu</span></div>
               <button class="gtd-reveal-btn" id="gtd-trash-expand-btn" onclick="openOverlay('trash')">展開（0件）</button>
             </div>
           </div>
@@ -7786,7 +7789,7 @@ function _injectExpandContent(panel, key) {
   if (existingPag) existingPag.remove();
 
   const slotHeader = panel.querySelector('.gtd-slot-header');
-  const titleMap = { impurg: '▶️ <b>IU</b>', imp: '💫 <b>I</b>u', urg: '💨 i<b>U</b>', trash: '🗑 iu', imasugu: '🔥 今すぐやる', project: 'PROJECT' };
+  const titleMap = { impurg: '▶️ <b class="gtd-cap">IU</b>', imp: '💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span>', urg: '💨 <span class="gtd-low">i</span><b class="gtd-cap">U</b>', trash: '🗑 <span class="gtd-low">iu</span>', imasugu: '🔥 今すぐやる', project: 'PROJECT' };
   if (slotHeader) slotHeader.innerHTML = titleMap[key] || '';
 
   const div = document.createElement('div');
