@@ -175,8 +175,8 @@ html[data-theme="light"] .edit-reset-btn { color: #b03030; background: rgba(180,
 html[data-theme="light"] .edit-chips:has(.edit-chip.active) .edit-chip:not(.active) { opacity: 0.45; }
 /* チップ個別カラー（ライトモード：暗色テキスト） */
 html[data-theme="light"] .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.4); }
-html[data-theme="light"] .edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
-html[data-theme="light"] .edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
+html[data-theme="light"] .edit-chip[data-val="▶️ IU"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
+html[data-theme="light"] .edit-chip[data-val="🔥 今すぐやる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
 html[data-theme="light"] .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
 html[data-theme="light"] .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
 html[data-theme="light"] .edit-chip[data-val="ELA"],
@@ -1538,8 +1538,8 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 .edit-chips.dimmed { opacity: 0.35; }
 /* チップ個別カラー */
 .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.18); --chip-color: #A09AE8; --chip-border: rgba(127,119,221,0.4); }
-.edit-chip[data-val="▶️ 次やる"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
-.edit-chip[data-val="🔥 今やる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
+.edit-chip[data-val="▶️ IU"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
+.edit-chip[data-val="🔥 今すぐやる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
 .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
 .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
 .edit-chip[data-val="ELA"]     { --chip-bg: rgba(160,200,232,0.18); --chip-color: #A0C8E8; --chip-border: rgba(160,200,232,0.45); }
@@ -4626,7 +4626,7 @@ function updateExecHint() { /* 「実行を始める」ボタンは廃止 */ }
 
 function renderNextList() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ 次やる';
+  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ IU';
   const tasks = allTasks.filter(t => !isDone(t) && gtdNext(t) && !leftoverSet.has(t.id));
   const el = document.getElementById('next-list');
   if (!el) return;
@@ -4850,7 +4850,7 @@ async function loadTasks() {
     const data = await notionQuery(DB.tasks, {
       and: [
         {property:'ステータス', status:{does_not_equal:'完了'}},
-        {property:'GTD 種別', status:{does_not_equal:'🗑ゴミ箱'}},
+        {property:'GTD 種別', status:{does_not_equal:'🗑 iu'}},
       ]
     }, [{property:'締切日', direction:'ascending'}]);
     allTasks = data.results || [];
@@ -5006,7 +5006,7 @@ function renderCard(task, mode='today') {
 
 function renderAll() {
   const today = new Date().toISOString().split('T')[0];
-  const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ 次やる';};
+  const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ IU';};
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
   // TODAY：当日セッション（3:01〜翌3:00）にピンしたタスクのみ
@@ -7609,21 +7609,20 @@ function showPage(page) {
 }
 
 // ===== タスクページ 展開オーバーレイ =====
-let overlayMode = null;         // null | 'next' | 'someday' | 'project'
+let overlayMode = null;         // null | 'impurg' | 'imp' | 'urg' | 'trash' | 'imasugu' | 'project'
 let overlayProjectId = null;
 let projMiniExpanded = false;
 let _overlayInboxCount = 0;    // 0=大タイトル表示, >0=カード表示件数
-let _overlayNextCount = 5;     // 次やる表示件数（最小5）
-let _overlaySomedayCount = 5;  // 今じゃない表示件数（最小5）
 
-const _OVERLAY_SLOTS = { next: 'gtd-slot-next', someday: 'gtd-slot-someday', project: 'gtd-slot-project' };
+const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu', imasugu: '🔥 今すぐやる' };
+const _overlayListCounts = { impurg: 5, imp: 5, urg: 5, trash: 5, imasugu: 5 }; // 各区分の表示件数（最小5）
+const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', imasugu: 'gtd-slot-imasugu', project: 'gtd-slot-project' };
 
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
   _overlayInboxCount = 0;
-  _overlayNextCount = 5;
-  _overlaySomedayCount = 5;
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 5; });
 
   // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
@@ -7704,8 +7703,7 @@ function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
   _overlayInboxCount = 0;
-  _overlayNextCount = 5;
-  _overlaySomedayCount = 5;
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 5; });
 
   // 暗幕を隠す
   document.getElementById('task-overlay').style.display = 'none';
@@ -7770,21 +7768,31 @@ function _injectExpandContent(panel, key) {
   if (existingPag) existingPag.remove();
 
   const slotHeader = panel.querySelector('.gtd-slot-header');
-  const titleMap = { next: '▶️ 次やる', someday: '💫 今じゃない', project: 'PROJECT' };
-  if (slotHeader) slotHeader.textContent = titleMap[key] || '';
+  const titleMap = { impurg: '▶️ <b>IU</b>', imp: '💫 <b>I</b>u', urg: '💨 i<b>U</b>', trash: '🗑 iu', imasugu: '🔥 今すぐやる', project: 'PROJECT' };
+  if (slotHeader) slotHeader.innerHTML = titleMap[key] || '';
 
   const div = document.createElement('div');
   div.className = 'gtd-expand-content';
 
   const isDoneT = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
 
-  if (key === 'next') {
+  if (key === 'project') {
+    _renderExpandProjectContent(div);
+    panel.appendChild(div);
+    return;
+  }
+
+  const gtdVal = _OVERLAY_GTD_MAP[key];
+  if (!gtdVal) return;
+  let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
+  const count = _overlayListCounts[key];
+
+  if (key === 'impurg') {
+    // 重要×緊急はエリア別グループ＋締切順（旧「次やる」の表示を踏襲）
     const byDl = (a, b) => { const ma = dlMs(a), mb = dlMs(b); if (!isFinite(ma)&&!isFinite(mb)) return 0; if (!isFinite(ma)) return 1; if (!isFinite(mb)) return -1; return ma-mb; };
-    const tasks = [...allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === '▶️ 次やる')].sort(byDl);
-    const count = _overlayNextCount;
+    tasks = [...tasks].sort(byDl);
     const shown = tasks.slice(0, count);
     const rest  = tasks.length - count;
-    // エリア別グループ（エリア内も締切順）
     const areaOrder = ['OFFICIAL','PRIVATE','ICU','カナダ'];
     const areaSlug = a => a==='OFFICIAL'?'kadai':a==='PRIVATE'?'personal':'other';
     const grouped = {};
@@ -7799,25 +7807,20 @@ function _injectExpandContent(panel, key) {
     panel.appendChild(div);
     const pag = document.createElement('div');
     pag.className = 'expand-pagination-bar';
-    pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayNextStep(-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayNextStep(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+    pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
     panel.appendChild(pag);
-
-  } else if (key === 'someday') {
-    const tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === '💫今じゃない');
-    const count = _overlaySomedayCount;
-    const shown = tasks.slice(0, count);
-    const rest  = tasks.length - count;
-    div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
-    panel.appendChild(div);
-    const pag = document.createElement('div');
-    pag.className = 'expand-pagination-bar';
-    pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlaySomedayStep(-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlaySomedayStep(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
-    panel.appendChild(pag);
-
-  } else if (key === 'project') {
-    _renderExpandProjectContent(div);
-    panel.appendChild(div);
+    return;
   }
+
+  // imp / urg / trash / imasugu はフラットな一覧（旧「今じゃない」の表示を踏襲）
+  const shown = tasks.slice(0, count);
+  const rest  = tasks.length - count;
+  div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+  panel.appendChild(div);
+  const pag = document.createElement('div');
+  pag.className = 'expand-pagination-bar';
+  pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+  panel.appendChild(pag);
 }
 
 function _renderExpandProjectContent(container) {
@@ -7896,16 +7899,10 @@ function _overlayInboxStep(delta) {
   _renderExpandInbox();
 }
 
-function _overlayNextStep(delta) {
-  _overlayNextCount = Math.max(5, _overlayNextCount + delta * 5);
-  const panel = document.getElementById('gtd-slot-next');
-  if (panel) _injectExpandContent(panel, 'next');
-}
-
-function _overlaySomedayStep(delta) {
-  _overlaySomedayCount = Math.max(5, _overlaySomedayCount + delta * 5);
-  const panel = document.getElementById('gtd-slot-someday');
-  if (panel) _injectExpandContent(panel, 'someday');
+function _overlayListStep(key, delta) {
+  _overlayListCounts[key] = Math.max(5, _overlayListCounts[key] + delta * 5);
+  const panel = document.getElementById(_OVERLAY_SLOTS[key]);
+  if (panel) _injectExpandContent(panel, key);
 }
 
 // toggleExpandInbox / expandOverlayGtdAll は新しいページネーションUIに置き換えられた
@@ -7962,11 +7959,12 @@ function renderGtdCard(task) {
   const gtdLabel = gtd || '📥 INBOX';
   const gtdOpts = [
     ['📥 INBOX', 'gtd-opt'],
-    ['▶️ 次やる', 'gtd-opt'],
-    ['💫今じゃない', 'gtd-opt'],
+    ['▶️ IU', 'gtd-opt'],
+    ['💫 Iu', 'gtd-opt'],
+    ['💨 iU', 'gtd-opt'],
     ['🗂 PROJECT', 'gtd-opt gtd-opt-project'],
-    ['🔥 今やる', 'gtd-opt gtd-opt-fire'],
-    ['🗑ゴミ箱', 'gtd-opt gtd-opt-trash'],
+    ['🔥 今すぐやる', 'gtd-opt gtd-opt-fire'],
+    ['🗑 iu', 'gtd-opt gtd-opt-trash'],
   ].map(([val, cls]) =>
     `<div class="${cls}" onclick="setGtdKind('${id}','${val}');event.stopPropagation()">${val}</div>`
   ).join('');
@@ -8029,16 +8027,16 @@ async function setGtdKind(id, gtdVal) {
 
   const task = allTasks.find(t => t.id === id);
 
-  if (gtdVal === '🔥 今やる') {
-    if (task) task.properties['GTD 種別'] = {type:'status', status:{name:'🔥 今やる'}};
+  if (gtdVal === '🔥 今すぐやる') {
+    if (task) task.properties['GTD 種別'] = {type:'status', status:{name:'🔥 今すぐやる'}};
     if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
     Promise.all([
-      notionUpdate(id, {'GTD 種別': {status: {name: '🔥 今やる'}}}),
+      notionUpdate(id, {'GTD 種別': {status: {name: '🔥 今すぐやる'}}}),
       notionUpdate(id, {'ステータス': {status: {name: '完了'}}}),
     ]).catch(console.error);
-  } else if (gtdVal === '🗑ゴミ箱') {
+  } else if (gtdVal === '🗑 iu') {
     if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
-    notionUpdate(id, {'GTD 種別': {status: {name: '🗑ゴミ箱'}}}).catch(console.error);
+    notionUpdate(id, {'GTD 種別': {status: {name: '🗑 iu'}}}).catch(console.error);
   } else {
     if (task) task.properties['GTD 種別'] = {type: 'status', status: {name: gtdVal}};
     notionUpdate(id, {'GTD 種別': {status: {name: gtdVal}}}).catch(console.error);
@@ -8081,9 +8079,11 @@ function renderTaskPage() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
   const getGtd = t => getProp(t,'GTD 種別');
 
-  const inboxTasks   = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
-  const nextTasks    = allTasks.filter(t => !isDone(t) && getGtd(t) === '▶️ 次やる');
-  const somedayTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '💫今じゃない');
+  const inboxTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
+  const gtdCounts = {};
+  Object.entries(_OVERLAY_GTD_MAP).forEach(([key, val]) => {
+    gtdCounts[key] = allTasks.filter(t => !isDone(t) && getGtd(t) === val).length;
+  });
 
   // 左：常時INBOX
   const leftLabel = document.getElementById('task-left-label');
@@ -8096,11 +8096,11 @@ function renderTaskPage() {
     applyTaskListLimit(leftList, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
   }
 
-  // 右：展開ボタンのカウント更新
-  const nextBtn = document.getElementById('gtd-next-expand-btn');
-  if (nextBtn) nextBtn.textContent = `展開（${nextTasks.length}件）`;
-  const somedayBtn = document.getElementById('gtd-someday-expand-btn');
-  if (somedayBtn) somedayBtn.textContent = `展開（${somedayTasks.length}件）`;
+  // 右：展開ボタンのカウント更新（4象限＋今すぐやる）
+  Object.keys(_OVERLAY_GTD_MAP).forEach(key => {
+    const btn = document.getElementById(`gtd-${key}-expand-btn`);
+    if (btn) btn.textContent = `展開（${gtdCounts[key] || 0}件）`;
+  });
   const projBtn = document.getElementById('gtd-project-expand-btn');
   if (projBtn) projBtn.textContent = `展開（${(_projCache||[]).length}件）`;
 
@@ -8193,8 +8193,11 @@ let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragActive = fal
 
 const GTD_DROP_AREAS = [
   { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
-  { elId: 'gtd-slot-next',    gtdVal: '▶️ 次やる' },
-  { elId: 'gtd-slot-someday', gtdVal: '💫今じゃない' },
+  { elId: 'gtd-slot-impurg',  gtdVal: '▶️ IU' },
+  { elId: 'gtd-slot-imp',     gtdVal: '💫 Iu' },
+  { elId: 'gtd-slot-urg',     gtdVal: '💨 iU' },
+  { elId: 'gtd-slot-trash',   gtdVal: '🗑 iu' },
+  { elId: 'gtd-slot-imasugu', gtdVal: '🔥 今すぐやる' },
 ];
 
 function initGtdDrag() {
@@ -9082,11 +9085,12 @@ async function _wizFinish() {
         <button class="btn-gtd" id="edit-gtd-btn" onclick="toggleEditGtdDropdown();event.stopPropagation()">📥 INBOX</button>
         <div class="gtd-dropdown" id="edit-gtd-dd">
           <div class="gtd-opt" onclick="selectEditGtd('📥 INBOX')">📥 INBOX</div>
-          <div class="gtd-opt" onclick="selectEditGtd('▶️ 次やる')">▶️ 次やる</div>
-          <div class="gtd-opt" onclick="selectEditGtd('💫今じゃない')">💫今じゃない</div>
+          <div class="gtd-opt" onclick="selectEditGtd('▶️ IU')">▶️ IU</div>
+          <div class="gtd-opt" onclick="selectEditGtd('💫 Iu')">💫 Iu</div>
+          <div class="gtd-opt" onclick="selectEditGtd('💨 iU')">💨 iU</div>
           <div class="gtd-opt gtd-opt-project" onclick="selectEditGtd('🗂 PROJECT')">🗂 PROJECT</div>
-          <div class="gtd-opt gtd-opt-fire" onclick="selectEditGtd('🔥 今やる')">🔥 今やる</div>
-          <div class="gtd-opt gtd-opt-trash" onclick="selectEditGtd('🗑ゴミ箱')">🗑ゴミ箱</div>
+          <div class="gtd-opt gtd-opt-fire" onclick="selectEditGtd('🔥 今すぐやる')">🔥 今すぐやる</div>
+          <div class="gtd-opt gtd-opt-trash" onclick="selectEditGtd('🗑 iu')">🗑 iu</div>
         </div>
       </div>
     </div>
