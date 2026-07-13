@@ -69,12 +69,13 @@ ADHDの大学生（ICU）の自分専用ホームページ。NotionをDBとし�
 - `#gtd-slot-imasugu`（`.gtd-area-imasugu`）：グリッド下の横長スロット。炎の背景画像（`public/backgrounds/imasugu-flame-v2.png`）のみで、ボタン・ラベルなし。ドロップされたタスクは即座に「🔥 今すぐやる」に分類され完了扱いになる、展開・一覧機能を持たない純粋なドロップ地点
 - `gtd-slot-project`：既存のPROJECTスロットは変更なし、GTD 種別とは無関係の別軸として維持
 
-### 展開（一覧表示）の仕組み（2026-07 刷新）
-以前は展開時にINBOX列・GTD列双方の座標を`getBoundingClientRect()`で測定して`position:fixed`に焼き付け、INBOXを1件ずつのページ送りUIに変形させる複雑な仕組みだったが、「固くて見にくい」ため全面刷新した。
+### 展開（一覧表示）の仕組み（2026-07 刷新、暗幕方式は撤去済み）
+最初のバージョンはINBOX列・GTD列双方の座標を`getBoundingClientRect()`で測定して`position:fixed`に焼き付け、INBOXを1件ずつのページ送りUIに変形させる複雑な仕組みだった。次に`z-index`で暗幕より前面に浮かせる方式に変えたが、`.task-gtd-col`の`position:sticky`が独自のスタッキングコンテキストを作りz-indexが効かず、パネルごと操作不能になるバグが発生。**運用要件（展開パネルからINBOXへタスクをドラッグして戻す）にも合わないため、暗幕そのものを撤去**し、現在は以下の形になっている。
 
-- `.task-gtd-col`内に常設・普段非表示の`#gtd-expand-panel`を1つ用意。展開時は`task-gtd-col`に`.gtd-expanded`クラスを付与し、CSSで「4象限グリッド/今すぐやる/PROJECTを隠し、`#gtd-expand-panel`を表示」に切り替えるだけ（座標測定なし）
-- `#gtd-expand-panel`は`z-index:10`で暗幕（`#task-overlay`, z-index:5）より前面に浮かせる。INBOXは何も変形させず、z-indexも上げないため暗幕の下に自然に沈み、操作不可になる（追加のpointer-events制御は不要）
-- 閉じるときは`.gtd-expanded`除去＋`#task-overlay`非表示のみ。開く前の状態をキャッシュ・復元する処理は撤廃
+- `.task-gtd-col`内に常設・普段非表示の`#gtd-expand-panel`を1つ用意。展開時は`task-gtd-col`に`.gtd-expanded`クラスを付与し、CSSで「4象限グリッド/今すぐやる/PROJECTを隠し、`#gtd-expand-panel`を表示」に切り替えるだけ（座標測定・z-index操作なし）
+- 暗幕（`#task-overlay`）は完全撤去。代わりに`document.body`へ`.gtd-expanded-mode`を付与し、**サイドバー・バナー・下部バーだけ**を`filter:brightness(0.45)`で減光（`pointer-events:none`で誤操作も防止）。task-page-grid（INBOX・展開パネル）には一切オーバーレイを被せないため、z-index競合が構造的に起きない
+- INBOXは展開中も変形させず常時操作可能。表示だけ`.inbox-simplified`クラスで「INBOX」というタイトルのみに簡略化する（一覧は隠すが、ドロップ判定は`GTD_DROP_AREAS`のコンテナ矩形判定のままなので影響を受けない）。展開パネルのタスクカードを既存のドラッグ機構でINBOXへドラッグすれば、GTD 種別が📥INBOXに戻る
+- 閉じる操作はEscapeキー、またはサイドバー・バナー・下部バー（減光された部分）のクリックで`closeOverlay()`が呼ばれる。明示的な閉じるボタンは無い
 - `_OVERLAY_GTD_MAP`/`_overlayListCounts`：展開一覧のGTD値対応表とページネーション件数（impurg/imp/urg/trashの4区分。imasuguは展開機能自体を持たないため対象外）
 
 ## 未完了・継続中
