@@ -2427,21 +2427,21 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 .proj-mini-footer .gtd-reveal-btn { font-size: 11px; padding: 6px 14px; }
 
-/* ===== 展開モード暗幕 ===== */
-/* #task-overlay は page-wrapper 内に置く → 同じスタッキングコンテキスト内で z-index 競合 */
-#task-overlay {
-  position: fixed; inset: 0; z-index: 5;
+/* ===== 展開モード：周辺（サイドバー・バナー・下部バー）だけを減光しクリックで閉じる ===== */
+/* task-page-grid（INBOX・展開パネル）には一切オーバーレイを被せないため、z-index競合が起きない */
+.gtd-expanded-mode .sidebar,
+.gtd-expanded-mode .banner-area,
+.gtd-expanded-mode .bottom-nav {
+  filter: brightness(0.45);
+  cursor: pointer;
+  transition: filter .15s;
+}
+.gtd-expanded-mode .sidebar *,
+.gtd-expanded-mode .banner-area *,
+.gtd-expanded-mode .bottom-nav * {
   pointer-events: none;
 }
-.task-overlay-backdrop {
-  position: absolute; inset: 0;
-  background: rgba(10,8,30,0.55);
-  pointer-events: all;
-  cursor: default;
-}
-/* サイドバーは暗幕より前面に常に */
-.sidebar { z-index: 20; }
-/* 展開パネル：常設・普段は非表示。暗幕(z-index:5)より上に浮かせるだけで、座標測定はしない */
+/* 展開パネル：常設・普段は非表示。暗幕に頼らず通常のレイアウトの中で表示するだけ */
 .gtd-expand-panel {
   display: none;
   flex: 1;
@@ -2452,7 +2452,6 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   border-radius: 10px;
   overflow: hidden;
   position: relative;
-  z-index: 10;
 }
 .task-gtd-col.gtd-expanded .task-gtd-grid,
 .task-gtd-col.gtd-expanded .gtd-area-imasugu,
@@ -2461,6 +2460,23 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 .task-gtd-col.gtd-expanded .gtd-expand-panel {
   display: flex;
+}
+/* 展開中：INBOXはタイトルのみのドロップ専用領域に簡略化 */
+.task-inbox-col.inbox-simplified .task-section-body {
+  display: none;
+}
+.task-inbox-col.inbox-simplified .task-toggle-header {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: none;
+  cursor: default;
+}
+.task-inbox-col.inbox-simplified #task-left-label {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 /* 展開中：タスク一覧エリア */
 .gtd-expand-content {
@@ -2564,13 +2580,8 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
 <div id="bg-layer"></div>
 <div class="page-wrapper">
 
-<!-- ===== 展開モード暗幕 (page-wrapper内でパネルと同じスタッキングコンテキスト) ===== -->
-<div id="task-overlay" style="display:none">
-  <div class="task-overlay-backdrop" onclick="closeOverlay()"></div>
-</div>
-
 <!-- サイドバー -->
-<div class="sidebar">
+<div class="sidebar" onclick="if (overlayMode) closeOverlay()">
   <button class="sb-btn active" data-page="home" onclick="showPage('home')"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></button>
   <button class="sb-btn" data-page="task" onclick="showPage('task')"><span class="sb-icon">📋</span><span class="sb-label">Task</span></button>
   <button class="sb-btn" data-page="project" onclick="showPage('project')"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></button>
@@ -2583,7 +2594,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
 <div class="main">
 
   <!-- バナー -->
-  <div class="banner-area">
+  <div class="banner-area" onclick="if (overlayMode) closeOverlay()">
     <div class="banner-orb" id="banner-orb"></div>
     <div class="banner-grid"></div>
     <!-- 日時ウィジェット -->
@@ -2845,7 +2856,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
 </div><!-- /.page-wrapper -->
 
 <!-- 固定下部ナビ -->
-<div class="bottom-nav">
+<div class="bottom-nav" onclick="if (overlayMode) closeOverlay()">
   <button id="theme-toggle-btn" onclick="toggleTheme()" style="position:absolute;left:20px;background:none;border:none;cursor:pointer;font-size:20px;opacity:0.7;transition:opacity .2s;padding:4px" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.7"><span id="theme-toggle-icon">☀️</span></button>
   <button class="nav-btn" onclick="showPage('task')">📋 TASK</button>
   <button class="nav-btn" onclick="showPage('project')">🗂 PROJECT</button>
@@ -7633,8 +7644,9 @@ function openOverlay(key) {
   overlayProjectId = null;
   Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 5; });
 
-  document.getElementById('task-overlay').style.display = 'block';
+  document.body.classList.add('gtd-expanded-mode');
   document.getElementById('task-gtd-col').classList.add('gtd-expanded');
+  document.getElementById('task-inbox-col-wrap')?.classList.add('inbox-simplified');
   const panel = document.getElementById('gtd-expand-panel');
   if (panel) _injectExpandContent(panel, key);
 
@@ -7646,8 +7658,9 @@ function closeOverlay() {
   overlayProjectId = null;
   Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 5; });
 
-  document.getElementById('task-overlay').style.display = 'none';
+  document.body.classList.remove('gtd-expanded-mode');
   document.getElementById('task-gtd-col').classList.remove('gtd-expanded');
+  document.getElementById('task-inbox-col-wrap')?.classList.remove('inbox-simplified');
   const expandPanel = document.getElementById('gtd-expand-panel');
   if (expandPanel) expandPanel.innerHTML = '';
 
