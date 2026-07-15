@@ -2220,6 +2220,10 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   overflow: hidden;
   background: rgba(255,255,255,0.8);
 }
+/* 展開中：expand-targetは.task-gtd-gridの子のままposition:absoluteで列全体に広がるため、
+   親.task-gtd-grid自身の背景（0.8）がその下にもう1枚残り、白が二重に重なって暗幕越しの
+   星空がほぼ見えなくなってしまう。展開中は親側の背景を消し、子1枚分の透明度に統一する。 */
+.task-gtd-col.expand-col-active .task-gtd-grid { background: transparent !important; }
 /* グリッド内の4マスは個別の枠・角丸をやめ、仕切り線（＋字）だけで4等分する。
    #task-gtd-col .task-gtd-area（IDセレクタ）の方が詳細度が高く背景を上書きしてくるため、
    !importantで確実に透明を維持し、親.task-gtd-gridの背景色を見せる。 */
