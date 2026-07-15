@@ -2425,7 +2425,17 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 /* 大文字＝該当（重要/緊急）は太字、小文字＝非該当は細字で表現 */
 .gtd-cap { font-weight: 700; }
-.gtd-low { font-weight: 300; text-decoration: line-through; text-decoration-thickness: 1px; }
+/* text-decoration:line-throughはフォントの内部メトリクスに依存し縦中央からずれるため、
+   疑似要素でtop:50%固定にして文字の縦中央に正確に線を引く */
+.gtd-low { font-weight: 300; position: relative; }
+.gtd-low::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: translateY(-50%);
+}
 /* 緊急度の行（2行目）：件数バッジをabsoluteで右に浮かせ、
    行自体の中央寄せ（IMPORTANTと同じ計算）には一切影響させない */
 .gtd-urgency-line { position: relative; }
