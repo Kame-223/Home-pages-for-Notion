@@ -126,7 +126,7 @@ html[data-theme="light"] .time-opt:hover { background: rgba(0,0,0,0.06); }
 html[data-theme="light"] .task-inbox-col,
 html[data-theme="light"] .task-section,
 html[data-theme="light"] .task-gtd-area {
-  background: var(--surface);
+  background: rgba(255,255,255,0.8);
   border-color: var(--border2);
 }
 html[data-theme="light"] .task-toggle-header,
@@ -143,7 +143,7 @@ html[data-theme="light"] .gtd-reveal-btn {
 html[data-theme="light"] .gtd-reveal-btn:hover { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.25); }
 html[data-theme="light"] .gtd-drag-ghost { background: rgba(255,255,255,0.97); color: rgba(0,0,0,0.85); box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
 html[data-theme="light"] .gtd-slot-header { color: var(--text); background: var(--surface2); border-bottom-color: var(--border); }
-html[data-theme="light"] #task-gtd-col .task-gtd-area { background: var(--surface); }
+html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.8); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.25); box-shadow: inset 0 0 20px rgba(255,255,255,0.3); }
 
 /* ===== ライトモード: GTDドロップダウン ===== */
@@ -2220,7 +2220,7 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   border: 1.5px solid #000000;
   border-radius: 10px;
   overflow: hidden;
-  background: var(--bg);
+  background: rgba(255,255,255,0.8);
 }
 /* グリッド内の4マスは個別の枠・角丸をやめ、仕切り線（＋字）だけで4等分する。
    #task-gtd-col .task-gtd-area（IDセレクタ）の方が詳細度が高く背景を上書きしてくるため、
@@ -2424,6 +2424,8 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 /* 大文字＝該当（重要/緊急）は太字、小文字＝非該当は細字で表現 */
 .gtd-cap { font-weight: 700; }
 .gtd-low { font-weight: 300; }
+/* 緊急度の行（2行目）に件数バッジを横並びさせる */
+.gtd-panel-name-row { display: flex; align-items: baseline; gap: 5px; }
 /* 4象限：パネル全体をクリックで展開できるようにする */
 .gtd-quadrant { cursor: pointer; }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover { background: rgba(0,0,0,0.03); }
@@ -2431,8 +2433,6 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover { backg
   font-size: 11px; font-weight: 600;
   color: var(--text-dim); letter-spacing: 0.04em;
   min-height: 13px;
-  align-self: flex-end;
-  margin-top: -6px;
 }
 /* PROJECTパネル フッター */
 .proj-mini-footer {
@@ -2501,7 +2501,7 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover { backg
   /* 4象限グリッド用の角丸なし・透明背景（.task-gtd-grid .task-gtd-area）を上書きし、
      INBOXと同じ角丸・背景色に統一する */
   border-radius: 10px !important;
-  background: var(--surface) !important;
+  background: rgba(255,255,255,0.8) !important;
 }
 /* 展開中：reveal-wrap は非表示（タイトルはgtd-slot-headerに移す） */
 .task-gtd-area.expand-target .gtd-reveal-wrap { display: none; }
@@ -2826,9 +2826,11 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
                 <div class="gtd-cap">IMPORTANT</div>
-                <div class="gtd-cap">URGENT</div>
+                <div class="gtd-panel-name-row">
+                  <span class="gtd-cap">URGENT</span>
+                  <span class="gtd-quadrant-count" id="gtd-impurg-count"></span>
+                </div>
               </div>
-              <span class="gtd-quadrant-count" id="gtd-impurg-count"></span>
             </div>
           </div>
 
@@ -2838,9 +2840,11 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
                 <div class="gtd-cap">IMPORTANT</div>
-                <div class="gtd-low">urgent</div>
+                <div class="gtd-panel-name-row">
+                  <span class="gtd-low">urgent</span>
+                  <span class="gtd-quadrant-count" id="gtd-imp-count"></span>
+                </div>
               </div>
-              <span class="gtd-quadrant-count" id="gtd-imp-count"></span>
             </div>
           </div>
 
@@ -2850,9 +2854,11 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
                 <div class="gtd-low">important</div>
-                <div class="gtd-cap">URGENT</div>
+                <div class="gtd-panel-name-row">
+                  <span class="gtd-cap">URGENT</span>
+                  <span class="gtd-quadrant-count" id="gtd-urg-count"></span>
+                </div>
               </div>
-              <span class="gtd-quadrant-count" id="gtd-urg-count"></span>
             </div>
           </div>
 
@@ -2862,9 +2868,11 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
                 <div class="gtd-low">important</div>
-                <div class="gtd-low">urgent</div>
+                <div class="gtd-panel-name-row">
+                  <span class="gtd-low">urgent</span>
+                  <span class="gtd-quadrant-count" id="gtd-trash-count"></span>
+                </div>
               </div>
-              <span class="gtd-quadrant-count" id="gtd-trash-count"></span>
             </div>
           </div>
         </div>
@@ -7810,9 +7818,9 @@ function _injectExpandContent(panel, key) {
   // 前後の空白が無名flexアイテムの境界で消えることがある。1つのspanで包んで回避する。
   const titleMap = {
     impurg: '<span><span class="gtd-cap">IMPORTANT</span> &amp; <span class="gtd-cap">URGENT</span></span>',
-    imp: '<span><span class="gtd-cap">IMPORTANT</span>, <span class="gtd-low">not urgent</span></span>',
-    urg: '<span><span class="gtd-low">not important</span>, <span class="gtd-cap">URGENT</span></span>',
-    trash: '<span><span class="gtd-low">not important</span>, <span class="gtd-low">not urgent</span></span>',
+    imp: '<span><span class="gtd-cap">IMPORTANT</span>, <span class="gtd-low">urgent</span></span>',
+    urg: '<span><span class="gtd-low">important</span>, <span class="gtd-cap">URGENT</span></span>',
+    trash: '<span><span class="gtd-low">important</span>, <span class="gtd-low">urgent</span></span>',
     project: 'PROJECT',
   };
   if (slotHeader) slotHeader.innerHTML = titleMap[key] || '';
