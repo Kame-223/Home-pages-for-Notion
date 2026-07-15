@@ -2420,9 +2420,9 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   flex-shrink: 0;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-/* 大文字＝該当（重要/緊急）には上線、小文字＝非該当には下線 */
-.gtd-cap { text-decoration: overline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
-.gtd-low { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+/* 大文字＝該当（重要/緊急）は太字、小文字＝非該当は細字で表現 */
+.gtd-cap { font-weight: 700; }
+.gtd-low { font-weight: 300; }
 /* 4象限：パネル全体をクリックで展開できるようにする */
 .gtd-quadrant { cursor: pointer; }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover { background: rgba(0,0,0,0.03); }
@@ -2430,6 +2430,8 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover { backg
   font-size: 11px; font-weight: 600;
   color: var(--text-dim); letter-spacing: 0.04em;
   min-height: 13px;
+  align-self: flex-end;
+  margin-top: -6px;
 }
 /* PROJECTパネル フッター */
 .proj-mini-footer {
