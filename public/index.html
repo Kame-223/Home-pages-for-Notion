@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <script>
-  // FOUC防止: localStorageのテーマをDOMより前に適用
-  (function(){ const t=localStorage.getItem('theme'); if(t) document.documentElement.dataset.theme=t; })();
+  // ダークテーマ機能停止中: 常にlightを適用（localStorageは参照しない）
+  (function(){ document.documentElement.dataset.theme='light'; })();
 </script>
 <head>
 <meta charset="UTF-8">
@@ -143,7 +143,7 @@ html[data-theme="light"] .gtd-reveal-btn {
 html[data-theme="light"] .gtd-reveal-btn:hover { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.25); }
 html[data-theme="light"] .gtd-drag-ghost { background: rgba(255,255,255,0.97); color: rgba(0,0,0,0.85); box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
 html[data-theme="light"] .gtd-slot-header { color: var(--text); background: var(--surface2); border-bottom-color: var(--border); }
-html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.55); }
+html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.8); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.25); box-shadow: inset 0 0 20px rgba(255,255,255,0.3); }
 
 /* ===== ライトモード: GTDドロップダウン ===== */
@@ -2414,14 +2414,23 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 /* GTDパネル 大ラベル */
 .gtd-panel-name {
-  font-size: 18px; font-weight: 700;
+  font-size: 14px; font-weight: 700;
   color: var(--text); text-align: center;
-  padding: 0; letter-spacing: 0.04em;
+  padding: 0; letter-spacing: 0.06em;
   flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
 /* 大文字＝該当（重要/緊急）には上線、小文字＝非該当には下線 */
 .gtd-cap { text-decoration: overline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
 .gtd-low { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+/* 4象限：パネル全体をクリックで展開できるようにする */
+.gtd-quadrant { cursor: pointer; }
+html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover { background: rgba(0,0,0,0.03); }
+.gtd-quadrant-count {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim); letter-spacing: 0.04em;
+  min-height: 13px;
+}
 /* PROJECTパネル フッター */
 .proj-mini-footer {
   display: flex; align-items: center; justify-content: center;
@@ -2449,6 +2458,19 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 .task-inbox-col.expand-sticky {
   overflow-y: auto;
   box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
+/* 展開中：INBOXはタスク一覧を隠し、タイトルだけを中央表示する（展開先を示すのが目的のため） */
+.task-inbox-expand-title { display: none; }
+.task-inbox-col.expand-sticky .task-toggle-header,
+.task-inbox-col.expand-sticky .task-section-body { display: none; }
+.task-inbox-col.expand-sticky .task-inbox-expand-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-sub);
 }
 .task-gtd-col.expand-col-active {
   box-sizing: border-box;
@@ -2466,7 +2488,7 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   /* 4象限グリッド用の角丸なし・透明背景（.task-gtd-grid .task-gtd-area）を上書きし、
      INBOXと同じ角丸・背景色に統一する */
   border-radius: 10px !important;
-  background: rgba(10,8,20,0.72) !important;
+  background: rgba(255,255,255,0.8) !important;
 }
 /* 展開中：reveal-wrap は非表示（タイトルはgtd-slot-headerに移す） */
 .task-gtd-area.expand-target .gtd-reveal-wrap { display: none; }
@@ -2776,6 +2798,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           <span id="task-left-label">📥 INBOX</span>
         </div>
         <div class="task-section-body" id="task-inbox-list"><div class="loading">読み込み中...</div></div>
+        <div class="task-inbox-expand-title">📥 INBOX</div>
       </div>
 
       <!-- 右：GTDパネル（sticky） -->
@@ -2784,34 +2807,50 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
         <!-- 4象限グリッド -->
         <div class="task-gtd-grid">
           <!-- 重要×緊急 -->
-          <div class="task-gtd-area" id="gtd-slot-impurg" data-gtd="▶️ IU">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-impurg" data-gtd="▶️ IU" onclick="openGtdQuadrant('impurg')">
+            <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">▶️ <b class="gtd-cap">IU</b></div>
-              <button class="gtd-reveal-btn" id="gtd-impurg-expand-btn" onclick="openOverlay('impurg')">展開（0件）</button>
+              <div class="gtd-panel-name">
+                <div class="gtd-cap">IMPORTANT</div>
+                <div class="gtd-cap">URGENT</div>
+              </div>
+              <span class="gtd-quadrant-count" id="gtd-impurg-count"></span>
             </div>
           </div>
 
           <!-- 重要×非緊急 -->
-          <div class="task-gtd-area" id="gtd-slot-imp" data-gtd="💫 Iu">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-imp" data-gtd="💫 Iu" onclick="openGtdQuadrant('imp')">
+            <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span></div>
-              <button class="gtd-reveal-btn" id="gtd-imp-expand-btn" onclick="openOverlay('imp')">展開（0件）</button>
+              <div class="gtd-panel-name">
+                <div class="gtd-cap">IMPORTANT</div>
+                <div class="gtd-low">urgent</div>
+              </div>
+              <span class="gtd-quadrant-count" id="gtd-imp-count"></span>
             </div>
           </div>
 
           <!-- 非重要×緊急 -->
-          <div class="task-gtd-area" id="gtd-slot-urg" data-gtd="💨 iU">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-urg" data-gtd="💨 iU" onclick="openGtdQuadrant('urg')">
+            <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">💨 <span class="gtd-low">i</span><b class="gtd-cap">U</b></div>
-              <button class="gtd-reveal-btn" id="gtd-urg-expand-btn" onclick="openOverlay('urg')">展開（0件）</button>
+              <div class="gtd-panel-name">
+                <div class="gtd-low">important</div>
+                <div class="gtd-cap">URGENT</div>
+              </div>
+              <span class="gtd-quadrant-count" id="gtd-urg-count"></span>
             </div>
           </div>
 
           <!-- 非重要×非緊急 -->
-          <div class="task-gtd-area" id="gtd-slot-trash" data-gtd="🗑 iu">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-trash" data-gtd="🗑 iu" onclick="openGtdQuadrant('trash')">
+            <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
-              <div class="gtd-panel-name">🗑 <span class="gtd-low">iu</span></div>
-              <button class="gtd-reveal-btn" id="gtd-trash-expand-btn" onclick="openOverlay('trash')">展開（0件）</button>
+              <div class="gtd-panel-name">
+                <div class="gtd-low">important</div>
+                <div class="gtd-low">urgent</div>
+              </div>
+              <span class="gtd-quadrant-count" id="gtd-trash-count"></span>
             </div>
           </div>
         </div>
@@ -2854,7 +2893,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
 
 <!-- 固定下部ナビ -->
 <div class="bottom-nav">
-  <button id="theme-toggle-btn" onclick="toggleTheme()" style="position:absolute;left:20px;background:none;border:none;cursor:pointer;font-size:20px;opacity:0.7;transition:opacity .2s;padding:4px" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.7"><span id="theme-toggle-icon">☀️</span></button>
+  <button id="theme-toggle-btn" onclick="toggleTheme()" style="display:none;position:absolute;left:20px;background:none;border:none;cursor:pointer;font-size:20px;opacity:0.7;transition:opacity .2s;padding:4px" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.7"><span id="theme-toggle-icon">☀️</span></button>
   <button class="nav-btn" onclick="showPage('task')">📋 TASK</button>
   <button class="nav-btn" onclick="showPage('project')">🗂 PROJECT</button>
   <!-- <a class="nav-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank">📝 NOTE</a> -->
@@ -3136,10 +3175,10 @@ function toggleTheme() {
 }
 
 function initTheme() {
-  const saved = localStorage.getItem('theme') || 'dark';
-  document.documentElement.dataset.theme = saved;
+  // ダークテーマ機能停止中: 常にlightを適用（localStorageは参照しない）
+  document.documentElement.dataset.theme = 'light';
   const icon = document.getElementById('theme-toggle-icon');
-  if (icon) icon.textContent = saved === 'light' ? '🌙' : '☀️';
+  if (icon) icon.textContent = '🌙';
 }
 
 // ===== Google Calendar OAuth =====
@@ -7637,6 +7676,14 @@ const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', 
 const _overlayListCounts = { impurg: 5, imp: 5, urg: 5, trash: 5 }; // 各区分の表示件数（最小5）
 const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
 
+// 4象限パネル全体のクリックで展開する。展開後はパネルが画面いっぱいに広がり、
+// 中の要素（タスクカードやページネーション）のクリックがこのonclickまで泡上がってくるため、
+// 展開中の再発火を防ぐガードを挟む。
+function openGtdQuadrant(key) {
+  if (overlayMode) return;
+  openOverlay(key);
+}
+
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
@@ -7745,7 +7792,7 @@ function _injectExpandContent(panel, key) {
   if (existingPag) existingPag.remove();
 
   const slotHeader = panel.querySelector('.gtd-slot-header');
-  const titleMap = { impurg: '▶️ <b class="gtd-cap">IU</b>', imp: '💫 <b class="gtd-cap">I</b><span class="gtd-low">u</span>', urg: '💨 <span class="gtd-low">i</span><b class="gtd-cap">U</b>', trash: '🗑 <span class="gtd-low">iu</span>', project: 'PROJECT' };
+  const titleMap = { impurg: 'Important &amp; Urgent', imp: 'Important, Not Urgent', urg: 'Urgent, Not Important', trash: 'Not Important, Not Urgent', project: 'PROJECT' };
   if (slotHeader) slotHeader.innerHTML = titleMap[key] || '';
 
   const div = document.createElement('div');
@@ -8041,10 +8088,10 @@ function renderTaskPage() {
     applyTaskListLimit(leftList, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
   }
 
-  // 右：展開ボタンのカウント更新（4象限＋今すぐやる）
+  // 右：4象限の件数バッジ更新
   Object.keys(_OVERLAY_GTD_MAP).forEach(key => {
-    const btn = document.getElementById(`gtd-${key}-expand-btn`);
-    if (btn) btn.textContent = `展開（${gtdCounts[key] || 0}件）`;
+    const badge = document.getElementById(`gtd-${key}-count`);
+    if (badge) badge.textContent = gtdCounts[key] ? `${gtdCounts[key]}` : '';
   });
   const projBtn = document.getElementById('gtd-project-expand-btn');
   if (projBtn) projBtn.textContent = `展開（${(_projCache||[]).length}件）`;
