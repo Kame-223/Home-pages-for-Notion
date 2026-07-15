@@ -53,8 +53,6 @@ Notion連携の個人用ライフデザインシステム。GitHub `Kame-223/Hom
 
 ---
 
-## 既知の問題（失敗ログ）
+## Notion API作業時の注意
 
-**この節は、実際に起きた不具合・誤りを見つけるたびに一行足していく。まだ空でもよい。**
-
-- 2026-07-12：Notionのselectプロパティのoptionをリネームしようとして `properties.<name>.select.options` をPATCHしたところ、既存option（idを指定したもの）は名前が変わらず無視される一方、配列に含めなかった既存optionは削除され、それを参照していた全ページの値が空になった。**select optionの配列PATCHは「完全上書き」であり、含めなかった既存optionは黙って削除される。またid一致のoptionは名前変更が反映されない（rename非対応）。** 安全な手順：①新option追加（既存全option＋新規分を含む配列でPATCH＝差分は純粋追加のみ）→②該当ページを1件ずつ新optionへ付け替え（page PATCH）→③全ページで旧optionの参照が0件になったことを確認→④旧optionだけを除いた配列でPATCHして削除。
+⚠️ Notionのプロパティ（特にselect/statusのoptions）をPATCHする前は、`notion-api-safety` skillを必ず確認する。過去にoption配列の全上書きで既存ページのデータが消失した事故がある。
