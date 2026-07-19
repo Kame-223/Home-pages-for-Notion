@@ -7828,10 +7828,10 @@ function closeOverlay() {
 }
 
 function _injectExpandContent(panel, key) {
+  // ページネーションバーはgtd-expand-content内の最後の子として入れるため、
+  // content自体を削除すれば一緒に消える
   const existing = panel.querySelector('.gtd-expand-content');
   if (existing) existing.remove();
-  const existingPag = panel.querySelector('.expand-pagination-bar');
-  if (existingPag) existingPag.remove();
 
   const slotHeader = panel.querySelector('.gtd-slot-header');
   // gtd-slot-headerがdisplay:flexのため、直下に複数のテキストノードを置くと
@@ -7878,11 +7878,11 @@ function _injectExpandContent(panel, key) {
       html += `<div class="expand-area-header area-${areaSlug(area)}">${area}</div>` + grouped[area].map(renderGtdCard).join('');
     });
     div.innerHTML = html || '<div class="section-empty">なし</div>';
-    panel.appendChild(div);
     const pag = document.createElement('div');
     pag.className = 'expand-pagination-bar';
     pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
-    panel.appendChild(pag);
+    div.appendChild(pag);
+    panel.appendChild(div);
     return;
   }
 
@@ -7890,11 +7890,11 @@ function _injectExpandContent(panel, key) {
   const shown = tasks.slice(0, count);
   const rest  = tasks.length - count;
   div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
-  panel.appendChild(div);
   const pag = document.createElement('div');
   pag.className = 'expand-pagination-bar';
   pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
-  panel.appendChild(pag);
+  div.appendChild(pag);
+  panel.appendChild(div);
 }
 
 function _renderExpandProjectContent(container) {
@@ -7942,7 +7942,8 @@ function _renderOverlay() {
 }
 
 function _overlayListStep(key, delta) {
-  _overlayListCounts[key] = Math.max(5, _overlayListCounts[key] + delta * 5);
+  // ▼：3件ずつ増やす／▲：件数によらず最初の5件までまとめて戻す
+  _overlayListCounts[key] = delta < 0 ? 5 : _overlayListCounts[key] + 3;
   const panel = document.getElementById(_OVERLAY_SLOTS[key]);
   if (panel) _injectExpandContent(panel, key);
 }
