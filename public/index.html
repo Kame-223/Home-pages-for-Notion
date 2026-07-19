@@ -141,7 +141,6 @@ html[data-theme="light"] .gtd-reveal-btn {
   background: rgba(0,0,0,0.03);
 }
 html[data-theme="light"] .gtd-reveal-btn:hover { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.25); }
-html[data-theme="light"] .gtd-drag-ghost { background: rgba(255,255,255,0.97); color: rgba(0,0,0,0.85); box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
 html[data-theme="light"] .gtd-slot-header { color: var(--text); background: var(--surface2); border-bottom-color: var(--border); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.8); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active:not(.expand-target) { background: rgba(255,255,255,1) !important; border-color: rgba(0,0,0,0.3); box-shadow: inset 0 0 16px rgba(0,0,0,0.08); }
@@ -2335,16 +2334,18 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   background: rgba(127,119,221,0.08);
 }
 /* GTDドラッグゴースト */
+/* カード名の吹き出しではなく、カーソルに付くやわらかな白い光のオーブ */
 .gtd-drag-ghost {
   position: fixed; z-index: 9999; pointer-events: none;
-  background: rgba(30,30,50,0.96); color: var(--text);
-  padding: 8px 14px; border-radius: 9px; font-size: 12px;
-  font-family: 'Noto Sans JP', sans-serif;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  border: 0.5px solid rgba(127,119,221,0.5);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,0) 75%);
+  /* 白いパネル上（4象限展開時など不透明白の上）でも輪郭が消えないよう、
+     ぼかし影だけでなくはっきりした輪も添える */
+  border: 1px solid rgba(0,0,0,0.18);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
   transform: translate(-50%, -50%);
-  white-space: nowrap; max-width: 220px;
-  overflow: hidden; text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 .task-card.gtd-dragging { opacity: 0.3; transition: opacity .15s; }
 
@@ -8229,8 +8230,8 @@ function _buildProjectLeftHtml(pid) {
   return html || '<div class="section-empty">タスクなし</div>';
 }
 
-// ===== タスクページ ドラッグ&ドロップ =====
-let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragActive = false, gtdDragSrcGtd = null;
+// ===== タスクページ GTD分類（クリックで持ち上げ→クリックで確定） =====
+let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragSrcGtd = null;
 
 const GTD_DROP_AREAS = [
   { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
@@ -8241,57 +8242,55 @@ const GTD_DROP_AREAS = [
   { elId: 'gtd-slot-imasugu', gtdVal: '🔥 今すぐやる' },
 ];
 
+// GTDボタン・タイムボタン等、カード内の個別操作は拾い上げ判定から除外する
+const GTD_PICKUP_EXCLUDE = '.btn-gtd,.time-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable';
+
 function initGtdDrag() {
   const content = document.getElementById('task-content');
   if (!content || content.dataset.gtdDragInit) return;
   content.dataset.gtdDragInit = '1';
 
-  content.addEventListener('pointerdown', e => {
-    const card = e.target.closest('.task-card');
+  document.addEventListener('click', e => {
+    if (gtdDragGhost) {
+      // 2回目のクリック：有効な移動先なら確定、そうでなければ何もせずキャンセル
+      finishGtdDrag(e.clientX, e.clientY);
+      return;
+    }
+    // 1回目のクリック：タスクカードの拾い上げ判定
+    const card = e.target.closest('#task-content .task-card');
     if (!card) return;
-    // GTDボタン・タイムボタン等は除外
-    if (e.target.closest('.btn-gtd,.time-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable')) return;
+    if (e.target.closest(GTD_PICKUP_EXCLUDE)) return;
 
     const id = card.id?.replace(/^gtc-/, '');
     if (!id) return;
-    e.preventDefault(); // ドラッグ中の文字選択を防ぐ
-
     const task = allTasks.find(t => t.id === id);
     if (!task) return;
-    const title = getProp(task,'タイトル') || '無題';
 
-    let moved = false;
-    const startX = e.clientX, startY = e.clientY;
+    gtdDragId = id;
+    gtdDragEl = card;
+    gtdDragSrcGtd = getProp(task, 'GTD 種別') || '📥 INBOX';
+    card.classList.add('gtd-dragging');
+    gtdDragGhost = document.createElement('div');
+    gtdDragGhost.className = 'gtd-drag-ghost';
+    gtdDragGhost.style.left = e.clientX + 'px';
+    gtdDragGhost.style.top  = e.clientY + 'px';
+    document.body.appendChild(gtdDragGhost);
+    updateGtdDropHighlight(e.clientX, e.clientY);
+  });
 
-    function onMove(ev) {
-      if (!moved) {
-        if (Math.abs(ev.clientX - startX) < 5 && Math.abs(ev.clientY - startY) < 5) return;
-        moved = true;
-        gtdDragId = id;
-        gtdDragEl = card;
-        gtdDragSrcGtd = getProp(task, 'GTD 種別') || '📥 INBOX';
-        card.classList.add('gtd-dragging');
-        gtdDragGhost = document.createElement('div');
-        gtdDragGhost.className = 'gtd-drag-ghost';
-        gtdDragGhost.textContent = title;
-        document.body.appendChild(gtdDragGhost);
-        gtdDragActive = true;
-      }
-      if (!gtdDragActive) return;
-      gtdDragGhost.style.left = ev.clientX + 'px';
-      gtdDragGhost.style.top  = ev.clientY + 'px';
-      updateGtdDropHighlight(ev.clientX, ev.clientY);
-    }
+  // 2本指クリック（右クリック相当）でその場キャンセル。通常のclickとは別系統のイベントなので、
+  // ダブルクリックのように1回目のクリックで先にキャンセル判定が走ってしまう衝突が起きない。
+  document.addEventListener('contextmenu', e => {
+    if (!gtdDragGhost) return;
+    e.preventDefault();
+    finishGtdDrag(-1, -1); // 画面外座標＝どのGTD_DROP_AREASにも一致しない＝キャンセル
+  });
 
-    function onUp(ev) {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      if (!gtdDragActive) return;
-      finishGtdDrag(ev.clientX, ev.clientY);
-    }
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointermove', e => {
+    if (!gtdDragGhost) return;
+    gtdDragGhost.style.left = e.clientX + 'px';
+    gtdDragGhost.style.top  = e.clientY + 'px';
+    updateGtdDropHighlight(e.clientX, e.clientY);
   });
 }
 
@@ -8314,7 +8313,7 @@ function finishGtdDrag(cx, cy) {
   GTD_DROP_AREAS.forEach(({ elId }) => document.getElementById(elId)?.classList.remove('gtd-drop-active'));
 
   const savedId = gtdDragId;
-  gtdDragId = null; gtdDragEl = null; gtdDragActive = false; gtdDragSrcGtd = null;
+  gtdDragId = null; gtdDragEl = null; gtdDragSrcGtd = null;
 
   const target = GTD_DROP_AREAS.find(({ elId }) => {
     const el = document.getElementById(elId);
@@ -8545,9 +8544,10 @@ function _tdClean(){
 }
 
 // 新しいpointerdown時に残留ゴーストを強制除去（フォールセーフ）
+// ※gtdDragGhostはクリックで拾い上げてから確定/キャンセルのクリックまで
+//   意図的にpointerdownを跨いで存在し続けるため、ここでは対象外
 document.addEventListener('pointerdown', () => {
   if (!_tdOk && _tdGhost) { _tdGhost.remove(); _tdGhost = null; }
-  if (!gtdDragActive && gtdDragGhost) { gtdDragGhost.remove(); gtdDragGhost = null; }
 }, true);
 // ページが非表示になった場合も強制クリーンアップ
 document.addEventListener('visibilitychange', () => {
