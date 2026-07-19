@@ -129,6 +129,14 @@ html[data-theme="light"] .task-gtd-area {
   background: rgba(255,255,255,0.8);
   border-color: var(--border2);
 }
+/* INBOXのドロップ中ハイライトも4象限と同じ「不透明白」方式に統一する。
+   ダーク時代の薄紫トーン（.task-inbox-col.gtd-drop-active、2332行目付近）は
+   ライト背景でほぼ視認できないため上書きする。 */
+html[data-theme="light"] .task-inbox-col.gtd-drop-active {
+  background: rgba(255,255,255,1);
+  border-color: rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 16px rgba(0,0,0,0.08);
+}
 html[data-theme="light"] .task-toggle-header,
 html[data-theme="light"] .gtd-section-header {
   background: var(--surface2);
@@ -2531,7 +2539,7 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover:not(.ex
 .gtd-expand-content {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0 20px;
+  padding: 4px 0 40px;
 }
 /* 展開中：プロジェクトパネルの折りたたみ要素を隠す */
 .task-gtd-area.expand-target .proj-mini-grid,
@@ -2546,10 +2554,13 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover:not(.ex
 .expand-page-btn {
   background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.15);
   border-radius: 999px; color: var(--text-sub); font-size: 13px;
-  padding: 8px 32px; cursor: pointer; transition: background .15s; line-height: 1;
+  padding: 8px 32px; cursor: pointer; transition: background .15s, opacity .15s; line-height: 1;
 }
 .expand-page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.16); }
 .expand-page-btn:disabled { opacity: 0.3; cursor: default; }
+/* ▲（最初の5件に戻す）は常に控えめな見た目にし、ホバー時だけ濃くする */
+.expand-page-btn-up { opacity: 0.35; }
+.expand-page-btn-up:hover:not(:disabled) { opacity: 1; }
 html[data-theme="light"] .expand-page-btn { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.15); }
 html[data-theme="light"] .expand-page-btn:hover:not(:disabled) { background: rgba(0,0,0,0.12); }
 html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0.08); }
@@ -7880,7 +7891,7 @@ function _injectExpandContent(panel, key) {
     div.innerHTML = html || '<div class="section-empty">なし</div>';
     const pag = document.createElement('div');
     pag.className = 'expand-pagination-bar';
-    pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=5?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
     div.appendChild(pag);
     panel.appendChild(div);
     return;
@@ -7892,7 +7903,7 @@ function _injectExpandContent(panel, key) {
   div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
   const pag = document.createElement('div');
   pag.className = 'expand-pagination-bar';
-  pag.innerHTML = `<button class="expand-page-btn" ${count<=5?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=5?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
   div.appendChild(pag);
   panel.appendChild(div);
 }
