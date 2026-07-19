@@ -2354,6 +2354,8 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   box-sizing: border-box;
 }
 .task-card.gtd-dragging { opacity: 0.3; transition: opacity .15s; }
+/* 展開パネルで▼を押して新しく表示された3件を目立たせるため、既存カードを薄くする */
+.task-card-faded { opacity: 0.4; }
 
 /* GTDスロットヘッダー */
 .gtd-slot-header {
@@ -2537,7 +2539,7 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover:not(.ex
 .gtd-expand-content {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0 40px;
+  padding: 4px 0 80px;
 }
 /* 展開中：プロジェクトパネルの折りたたみ要素を隠す */
 .task-gtd-area.expand-target .proj-mini-grid,
@@ -2556,9 +2558,12 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-quadrant:hover:not(.ex
 }
 .expand-page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.16); }
 .expand-page-btn:disabled { opacity: 0.3; cursor: default; }
-/* ▲（最初の5件に戻す）は常に控えめな見た目にし、ホバー時だけ濃くする */
+/* ▲（最初の3件に戻す）は常に控えめな見た目にし、ホバー時だけ濃くする */
 .expand-page-btn-up { opacity: 0.35; }
 .expand-page-btn-up:hover:not(:disabled) { opacity: 1; }
+/* ▼がこれ以上押せない（全件表示済み）ときは、▲を常時濃い色にして
+   「次にできる操作はこちら」を示す */
+.expand-pagination-bar:has(.expand-page-btn-down:disabled) .expand-page-btn-up:not(:disabled) { opacity: 1; }
 html[data-theme="light"] .expand-page-btn { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.15); }
 html[data-theme="light"] .expand-page-btn:hover:not(:disabled) { background: rgba(0,0,0,0.12); }
 html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0.08); }
@@ -7715,6 +7720,8 @@ let projMiniExpanded = false;
 
 const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu' };
 const _overlayListCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 }; // 各区分の表示件数（最小3）
+// ▼を押す直前の表示件数。この件数より前＝既存カード（薄く表示）、以降＝今回新しく表示された分
+const _overlayListPrevCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 };
 const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
 
 // 4象限パネル全体のクリックで展開する。展開後はパネルが画面いっぱいに広がり、
@@ -7729,7 +7736,7 @@ function openGtdQuadrant(key) {
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; });
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 3; });
 
   // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
@@ -7790,7 +7797,7 @@ function openOverlay(key) {
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; });
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 3; });
 
   // 暗幕を隠す
   document.getElementById('task-overlay').style.display = 'none';
@@ -7874,6 +7881,7 @@ function _injectExpandContent(panel, key) {
   if (!gtdVal) return;
   let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
   const count = _overlayListCounts[key];
+  const prevCount = _overlayListPrevCounts[key] ?? 3;
 
   if (key === 'impurg') {
     // 重要×緊急はエリア別グループ＋締切順（旧「次やる」の表示を踏襲）
@@ -7881,6 +7889,8 @@ function _injectExpandContent(panel, key) {
     tasks = [...tasks].sort(byDl);
     const shown = tasks.slice(0, count);
     const rest  = tasks.length - count;
+    // prevCount件より前＝直前まで既に表示されていたカード。今回▼で新しく増えた分と区別して薄く表示する
+    const oldIds = new Set(shown.slice(0, prevCount).map(t => t.id));
     const areaOrder = ['OFFICIAL','PRIVATE','ICU','カナダ'];
     const areaSlug = a => a==='OFFICIAL'?'kadai':a==='PRIVATE'?'personal':'other';
     const grouped = {};
@@ -7889,12 +7899,12 @@ function _injectExpandContent(panel, key) {
     let html = '';
     orderedAreas.forEach(area => {
       if (!grouped[area]) return;
-      html += `<div class="expand-area-header area-${areaSlug(area)}">${area}</div>` + grouped[area].map(renderGtdCard).join('');
+      html += `<div class="expand-area-header area-${areaSlug(area)}">${area}</div>` + grouped[area].map(t => renderGtdCard(t, oldIds.has(t.id))).join('');
     });
     div.innerHTML = html || '<div class="section-empty">なし</div>';
     const pag = document.createElement('div');
     pag.className = 'expand-pagination-bar';
-    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
     div.appendChild(pag);
     panel.appendChild(div);
     div.scrollTop = savedScrollTop;
@@ -7904,10 +7914,11 @@ function _injectExpandContent(panel, key) {
   // imp / urg / trash / imasugu はフラットな一覧（旧「今じゃない」の表示を踏襲）
   const shown = tasks.slice(0, count);
   const rest  = tasks.length - count;
-  div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
+  const oldIds = new Set(shown.slice(0, prevCount).map(t => t.id));
+  div.innerHTML = shown.length ? shown.map(t => renderGtdCard(t, oldIds.has(t.id))).join('') : '<div class="section-empty">なし</div>';
   const pag = document.createElement('div');
   pag.className = 'expand-pagination-bar';
-  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
   div.appendChild(pag);
   panel.appendChild(div);
   div.scrollTop = savedScrollTop;
@@ -7958,6 +7969,9 @@ function _renderOverlay() {
 }
 
 function _overlayListStep(key, delta) {
+  // ▼を押す直前の件数を控えておく（既存カードを薄く表示する基準に使う）。
+  // ▲を押したときはリセットなので、既存/新規の区別自体をなくす。
+  _overlayListPrevCounts[key] = delta < 0 ? 3 : _overlayListCounts[key];
   // ▼：3件ずつ増やす／▲：件数によらず最初の3件までまとめて戻す
   _overlayListCounts[key] = delta < 0 ? 3 : _overlayListCounts[key] + 3;
   const panel = document.getElementById(_OVERLAY_SLOTS[key]);
@@ -7971,7 +7985,7 @@ function toggleGtdArea(key) { openOverlay(key); }
 function toggleTaskSection(key) { if (key === 'next' || key === 'someday') openOverlay(key); }
 
 // ===== GTDカード描画 =====
-function renderGtdCard(task) {
+function renderGtdCard(task, faded) {
   const id = task.id;
   const title = getProp(task,'タイトル') || '無題';
   const area = getProp(task,'エリア');
@@ -8029,7 +8043,7 @@ function renderGtdCard(task) {
   ).join('');
 
   return `
-  <div class="task-card ${areaBorderCls(effectiveAreaG)} ${ttClsG}" id="gtc-${id}" style="margin-bottom:6px">
+  <div class="task-card ${areaBorderCls(effectiveAreaG)} ${ttClsG}${faded?' task-card-faded':''}" id="gtc-${id}" style="margin-bottom:6px">
     <div class="tag-row">${leftBtnG}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
     <div class="card-lower">
       <div class="card-body">
