@@ -7743,7 +7743,9 @@ function openOverlay(key) {
   const gtdCol   = document.getElementById('task-gtd-col');
   const btmNav   = document.querySelector('.bottom-nav');
   const btmTop   = btmNav ? btmNav.getBoundingClientRect().top : window.innerHeight;
-  const panelH   = btmTop - 20;
+  // パネルはtop:20pxから始まるため、下部ナビとの間に20pxの隙間を残すには
+  // 単純に btmTop-20 ではなく、開始位置の20pxも合わせて引く必要がある
+  const panelH   = btmTop - 20 - 20;
   const inboxR   = inboxCol ? inboxCol.getBoundingClientRect() : null;
   const gtdR     = gtdCol   ? gtdCol.getBoundingClientRect()   : null;
 
