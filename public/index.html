@@ -7841,6 +7841,9 @@ function _injectExpandContent(panel, key) {
   // ページネーションバーはgtd-expand-content内の最後の子として入れるため、
   // content自体を削除すれば一緒に消える
   const existing = panel.querySelector('.gtd-expand-content');
+  // ▼で件数が増えるたびにcontentを作り直すと、新しい要素はscrollTop=0から
+  // 始まってしまい、スクロール中でも強制的に先頭に戻ってしまう。位置を控えて後で復元する。
+  const savedScrollTop = existing ? existing.scrollTop : 0;
   if (existing) existing.remove();
 
   const slotHeader = panel.querySelector('.gtd-slot-header');
@@ -7863,6 +7866,7 @@ function _injectExpandContent(panel, key) {
   if (key === 'project') {
     _renderExpandProjectContent(div);
     panel.appendChild(div);
+    div.scrollTop = savedScrollTop;
     return;
   }
 
@@ -7893,6 +7897,7 @@ function _injectExpandContent(panel, key) {
     pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
     div.appendChild(pag);
     panel.appendChild(div);
+    div.scrollTop = savedScrollTop;
     return;
   }
 
@@ -7905,6 +7910,7 @@ function _injectExpandContent(panel, key) {
   pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
   div.appendChild(pag);
   panel.appendChild(div);
+  div.scrollTop = savedScrollTop;
 }
 
 function _renderExpandProjectContent(container) {
