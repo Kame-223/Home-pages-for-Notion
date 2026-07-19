@@ -142,7 +142,6 @@ html[data-theme="light"] .gtd-section-header {
   background: var(--surface2);
   border-bottom-color: var(--border);
 }
-html[data-theme="light"] .task-toggle-header:hover,
 html[data-theme="light"] .gtd-section-header:hover { background: rgba(0,0,0,0.04); }
 html[data-theme="light"] .gtd-reveal-btn {
   border-color: rgba(0,0,0,0.14);
@@ -2277,7 +2276,6 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   text-transform: uppercase;
   cursor: pointer; user-select: none; flex-shrink: 0;
 }
-.task-toggle-header:hover { background: rgba(255,255,255,0.03); }
 .task-toggle-arrow { font-size: 9px; color: var(--text-dim); transition: transform .2s; display: inline-block; }
 .task-toggle-arrow.open { transform: rotate(90deg); }
 .task-section-body.collapsed { display: none; }
@@ -7716,7 +7714,7 @@ let overlayProjectId = null;
 let projMiniExpanded = false;
 
 const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu' };
-const _overlayListCounts = { impurg: 5, imp: 5, urg: 5, trash: 5 }; // 各区分の表示件数（最小5）
+const _overlayListCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 }; // 各区分の表示件数（最小3）
 const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
 
 // 4象限パネル全体のクリックで展開する。展開後はパネルが画面いっぱいに広がり、
@@ -7724,13 +7722,14 @@ const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'g
 // 展開中の再発火を防ぐガードを挟む。
 function openGtdQuadrant(key) {
   if (overlayMode) return;
+  if (gtdDragGhost) return; // タスクカードのピックアップ中はクリックで展開しない（移動確定を優先）
   openOverlay(key);
 }
 
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 5; });
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; });
 
   // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
@@ -7791,7 +7790,7 @@ function openOverlay(key) {
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 5; });
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; });
 
   // 暗幕を隠す
   document.getElementById('task-overlay').style.display = 'none';
@@ -7891,7 +7890,7 @@ function _injectExpandContent(panel, key) {
     div.innerHTML = html || '<div class="section-empty">なし</div>';
     const pag = document.createElement('div');
     pag.className = 'expand-pagination-bar';
-    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=5?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
     div.appendChild(pag);
     panel.appendChild(div);
     return;
@@ -7903,7 +7902,7 @@ function _injectExpandContent(panel, key) {
   div.innerHTML = shown.length ? shown.map(renderGtdCard).join('') : '<div class="section-empty">なし</div>';
   const pag = document.createElement('div');
   pag.className = 'expand-pagination-bar';
-  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=5?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
   div.appendChild(pag);
   panel.appendChild(div);
 }
@@ -7953,8 +7952,8 @@ function _renderOverlay() {
 }
 
 function _overlayListStep(key, delta) {
-  // ▼：3件ずつ増やす／▲：件数によらず最初の5件までまとめて戻す
-  _overlayListCounts[key] = delta < 0 ? 5 : _overlayListCounts[key] + 3;
+  // ▼：3件ずつ増やす／▲：件数によらず最初の3件までまとめて戻す
+  _overlayListCounts[key] = delta < 0 ? 3 : _overlayListCounts[key] + 3;
   const panel = document.getElementById(_OVERLAY_SLOTS[key]);
   if (panel) _injectExpandContent(panel, key);
 }
