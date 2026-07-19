@@ -8267,9 +8267,14 @@ function initGtdDrag() {
   if (!content || content.dataset.gtdDragInit) return;
   content.dataset.gtdDragInit = '1';
 
+  // キャプチャフェーズで先取りする：カードを持っている間の確定/キャンセルクリックが、
+  // クリック先本来のonclick（サイドバーのページ切替や他のボタンなど）まで届いて
+  // 意図しない動作を引き起こさないよう、stopPropagationで完全に打ち止めにする。
   document.addEventListener('click', e => {
     if (gtdDragGhost) {
-      // 2回目のクリック：有効な移動先なら確定、そうでなければ何もせずキャンセル
+      // 2回目のクリック：有効な移動先なら確定、そうでなければ何もせずキャンセル。
+      // どちらにせよ、クリック先本来の動作は一切発火させない。
+      e.stopPropagation();
       finishGtdDrag(e.clientX, e.clientY);
       return;
     }
@@ -8293,7 +8298,7 @@ function initGtdDrag() {
     gtdDragGhost.style.top  = e.clientY + 'px';
     document.body.appendChild(gtdDragGhost);
     updateGtdDropHighlight(e.clientX, e.clientY);
-  });
+  }, true);
 
   // 2本指クリック（右クリック相当）でその場キャンセル。通常のclickとは別系統のイベントなので、
   // ダブルクリックのように1回目のクリックで先にキャンセル判定が走ってしまう衝突が起きない。
