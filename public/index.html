@@ -1296,6 +1296,12 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .tag-red-vivid { background: rgba(216,60,40,0.25); color: #FF5040; border: 0.5px solid rgba(255,80,64,0.6); font-weight: 700; }
 .tag-magenta { background: rgba(144,112,192,0.15); color: #C0A0E8; border: 0.5px solid rgba(144,112,192,0.35); }
 .tag-rose    { background: rgba(248,216,176,0.12); color: #F8D8B0; border: 0.5px solid rgba(248,216,176,0.3); }
+/* エリア（OFFICIAL/PRIVATE）は毎回文字を読まなくても判別できるよう、
+   横長のタグではなく色付きの丸1つで表示する */
+.area-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: middle; cursor: pointer; flex-shrink: 0; }
+.area-dot-official { background: #9070C0; }
+.area-dot-private { background: #F8D8B0; }
+.area-dot-gray { background: var(--text-dim); }
 .tag-olive   { background: rgba(192,224,192,0.12); color: #C0E0C0; border: 0.5px solid rgba(192,224,192,0.3); }
 .tag-navy    { background: rgba(160,200,232,0.15); color: #A0C8E8; border: 0.5px solid rgba(160,200,232,0.35); }
 .deadline-tag { flex-shrink: 0; }
@@ -4943,6 +4949,11 @@ function areaBorderCls(area) {
   return '';
 }
 
+function areaDotCls(area) {
+  if (area==='OFFICIAL') return 'area-dot-official';
+  if (area==='PRIVATE') return 'area-dot-private';
+  return 'area-dot-gray';
+}
 function areaTagCls(area) {
   if (area==='OFFICIAL') return 'tag-magenta';
   if (area==='PRIVATE') return 'tag-rose';
@@ -5079,7 +5090,7 @@ function renderCard(task, mode='today') {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    area ? `<span class="area-dot ${areaDotCls(area)} clickable" onclick="${editCall}" title="${area}"></span>` : '',
     (subjectToShow && !elaToShow) ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
@@ -7963,7 +7974,7 @@ function renderGtdCard(task, faded) {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="tag ${areaTagCls(area)} clickable" onclick="${editCall}">${area}</span>` : '',
+    area ? `<span class="area-dot ${areaDotCls(area)} clickable" onclick="${editCall}" title="${area}"></span>` : '',
     (subjectToShow && !elaToShow) ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
