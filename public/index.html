@@ -850,10 +850,12 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .bottom-row {
   grid-column: 1 / 3;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
   background: transparent;
 }
+/* GTDラベル(IMPORTANT/urgent)をパネル見出しでも大文字強制なしで表示するためのラッパー */
+.panel-header-gtd { text-transform: none; display: inline-flex; gap: 4px; }
 .bottom-section { display: contents; }
 .bottom-panel {
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -1092,15 +1094,6 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 }
 .done-drawer-cards { display: none; }
 .done-drawer-cards.open { display: block; }
-/* 持ち越し表示ボタン */
-.leftover-reveal-wrap { text-align: center; padding: 18px 0 14px; }
-.leftover-reveal-btn {
-  font-size: 12px; padding: 9px 28px; border-radius: 99px;
-  border: 0.5px solid rgba(232,92,92,0.35); background: rgba(232,92,92,0.07);
-  color: rgba(232,92,92,0.85); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  transition: all .2s;
-}
-.leftover-reveal-btn:hover { background: rgba(232,92,92,0.16); border-color: rgba(232,92,92,0.55); }
 /* ===== 朝昼夜 光の玉 ===== */
 .s-orb-col { display: none; }
 .jk-orb {
@@ -1153,31 +1146,6 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
   background: rgba(30,30,40,0.35);
 }
-/* 持ち越し「追加済み」セクション */
-.leftover-added-wrap { margin: 4px 0 8px; }
-.leftover-added-toggle {
-  font-size: 11px; color: var(--text-dim); cursor: pointer;
-  padding: 10px 0 4px; transition: color .15s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  user-select: none; border: none; background: transparent;
-  width: 100%; font-family: 'Noto Sans JP', sans-serif;
-}
-.leftover-added-toggle::before, .leftover-added-toggle::after {
-  content: ''; flex: 1; height: 0.5px; background: var(--border);
-}
-.leftover-added-toggle:hover { color: var(--text-sub); }
-.leftover-added-cards { display: none; padding: 6px 0 2px; }
-.leftover-added-cards.open { display: block; }
-/* 持ち越し非表示ボタン */
-.leftover-hide-btn {
-  font-size: 12px; padding: 9px 20px; border-radius: 99px;
-  border: 0.5px solid var(--border2); background: rgba(255,255,255,0.03);
-  color: var(--text-sub); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
-  transition: all .15s;
-}
-.leftover-hide-btn:hover { border-color: rgba(232,92,92,0.4); color: rgba(232,92,92,0.8); background: rgba(232,92,92,0.06); }
-.leftover-hide-wrap { text-align: center; padding: 10px 0 6px; }
-.leftover-btns-row { display: flex; justify-content: center; gap: 10px; align-items: center; }
 /* 全完了セレブレーション */
 @keyframes celebFadeIn {
   from { opacity: 0; transform: translate(-50%,-50%) scale(.8); }
@@ -2769,13 +2737,17 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
     <div class="bottom-row">
 
       <!-- 選択モード：直接パネル -->
-      <div id="leftover-panel" class="bottom-panel" onclick="handlePanelClick('next')">
-        <div class="section-header red">🔄 持ち越し<span class="task-count" id="leftover-count"></span></div>
-        <div class="bottom-half" id="leftover-list"><div class="loading">読み込み中...</div></div>
-      </div>
       <div id="next-panel" class="bottom-panel" onclick="handlePanelClick('next')">
-        <div class="section-header blue">▶️ 次やること<div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
+        <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-cap">IMPORTANT</span><span class="gtd-cap">URGENT</span></span><div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
+      </div>
+      <div id="niu-panel" class="bottom-panel" onclick="handlePanelClick('next')">
+        <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-low">important</span><span class="gtd-cap">URGENT</span></span></div>
+        <div class="bottom-half" id="niu-list"><div class="loading">読み込み中...</div></div>
+      </div>
+      <div id="project-panel" class="bottom-panel" onclick="handlePanelClick('next')">
+        <div class="section-header blue">PROJECT</div>
+        <div class="bottom-half" id="project-list"><div class="section-empty">準備中</div></div>
       </div>
 
       <!-- 実行モード：振り返りのみ -->
@@ -2862,7 +2834,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
         <!-- 4象限グリッド -->
         <div class="task-gtd-grid">
           <!-- 重要×緊急 -->
-          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-impurg" data-gtd="▶️ IU" onclick="openGtdQuadrant('impurg')">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-impurg" data-gtd="▶️ IMPORTANT URGENT" onclick="openGtdQuadrant('impurg')">
             <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
@@ -2873,7 +2845,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           </div>
 
           <!-- 重要×非緊急 -->
-          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-imp" data-gtd="💫 Iu" onclick="openGtdQuadrant('imp')">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-imp" data-gtd="💫 IMPORTANT urgent" onclick="openGtdQuadrant('imp')">
             <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
@@ -2884,7 +2856,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           </div>
 
           <!-- 非重要×緊急 -->
-          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-urg" data-gtd="💨 iU" onclick="openGtdQuadrant('urg')">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-urg" data-gtd="💨 important URGENT" onclick="openGtdQuadrant('urg')">
             <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
@@ -2895,7 +2867,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
           </div>
 
           <!-- 非重要×非緊急 -->
-          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-trash" data-gtd="🗑 iu" onclick="openGtdQuadrant('trash')">
+          <div class="task-gtd-area gtd-quadrant" id="gtd-slot-trash" data-gtd="🗑️important urgent" onclick="openGtdQuadrant('trash')">
             <div class="gtd-slot-header"></div>
             <div class="gtd-reveal-wrap">
               <div class="gtd-panel-name">
@@ -4736,8 +4708,8 @@ function updateExecHint() { /* 「実行を始める」ボタンは廃止 */ }
 
 function renderNextList() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ IU';
-  const tasks = allTasks.filter(t => !isDone(t) && gtdNext(t) && !leftoverSet.has(t.id));
+  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ IMPORTANT URGENT';
+  const tasks = allTasks.filter(t => !isDone(t) && gtdNext(t));
   const el = document.getElementById('next-list');
   if (!el) return;
   if (!tasks.length) { el.innerHTML = '<div class="section-empty">次やるタスクがありません</div>'; return; }
@@ -4823,6 +4795,88 @@ function applyNextListLimit(el, total) {
   );
 }
 
+// ===== important URGENT（Not Important×Urgent）パネル =====
+let niuListExpanded = false;
+let niuPrevCutoff = 0;
+const NIU_DEFAULT_COUNT = 3;
+
+function expandNiuList() {
+  niuListExpanded = true;
+  renderNiuList();
+}
+
+function collapseNiuList() {
+  niuListExpanded = false;
+  niuPrevCutoff = 0;
+  renderNiuList();
+}
+
+function renderNiuList() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
+  const gtdNiu = t => getProp(t,'GTD 種別')==='💨 important URGENT';
+  const tasks = allTasks.filter(t => !isDone(t) && gtdNiu(t));
+  const el = document.getElementById('niu-list');
+  if (!el) return;
+  if (!tasks.length) { el.innerHTML = '<div class="section-empty">対象のタスクがありません</div>'; return; }
+
+  const byDeadline = (a, b) => {
+    const ma = dlMs(a), mb = dlMs(b);
+    if (!isFinite(ma) && !isFinite(mb)) return 0;
+    if (!isFinite(ma)) return 1;
+    if (!isFinite(mb)) return -1;
+    return ma - mb;
+  };
+
+  let html = '';
+  const byArea = {};
+  tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
+  const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
+
+  const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal'};
+  areaKeys.forEach(area => {
+    const aTasks = byArea[area];
+    let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
+    inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'niu')).join('');
+    html += `<div class="card-group">${inner}</div>`;
+  });
+  el.innerHTML = html;
+  applyNiuListLimit(el, tasks.length);
+}
+
+function applyNiuListLimit(el, total) {
+  const cards = Array.from(el.querySelectorAll('.task-card'));
+
+  if (niuListExpanded) {
+    if (cards.length > NIU_DEFAULT_COUNT) {
+      cards.forEach((c, i) => { if (i >= niuPrevCutoff) c.classList.add('newly-shown'); });
+      el.insertAdjacentHTML('beforeend',
+        `<div class="next-show-more"><button class="next-show-less-btn" onclick="collapseNiuList()">▲ 表示数を減らす</button></div>`
+      );
+    }
+    return;
+  }
+
+  if (total <= NIU_DEFAULT_COUNT || cards.length <= NIU_DEFAULT_COUNT) return;
+  const todayStr = new Date().toISOString().split('T')[0];
+  let cutoff = NIU_DEFAULT_COUNT;
+  while (cutoff < cards.length) {
+    const dl = cards[cutoff].dataset.deadline;
+    if (dl && dl.startsWith(todayStr)) cutoff++;
+    else break;
+  }
+  if (cutoff >= cards.length) return;
+  niuPrevCutoff = cutoff;
+  for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
+  el.querySelectorAll('.card-group').forEach(g => {
+    const visible = g.querySelectorAll('.task-card:not([style*="none"])');
+    if (!visible.length) g.style.display = 'none';
+  });
+  const remaining = cards.length - cutoff;
+  el.insertAdjacentHTML('beforeend',
+    `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandNiuList()">もっと見る（あと${remaining}件）</button></div>`
+  );
+}
+
 function deadlineTag(dateStr, isDone, isImportant) {
   if (!dateStr) return null;
   const hasTime = dateStr.length > 10;
@@ -4889,22 +4943,6 @@ function areaBorderCls(area) {
   return '';
 }
 
-function groupByArea(tasks, renderFn) {
-  const order = ['OFFICIAL','PRIVATE','その他'];
-  const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal','その他':'area-other'};
-  const groups = {};
-  tasks.forEach(t => {
-    const a = getProp(t,'エリア') || 'その他';
-    (groups[a] = groups[a] || []).push(t);
-  });
-  return order.filter(a => groups[a]?.length).map(a =>
-    `<div class="card-group">
-      <div class="card-group-header ${clsMap[a]}">${a}</div>
-      ${groups[a].map(renderFn).join('')}
-    </div>`
-  ).join('');
-}
-
 function areaTagCls(area) {
   if (area==='OFFICIAL') return 'tag-magenta';
   if (area==='PRIVATE') return 'tag-rose';
@@ -4960,13 +4998,13 @@ async function loadTasks() {
     const data = await notionQuery(DB.tasks, {
       and: [
         {property:'ステータス', status:{does_not_equal:'完了'}},
-        {property:'GTD 種別', status:{does_not_equal:'🗑 iu'}},
+        {property:'GTD 種別', status:{does_not_equal:'🗑️important urgent'}},
       ]
     }, [{property:'締切日', direction:'ascending'}]);
     allTasks = data.results || [];
   } catch(e) {
     console.error('loadTasks API error:', e);
-    ['today-tasks','leftover-list','next-list'].forEach(id => {
+    ['today-tasks','next-list','niu-list'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = '<div class="section-empty" style="color:var(--red)">Notion接続エラー</div>';
     });
@@ -5053,7 +5091,7 @@ function renderCard(task, mode='today') {
   const links = s.links;
   const linkPillsHtml = ''; // 作業リンクピルは一時非表示（後で検討）
 
-  if (mode === 'leftover' || mode === 'next') {
+  if (mode === 'next' || mode === 'niu') {
     return `
     <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''} ${ttCls}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
       <div class="pin-badge">✕</div>
@@ -5116,7 +5154,7 @@ function renderCard(task, mode='today') {
 
 function renderAll() {
   const today = new Date().toISOString().split('T')[0];
-  const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ IU';};
+  const gtdNext = t => {const g=getProp(t,'GTD 種別'); return g==='▶️ IMPORTANT URGENT';};
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
 
   // TODAY：当日セッション（3:01〜翌3:00）にピンしたタスクのみ
@@ -5251,23 +5289,16 @@ function renderAll() {
   requestAnimationFrame(initBunbunDrag);
   } // end: today panel skip
 
-  // やり残し（1日の切り替わりは3:01基準）
-  // 期限切れタスク ＋ 前セッションにピンしたが未完了のタスク（セッションをまたいだ今日やること）
-  leftoverSet = new Set();
+  // 完了しないままセッションを跨いだタスク（期限切れ、または前セッションでピンしたまま未完了）は、
+  // 時間帯（朝/昼/夜）の設定をリセットし、今日の状況で選び直させる。表示パネルは各GTD分類パネルが担う。
+  let _jkReset = false;
   allTasks.forEach(t => {
     if (isDone(t)) return;
     const s = taskState[t.id];
     const deadline = getProp(t,'締切日');
-    // 期限切れ
-    if (deadline && deadline < currentSession) { leftoverSet.add(t.id); return; }
-    // 前セッションのピン済み（pinnedSessionDateが設定済みで今日ではないもの）
-    if (s?.pinned && s?.pinnedSessionDate && s.pinnedSessionDate < currentSession) leftoverSet.add(t.id);
-  });
-  const leftover = allTasks.filter(t => leftoverSet.has(t.id));
-  // 持ち越しタスクの時間帯設定をリセット（今日のセッションでピン済みのタスクは除外）
-  let _jkReset = false;
-  leftover.forEach(t => {
-    const s = taskState[t.id];
+    const isCarriedOver = (deadline && deadline < currentSession) ||
+      !!(s?.pinned && s?.pinnedSessionDate && s.pinnedSessionDate < currentSession);
+    if (!isCarriedOver) return;
     if (s?.pinnedSessionDate === currentSession) return;
     if (s?.jikantai) {
       s.jikantai = null;
@@ -5276,10 +5307,9 @@ function renderAll() {
     }
   });
   if (_jkReset) saveTaskState();
-  renderLeftoverSection(leftover);
 
-  // 次やること
-  if (currentMode !== 'select' || focusedPanel === 'next') renderNextList();
+  // IMPORTANT URGENT / important URGENT
+  if (currentMode !== 'select' || focusedPanel === 'next') { renderNextList(); renderNiuList(); }
 
   // 子タスクキャッシュがあるカードの進捗を常に表示
   requestAnimationFrame(() => Object.keys(subtaskData).forEach(id => updateSubtaskProgress(id)));
@@ -5290,22 +5320,25 @@ function renderAll() {
   });
 
   // 霧効果 + ボタン表示制御（Sモードのみ）
-  const todayBoardEl  = document.querySelector('.today-board');
-  const nextPanelEl   = document.getElementById('next-panel');
-  const leftoverEl    = document.getElementById('leftover-panel');
-  const sOrbColEl     = document.getElementById('s-orb-col');
-  const sStarColEl    = document.getElementById('s-star-col');
-  const isToday       = focusedPanel === 'today';
+  const todayBoardEl   = document.querySelector('.today-board');
+  const nextPanelEl    = document.getElementById('next-panel');
+  const niuPanelEl     = document.getElementById('niu-panel');
+  const projectPanelEl = document.getElementById('project-panel');
+  const sOrbColEl      = document.getElementById('s-orb-col');
+  const sStarColEl     = document.getElementById('s-star-col');
+  const isToday        = focusedPanel === 'today';
   if (currentMode === 'select') {
     todayBoardEl?.classList.toggle('panel-blurred', !isToday);
     nextPanelEl?.classList.toggle('panel-blurred',   isToday);
-    leftoverEl?.classList.toggle('panel-blurred',    isToday);
+    niuPanelEl?.classList.toggle('panel-blurred',    isToday);
+    projectPanelEl?.classList.toggle('panel-blurred', isToday);
     sOrbColEl?.classList.toggle('orb-hidden',  !isToday);
     sStarColEl?.classList.toggle('star-hidden',  isToday);
   } else {
     todayBoardEl?.classList.remove('panel-blurred');
     nextPanelEl?.classList.remove('panel-blurred');
-    leftoverEl?.classList.remove('panel-blurred');
+    niuPanelEl?.classList.remove('panel-blurred');
+    projectPanelEl?.classList.remove('panel-blurred');
     sOrbColEl?.classList.add('orb-hidden');
     sStarColEl?.classList.add('star-hidden');
   }
@@ -5868,10 +5901,6 @@ function finishDrag(isBunbun=false) {
   renderAll();
 }
 
-const LEFTOVER_DEFAULT_COUNT = 3;
-let leftoverRevealed = false;
-let leftoverExpanded = false;
-let leftoverAddedOpen = false;
 let bunbunOpen = false;
 let orbFilter = null;
 let focusedPanel = 'next'; // 'next' | 'today'
@@ -5879,13 +5908,7 @@ let _starAnchorScrollY = null;
 let _starAnchorViewportTop = null;
 let _tbBottomDoc = 0;
 let _tdContainerId = 'today-tasks';
-let leftoverSet = new Set();
 
-function revealLeftover()       { leftoverRevealed = true;  leftoverExpanded = false; renderAll(); }
-function hideLeftover()         { leftoverRevealed = false; leftoverExpanded = false; renderAll(); }
-function expandLeftoverList()   { leftoverExpanded = true;  renderAll(); }
-function collapseLeftoverList() { leftoverExpanded = false; renderAll(); }
-function toggleLeftoverAdded()  { leftoverAddedOpen = !leftoverAddedOpen; renderAll(); }
 function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 function handlePanelClick(panel) {
   if (currentMode !== 'select' || focusedPanel === panel) return;
@@ -5898,16 +5921,13 @@ function handlePanelClick(panel) {
   }));
 }
 function resetStarAnchor() {
-  const leftoverEl = document.getElementById('leftover-panel');
   const nextPanelEl = document.getElementById('next-panel');
   const todayBoardEl = document.querySelector('.today-board');
   const headerH = 62, margin = 16;
   _starAnchorScrollY = window.scrollY;
   if (todayBoardEl) _tbBottomDoc = todayBoardEl.getBoundingClientRect().bottom + window.scrollY;
   let refTop = headerH + margin;
-  if (leftoverEl && !leftoverEl.classList.contains('hidden')) {
-    refTop = Math.max(leftoverEl.getBoundingClientRect().top, headerH + margin);
-  } else if (nextPanelEl) {
+  if (nextPanelEl) {
     refTop = Math.max(nextPanelEl.getBoundingClientRect().top, headerH + margin);
   }
   _starAnchorViewportTop = refTop;
@@ -5932,12 +5952,8 @@ function updateStarFollow() {
   const rawTop = Math.round(_starAnchorViewportTop + scrollDelta * 0.4);
   // min: 現在のパネル上端（リアルタイム）より上には行かせない
   // max: 今日やることの下端まで（それ以降は追従停止）
-  const leftoverEl2 = document.getElementById('leftover-panel');
   const nextPanelEl = document.getElementById('next-panel');
-  const currentPanelTop = (leftoverEl2 && !leftoverEl2.classList.contains('hidden'))
-    ? Math.max(leftoverEl2.getBoundingClientRect().top, headerH)
-    : Math.max(nextPanelEl?.getBoundingClientRect().top ?? headerH, headerH);
-  const minTop = currentPanelTop;
+  const minTop = Math.max(nextPanelEl?.getBoundingClientRect().top ?? headerH, headerH);
   const todayBoardEl = document.querySelector('.today-board');
   const tbBottom = todayBoardEl ? todayBoardEl.getBoundingClientRect().bottom : window.innerHeight;
   const maxTop = Math.max(minTop, tbBottom - btnH - margin);
@@ -5968,87 +5984,6 @@ function setOrbFilter(jk) {
   renderAll();
 }
 function clearOrbFilter() { orbFilter = null; bunbunOpen = false; renderAll(); }
-
-function renderLeftoverSection(leftover) {
-  const leftoverPanelEl = document.getElementById('leftover-panel');
-  if (leftoverPanelEl) {
-    const wasHidden = leftoverPanelEl.classList.contains('hidden');
-    leftoverPanelEl.classList.toggle('hidden', currentMode !== 'select' || leftover.length === 0);
-    const isHidden = leftoverPanelEl.classList.contains('hidden');
-  }
-  const leftEl = document.getElementById('leftover-list');
-  const countEl = document.getElementById('leftover-count');
-  if (!leftEl) return;
-  if (countEl) countEl.textContent = leftover.length ? `(${leftover.length})` : '';
-
-  const currentSession = getFurikaeriDate();
-  const addedToToday = leftover.filter(t => {
-    const s = taskState[t.id];
-    return s?.pinned && s?.pinnedSessionDate === currentSession;
-  });
-  const remaining = leftover.filter(t => {
-    const s = taskState[t.id];
-    return !(s?.pinned && s?.pinnedSessionDate === currentSession);
-  });
-
-  let html = '';
-
-  // 追加済みセクション（常に独立表示）
-  if (addedToToday.length) {
-    html += `<div class="leftover-added-wrap">
-      <button class="leftover-added-toggle" onclick="toggleLeftoverAdded()">✅ 追加済み（${addedToToday.length}件）${leftoverAddedOpen ? ' ▲' : ' ▼'}</button>
-      <div class="leftover-added-cards ${leftoverAddedOpen ? 'open' : ''}">
-        ${addedToToday.map(t => renderCard(t,'leftover').replace(' confirmed-dim','')).join('')}
-      </div>
-    </div>`;
-  }
-
-  if (!remaining.length) {
-    if (!addedToToday.length) html += '<div class="section-empty" style="color:var(--green)">持ち越しなし 🎉</div>';
-    leftEl.innerHTML = html;
-    return;
-  }
-
-  if (!leftoverRevealed) {
-    html += `<div class="leftover-reveal-wrap">
-      <button class="leftover-reveal-btn" onclick="revealLeftover()">🔄 持ち越しタスクを表示（${remaining.length}件）</button>
-    </div>`;
-    leftEl.innerHTML = html;
-    return;
-  }
-
-  html += groupByArea(remaining, t => renderCard(t,'leftover'));
-  leftEl.innerHTML = html;
-
-  const mainCards = Array.from(leftEl.querySelectorAll(':scope > .card-group .task-card'));
-
-  const hideBtn = `<button class="leftover-hide-btn" onclick="hideLeftover()">非表示にする</button>`;
-
-  if (!leftoverExpanded && mainCards.length > LEFTOVER_DEFAULT_COUNT) {
-    for (let i = LEFTOVER_DEFAULT_COUNT; i < mainCards.length; i++) mainCards[i].style.display = 'none';
-    leftEl.querySelectorAll(':scope > .card-group').forEach(g => {
-      if (!g.querySelectorAll('.task-card:not([style*="none"])').length) g.style.display = 'none';
-    });
-    const remainingCount = mainCards.length - LEFTOVER_DEFAULT_COUNT;
-    leftEl.insertAdjacentHTML('beforeend',
-      `<div class="next-show-more leftover-btns-row">
-        <button class="next-show-more-btn" onclick="expandLeftoverList()">もっと見る（あと${remainingCount}件）</button>
-        ${hideBtn}
-      </div>`
-    );
-  } else if (leftoverExpanded && mainCards.length > LEFTOVER_DEFAULT_COUNT) {
-    leftEl.insertAdjacentHTML('beforeend',
-      `<div class="next-show-more leftover-btns-row">
-        <button class="next-show-less-btn" onclick="collapseLeftoverList()">▲ 表示数を減らす</button>
-        ${hideBtn}
-      </div>`
-    );
-  } else {
-    leftEl.insertAdjacentHTML('beforeend',
-      `<div class="leftover-hide-wrap">${hideBtn}</div>`
-    );
-  }
-}
 
 // 全完了セレブレーション
 let celebShown = false;
@@ -6777,8 +6712,9 @@ let _tbResizeObs = null;
 function setMode(mode) {
   currentMode = mode;
   const isSelect = mode === 'select';
-  // leftover-panel の表示は renderLeftoverSection が管理
   document.getElementById('next-panel').classList.toggle('hidden', !isSelect);
+  document.getElementById('niu-panel').classList.toggle('hidden', !isSelect);
+  document.getElementById('project-panel').classList.toggle('hidden', !isSelect);
   document.getElementById('exec-bottom').classList.toggle('hidden', isSelect);
   document.getElementById('btn-select').classList.toggle('active', isSelect);
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
@@ -7723,7 +7659,7 @@ let overlayMode = null;         // null | 'impurg' | 'imp' | 'urg' | 'trash' | '
 let overlayProjectId = null;
 let projMiniExpanded = false;
 
-const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu' };
+const _OVERLAY_GTD_MAP = { impurg: '▶️ IMPORTANT URGENT', imp: '💫 IMPORTANT urgent', urg: '💨 important URGENT', trash: '🗑️important urgent' };
 const _overlayListCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 }; // 各区分の表示件数（最小3）
 // ▼を押す直前の表示件数。0＝まだ一度も▼を押していない（何も薄くしない）。
 // この件数より前＝既存カード（薄く表示）、以降＝今回新しく表示された分
@@ -8040,12 +7976,12 @@ function renderGtdCard(task, faded) {
   const gtdLabel = gtd || '📥 INBOX';
   const gtdOpts = [
     ['📥 INBOX', 'gtd-opt'],
-    ['▶️ IU', 'gtd-opt'],
-    ['💫 Iu', 'gtd-opt'],
-    ['💨 iU', 'gtd-opt'],
+    ['▶️ IMPORTANT URGENT', 'gtd-opt'],
+    ['💫 IMPORTANT urgent', 'gtd-opt'],
+    ['💨 important URGENT', 'gtd-opt'],
     ['🗂 PROJECT', 'gtd-opt gtd-opt-project'],
     ['🔥 今すぐやる', 'gtd-opt gtd-opt-fire'],
-    ['🗑 iu', 'gtd-opt gtd-opt-trash'],
+    ['🗑️important urgent', 'gtd-opt gtd-opt-trash'],
   ].map(([val, cls]) =>
     `<div class="${cls}" onclick="setGtdKind('${id}','${val}');event.stopPropagation()">${val}</div>`
   ).join('');
@@ -8115,9 +8051,9 @@ async function setGtdKind(id, gtdVal) {
       notionUpdate(id, {'GTD 種別': {status: {name: '🔥 今すぐやる'}}}),
       notionUpdate(id, {'ステータス': {status: {name: '完了'}}}),
     ]).catch(console.error);
-  } else if (gtdVal === '🗑 iu') {
+  } else if (gtdVal === '🗑️important urgent') {
     if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
-    notionUpdate(id, {'GTD 種別': {status: {name: '🗑 iu'}}}).catch(console.error);
+    notionUpdate(id, {'GTD 種別': {status: {name: '🗑️important urgent'}}}).catch(console.error);
   } else {
     if (task) task.properties['GTD 種別'] = {type: 'status', status: {name: gtdVal}};
     notionUpdate(id, {'GTD 種別': {status: {name: gtdVal}}}).catch(console.error);
@@ -8274,10 +8210,10 @@ let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragSrcGtd = nul
 
 const GTD_DROP_AREAS = [
   { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
-  { elId: 'gtd-slot-impurg',  gtdVal: '▶️ IU' },
-  { elId: 'gtd-slot-imp',     gtdVal: '💫 Iu' },
-  { elId: 'gtd-slot-urg',     gtdVal: '💨 iU' },
-  { elId: 'gtd-slot-trash',   gtdVal: '🗑 iu' },
+  { elId: 'gtd-slot-impurg',  gtdVal: '▶️ IMPORTANT URGENT' },
+  { elId: 'gtd-slot-imp',     gtdVal: '💫 IMPORTANT urgent' },
+  { elId: 'gtd-slot-urg',     gtdVal: '💨 important URGENT' },
+  { elId: 'gtd-slot-trash',   gtdVal: '🗑️important urgent' },
   { elId: 'gtd-slot-imasugu', gtdVal: '🔥 今すぐやる' },
 ];
 
@@ -9170,12 +9106,12 @@ async function _wizFinish() {
         <button class="btn-gtd" id="edit-gtd-btn" onclick="toggleEditGtdDropdown();event.stopPropagation()">📥 INBOX</button>
         <div class="gtd-dropdown" id="edit-gtd-dd">
           <div class="gtd-opt" onclick="selectEditGtd('📥 INBOX')">📥 INBOX</div>
-          <div class="gtd-opt" onclick="selectEditGtd('▶️ IU')">▶️ IU</div>
-          <div class="gtd-opt" onclick="selectEditGtd('💫 Iu')">💫 Iu</div>
-          <div class="gtd-opt" onclick="selectEditGtd('💨 iU')">💨 iU</div>
+          <div class="gtd-opt" onclick="selectEditGtd('▶️ IMPORTANT URGENT')">▶️ IMPORTANT URGENT</div>
+          <div class="gtd-opt" onclick="selectEditGtd('💫 IMPORTANT urgent')">💫 IMPORTANT urgent</div>
+          <div class="gtd-opt" onclick="selectEditGtd('💨 important URGENT')">💨 important URGENT</div>
           <div class="gtd-opt gtd-opt-project" onclick="selectEditGtd('🗂 PROJECT')">🗂 PROJECT</div>
           <div class="gtd-opt gtd-opt-fire" onclick="selectEditGtd('🔥 今すぐやる')">🔥 今すぐやる</div>
-          <div class="gtd-opt gtd-opt-trash" onclick="selectEditGtd('🗑 iu')">🗑 iu</div>
+          <div class="gtd-opt gtd-opt-trash" onclick="selectEditGtd('🗑️important urgent')">🗑️important urgent</div>
         </div>
       </div>
     </div>
