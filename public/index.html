@@ -1250,7 +1250,7 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .task-card.imp { border-color: rgba(220,20,20,0.7); }
 /* ===== 想定時間タイプ：Quick/Normal/Heavyの積み木アイコン、色は黒で統一 ===== */
 .time-val.tt-quick, .time-val.tt-normal, .time-val.tt-heavy {
-  color: #111; background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.15); min-width: 30px;
+  color: #111; background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.15); min-width: 48px;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .time-val svg { display: block; }
@@ -5580,7 +5580,7 @@ function _weightDotsIcon(filled) {
     ? `<circle cx="${cx}" cy="5" r="4" fill="currentColor"/>`
     : `<circle cx="${cx}" cy="5" r="4" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5"/>`
   ).join('');
-  return `<svg viewBox="0 0 30 10" width="20" height="7">${circles}</svg>`;
+  return `<svg viewBox="0 0 30 10" width="40" height="14">${circles}</svg>`;
 }
 const TIME_TYPE_ICONS = { Quick: _weightDotsIcon(1), Normal: _weightDotsIcon(2), Heavy: _weightDotsIcon(3) };
 function cycleTimeType(id, d) {
