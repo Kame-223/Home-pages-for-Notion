@@ -181,7 +181,7 @@ html[data-theme="light"] .edit-reset-btn { color: #b03030; background: rgba(180,
 html[data-theme="light"] .edit-chips:has(.edit-chip.active) .edit-chip:not(.active) { opacity: 0.45; }
 /* チップ個別カラー（ライトモード：暗色テキスト） */
 html[data-theme="light"] .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.4); }
-html[data-theme="light"] .edit-chip[data-val="▶️ IU"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
+html[data-theme="light"] .edit-chip[data-val="▶️ IMPORTANT URGENT"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
 html[data-theme="light"] .edit-chip[data-val="🔥 今すぐやる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
 html[data-theme="light"] .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
 html[data-theme="light"] .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
@@ -1543,7 +1543,7 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12);
 .edit-chips.dimmed { opacity: 0.35; }
 /* チップ個別カラー */
 .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.18); --chip-color: #A09AE8; --chip-border: rgba(127,119,221,0.4); }
-.edit-chip[data-val="▶️ IU"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
+.edit-chip[data-val="▶️ IMPORTANT URGENT"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
 .edit-chip[data-val="🔥 今すぐやる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
 .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
 .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
@@ -2353,7 +2353,12 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   transform: translate(-50%, -50%);
   box-sizing: border-box;
 }
-.task-card.gtd-dragging { opacity: 0.3; transition: opacity .15s; }
+/* 持ち上げ中は薄くせず、白い枠で囲んでハイライトする（パネル背景でも見えるよう影も添える） */
+.task-card.gtd-dragging {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 4px 16px rgba(0,0,0,0.2);
+  transition: box-shadow .15s, border-color .15s;
+}
 /* 展開パネルで▼を押して新しく表示された3件を目立たせるため、既存カードを薄くする */
 .task-card-faded { opacity: 0.4; }
 
