@@ -1248,10 +1248,12 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .card-lower { border-radius: 0 0 12px 12px; transition: background .2s; }
 .task-card.imp .card-lower { background: rgba(220,20,20,0.55); padding: 8px 14px 11px; margin: 0 -14px -11px; }
 .task-card.imp { border-color: rgba(220,20,20,0.7); }
-/* ===== 想定時間タイプ ===== */
-.time-val.tt-quick  { color: #111; background: rgba(100,170,120,0.15); border-color: rgba(100,170,120,0.35); min-width: 44px; }
-.time-val.tt-normal { color: #111; background: rgba(190,155,70,0.15);  border-color: rgba(190,155,70,0.35); min-width: 44px; }
-.time-val.tt-heavy  { color: #111; background: rgba(190,85,85,0.15);  border-color: rgba(190,85,85,0.35); min-width: 44px; }
+/* ===== 想定時間タイプ：Quick/Normal/Heavyの積み木アイコン、色は黒で統一 ===== */
+.time-val.tt-quick, .time-val.tt-normal, .time-val.tt-heavy {
+  color: #111; background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.15); min-width: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.time-val svg { display: block; }
 .tag-imp-dl { background: rgba(220,20,20,0.75); color: #fff; border: 0.5px solid rgba(255,60,60,0.9); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.02em; }
 /* Importantトグルスイッチ */
 .imp-switch-wrap { display: flex; align-items: center; gap: 7px; }
@@ -5070,7 +5072,7 @@ function renderCard(task, mode='today') {
   const ttCls = `tt-${_tt.toLowerCase()}`;
   const timeTypeHtml = `<div class="time-wrap">
     <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
-    <span class="time-val tt-${_tt.toLowerCase()}" id="tv-${id}">${_tt}</span>
+    <span class="time-val tt-${_tt.toLowerCase()}" id="tv-${id}" title="${_tt}">${TIME_TYPE_ICONS[_tt]}</span>
     <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
   </div>`;
 
@@ -5572,6 +5574,12 @@ async function saveFurikaeri() {
 
 // ===== インタラクション =====
 const TIME_TYPES = ['Quick', 'Normal', 'Heavy'];
+// 想定時間タイプのアイコン：積み木が1〜3段に増えていく表記（色はcurrentColorで.time-valに追従）
+const TIME_TYPE_ICONS = {
+  Quick:  '<svg viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="16" width="12" height="6" rx="1" fill="currentColor"/></svg>',
+  Normal: '<svg viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="9" width="12" height="6" rx="1" fill="currentColor"/><rect x="6" y="16" width="12" height="6" rx="1" fill="currentColor"/></svg>',
+  Heavy:  '<svg viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="2" width="12" height="6" rx="1" fill="currentColor"/><rect x="6" y="9" width="12" height="6" rx="1" fill="currentColor"/><rect x="6" y="16" width="12" height="6" rx="1" fill="currentColor"/></svg>',
+};
 function cycleTimeType(id, d) {
   if (!taskState[id]) return;
   const cur = taskState[id].timeType || 'Normal'; // null（旧データ）はNormalとして扱う
@@ -5587,7 +5595,7 @@ function cycleTimeType(id, d) {
   }
   for (const spanId of [`tv-${id}`, `gtv-${id}`]) {
     const span = document.getElementById(spanId);
-    if (span) { span.textContent = newType; span.className = `time-val tt-${newType.toLowerCase()}`; }
+    if (span) { span.innerHTML = TIME_TYPE_ICONS[newType]; span.className = `time-val tt-${newType.toLowerCase()}`; span.title = newType; }
   }
   saveTaskState();
 }
@@ -7963,7 +7971,7 @@ function renderGtdCard(task, faded) {
   const ttClsG = `tt-${_ttG.toLowerCase()}`;
   const timeTypeHtmlG = `<div class="time-wrap">
     <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
-    <span class="time-val tt-${_ttG.toLowerCase()}" id="gtv-${id}">${_ttG}</span>
+    <span class="time-val tt-${_ttG.toLowerCase()}" id="gtv-${id}" title="${_ttG}">${TIME_TYPE_ICONS[_ttG]}</span>
     <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
   </div>`;
 
