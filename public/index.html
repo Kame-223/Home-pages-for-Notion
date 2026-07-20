@@ -7720,8 +7720,9 @@ let projMiniExpanded = false;
 
 const _OVERLAY_GTD_MAP = { impurg: '▶️ IU', imp: '💫 Iu', urg: '💨 iU', trash: '🗑 iu' };
 const _overlayListCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 }; // 各区分の表示件数（最小3）
-// ▼を押す直前の表示件数。この件数より前＝既存カード（薄く表示）、以降＝今回新しく表示された分
-const _overlayListPrevCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 };
+// ▼を押す直前の表示件数。0＝まだ一度も▼を押していない（何も薄くしない）。
+// この件数より前＝既存カード（薄く表示）、以降＝今回新しく表示された分
+const _overlayListPrevCounts = { impurg: 0, imp: 0, urg: 0, trash: 0 };
 const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
 
 // 4象限パネル全体のクリックで展開する。展開後はパネルが画面いっぱいに広がり、
@@ -7736,7 +7737,7 @@ function openGtdQuadrant(key) {
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 3; });
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 0; });
 
   // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
@@ -7799,7 +7800,7 @@ function openOverlay(key) {
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 3; });
+  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 0; });
 
   // 暗幕を隠す
   document.getElementById('task-overlay').style.display = 'none';
@@ -7883,7 +7884,7 @@ function _injectExpandContent(panel, key) {
   if (!gtdVal) return;
   let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
   const count = _overlayListCounts[key];
-  const prevCount = _overlayListPrevCounts[key] ?? 3;
+  const prevCount = _overlayListPrevCounts[key] ?? 0;
 
   if (key === 'impurg') {
     // 重要×緊急はエリア別グループ＋締切順（旧「次やる」の表示を踏襲）
@@ -7973,7 +7974,7 @@ function _renderOverlay() {
 function _overlayListStep(key, delta) {
   // ▼を押す直前の件数を控えておく（既存カードを薄く表示する基準に使う）。
   // ▲を押したときはリセットなので、既存/新規の区別自体をなくす。
-  _overlayListPrevCounts[key] = delta < 0 ? 3 : _overlayListCounts[key];
+  _overlayListPrevCounts[key] = delta < 0 ? 0 : _overlayListCounts[key];
   // ▼：3件ずつ増やす／▲：件数によらず最初の3件までまとめて戻す
   _overlayListCounts[key] = delta < 0 ? 3 : _overlayListCounts[key] + 3;
   const panel = document.getElementById(_OVERLAY_SLOTS[key]);
@@ -8166,7 +8167,7 @@ function renderTaskPage() {
   if (leftLabel) leftLabel.innerHTML = `📥 INBOX<span class="task-count">${inboxTasks.length ? `(${inboxTasks.length})` : ''}</span>`;
   if (leftList && !overlayMode) {
     leftList.innerHTML = inboxTasks.length
-      ? inboxTasks.map(renderGtdCard).join('')
+      ? inboxTasks.map(t => renderGtdCard(t)).join('')
       : '<div class="section-empty">INBOXは空です 🎉</div>';
     applyTaskListLimit(leftList, taskInboxExpanded, 'expandTaskInbox', 'collapseTaskInbox');
   }
