@@ -5576,13 +5576,11 @@ async function saveFurikaeri() {
 const TIME_TYPES = ['Quick', 'Normal', 'Heavy'];
 // 想定時間タイプのアイコン：丸を3つ並べ、該当する数だけ黒丸・残りは空丸で表現（色はcurrentColorで.time-valに追従）
 function _weightDotsIcon(filled) {
-  // 左から小→中→大と丸自体の大きさも増えていくことで、個数と大きさの両方で重さを表現する
+  // 左から小→中→大と丸自体の大きさも増えていくことで、個数と大きさの両方で重さを表現する。
+  // 空の丸は表示せず、埋まっている分だけ並べる
   const radii = [3, 4, 5];
   const cxs = [5, 13.5, 24];
-  const circles = radii.map((r, i) => i < filled
-    ? `<circle cx="${cxs[i]}" cy="7" r="${r}" fill="currentColor"/>`
-    : `<circle cx="${cxs[i]}" cy="7" r="${r}" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.26" stroke-linecap="round" stroke-dasharray="0.1 2.8"/>`
-  ).join('');
+  const circles = radii.slice(0, filled).map((r, i) => `<circle cx="${cxs[i]}" cy="7" r="${r}" fill="currentColor"/>`).join('');
   return `<svg viewBox="0 0 32 14" width="44" height="19">${circles}</svg>`;
 }
 const TIME_TYPE_ICONS = { Quick: _weightDotsIcon(1), Normal: _weightDotsIcon(2), Heavy: _weightDotsIcon(3) };
