@@ -5578,7 +5578,7 @@ const TIME_TYPES = ['Quick', 'Normal', 'Heavy'];
 function _weightDotsIcon(filled) {
   const circles = [5, 15, 25].map((cx, i) => i < filled
     ? `<circle cx="${cx}" cy="5" r="4" fill="currentColor"/>`
-    : `<circle cx="${cx}" cy="5" r="4" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5"/>`
+    : `<circle cx="${cx}" cy="5" r="4" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="0.1 2.8"/>`
   ).join('');
   return `<svg viewBox="0 0 30 10" width="40" height="14">${circles}</svg>`;
 }
