@@ -855,7 +855,7 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   background: transparent;
 }
 /* GTDラベル(IMPORTANT/urgent)をパネル見出しでも大文字強制なしで表示するためのラッパー */
-.panel-header-gtd { text-transform: none; display: inline-flex; gap: 4px; }
+.panel-header-gtd { text-transform: none; display: inline-flex; align-items: center; gap: 4px; }
 .bottom-section { display: contents; }
 .bottom-panel {
   border: 0.5px solid rgba(255,255,255,0.12);
@@ -1428,11 +1428,11 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   cursor: pointer; color: var(--text); font-family: 'Noto Sans JP', sans-serif;
   font-weight: 500; transition: all .2s; white-space: nowrap;
 }
-.btn-pin-big:hover { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.35); color: var(--green); }
+.btn-pin-big:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); color: var(--text); }
 .btn-pin-big.pinned { border-color: rgba(240,149,149,0.4); background: rgba(240,149,149,0.1); color: #F09595; }
 .btn-pin-big.pinned:hover { background: rgba(240,149,149,0.18); }
-html[data-theme="light"] .btn-pin-big { background: rgba(255,255,255,0.12); border-color: rgba(0,0,0,0.15); }
-html[data-theme="light"] .btn-pin-big:hover { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.35); color: var(--green); }
+html[data-theme="light"] .btn-pin-big { border-color: rgba(0,0,0,0.3); }
+html[data-theme="light"] .btn-pin-big:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); color: var(--text); }
 
 /* 完了ボタン（大） */
 .btn-done-big {
@@ -4650,19 +4650,61 @@ const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 function setNextFilter(f) {
   nextFilter = f;
   nextTargetCount = NEXT_DEFAULT_COUNT;
-  nextPrevCutoff = 0;
+  nextPrevSelectedIds = new Set();
   document.querySelectorAll('.next-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
   renderNextList();
 }
 
 const NEXT_DEFAULT_COUNT = 3;
 let nextTargetCount = NEXT_DEFAULT_COUNT;
-let nextPrevCutoff = 0;
-let nextLastCutoff = 0;
+let nextPrevSelectedIds = new Set();
+
+// 期限切れ／今日締切／明日締切＝deadlineTag()のtag-redと同じ条件
+function isRedDeadline(dateStr) {
+  if (!dateStr) return false;
+  const hasTime = dateStr.length > 10;
+  const dl = new Date(hasTime ? dateStr : dateStr + 'T00:00:00');
+  const now = new Date();
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dlLocal = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
+  const diffDays = Math.round((dlLocal - todayLocal) / 86400000);
+  const isOverdue = hasTime ? (dl < now) : (diffDays < 0);
+  return isOverdue || diffDays <= 1;
+}
+
+function byDeadlineAsc(a, b) { return dlMs(a) - dlMs(b); }
+
+// 締切順にtargetCount件を選び、そこに含まれない赤タスク（期限切れ/今日/明日）を全て追加する
+function selectDisplayTasks(tasks, targetCount) {
+  const sorted = [...tasks].sort(byDeadlineAsc);
+  const base = sorted.slice(0, targetCount);
+  const baseIds = new Set(base.map(t => t.id));
+  const redExtra = sorted.filter(t => !baseIds.has(t.id) && isRedDeadline(getProp(t, '締切日')));
+  return [...base, ...redExtra].sort(byDeadlineAsc);
+}
+
+function renderPaginationBar(el, targetCount, defaultCount, totalCount, selectedCount, stepFnName) {
+  if (totalCount <= defaultCount) return;
+  const rest = totalCount - selectedCount;
+  el.insertAdjacentHTML('beforeend',
+    `<div class="expand-pagination-bar"><button class="expand-page-btn expand-page-btn-up" ${targetCount<=defaultCount?'disabled':''} onclick="${stepFnName}(-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="${stepFnName}(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span></div>`
+  );
+}
+
+function getNextTasks() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
+  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ IMPORTANT URGENT';
+  return allTasks.filter(t => !isDone(t) && gtdNext(t));
+}
 
 function stepNextList(delta) {
-  nextPrevCutoff = delta < 0 ? 0 : nextLastCutoff;
-  nextTargetCount = delta < 0 ? NEXT_DEFAULT_COUNT : nextTargetCount + 3;
+  if (delta < 0) {
+    nextTargetCount = NEXT_DEFAULT_COUNT;
+    nextPrevSelectedIds = new Set();
+  } else {
+    nextPrevSelectedIds = new Set(selectDisplayTasks(getNextTasks(), nextTargetCount).map(t => t.id));
+    nextTargetCount += 3;
+  }
   renderNextList();
 }
 
@@ -4703,21 +4745,17 @@ function toggleDoneDrawer() {
 function updateExecHint() { /* 「実行を始める」ボタンは廃止 */ }
 
 function renderNextList() {
-  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  const gtdNext = t => getProp(t,'GTD 種別')==='▶️ IMPORTANT URGENT';
-  const tasks = allTasks.filter(t => !isDone(t) && gtdNext(t));
+  const tasks = getNextTasks();
   const el = document.getElementById('next-list');
   if (!el) return;
   if (!tasks.length) { el.innerHTML = '<div class="section-empty">次やるタスクがありません</div>'; return; }
 
+  const selected = selectDisplayTasks(tasks, nextTargetCount);
+  const isFaded = t => nextPrevSelectedIds.has(t.id);
+
   if (nextFilter === 'deadline') {
-    const sorted = [...tasks].sort((a,b) => {
-      const da = getProp(a,'締切日'), db = getProp(b,'締切日');
-      if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
-      return da < db ? -1 : da > db ? 1 : 0;
-    });
-    el.innerHTML = sorted.map(t => renderCard(t,'next')).join('');
-    applyNextListLimit(el, sorted.length);
+    el.innerHTML = selected.map(t => renderCard(t,'next',isFaded(t))).join('');
+    renderPaginationBar(el, nextTargetCount, NEXT_DEFAULT_COUNT, tasks.length, selected.length, 'stepNextList');
     return;
   }
 
@@ -4733,7 +4771,7 @@ function renderNextList() {
 
   let html = '';
   const byArea = {};
-  tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
+  selected.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
   const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal'};
@@ -4746,67 +4784,47 @@ function renderNextList() {
       const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
       subKeys.forEach((sub, i) => {
         if (i > 0) inner += `<div style="height:14px"></div>`;
-        inner += [...bySubject[sub]].sort(byDeadline).map(t => renderCard(t,'next')).join('');
+        inner += [...bySubject[sub]].sort(byDeadline).map(t => renderCard(t,'next',isFaded(t))).join('');
       });
     } else {
-      inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next')).join('');
+      inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'next',isFaded(t))).join('');
     }
     html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
-  applyNextListLimit(el, tasks.length);
-}
-
-function applyNextListLimit(el, total) {
-  const cards = Array.from(el.querySelectorAll('.task-card'));
-  if (total <= NEXT_DEFAULT_COUNT || cards.length <= NEXT_DEFAULT_COUNT) { nextLastCutoff = cards.length; return; }
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  let cutoff = Math.min(nextTargetCount, cards.length);
-  while (cutoff < cards.length) {
-    const dl = cards[cutoff].dataset.deadline;
-    if (dl && dl.startsWith(todayStr)) cutoff++;
-    else break;
-  }
-
-  if (nextPrevCutoff > 0) {
-    cards.forEach((c, i) => { if (i < nextPrevCutoff) c.classList.add('task-card-faded'); });
-  }
-
-  if (cutoff < cards.length) {
-    for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
-    el.querySelectorAll('.card-group').forEach(g => {
-      const visible = g.querySelectorAll('.task-card:not([style*="none"])');
-      if (!visible.length) g.style.display = 'none';
-    });
-  }
-
-  nextLastCutoff = cutoff;
-  const rest = cards.length - cutoff;
-  el.insertAdjacentHTML('beforeend',
-    `<div class="expand-pagination-bar"><button class="expand-page-btn expand-page-btn-up" ${nextTargetCount<=NEXT_DEFAULT_COUNT?'disabled':''} onclick="stepNextList(-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="stepNextList(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span></div>`
-  );
+  renderPaginationBar(el, nextTargetCount, NEXT_DEFAULT_COUNT, tasks.length, selected.length, 'stepNextList');
 }
 
 // ===== important URGENT（Not Important×Urgent）パネル =====
 const NIU_DEFAULT_COUNT = 3;
 let niuTargetCount = NIU_DEFAULT_COUNT;
-let niuPrevCutoff = 0;
-let niuLastCutoff = 0;
+let niuPrevSelectedIds = new Set();
+
+function getNiuTasks() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
+  const gtdNiu = t => getProp(t,'GTD 種別')==='💨 important URGENT';
+  return allTasks.filter(t => !isDone(t) && gtdNiu(t));
+}
 
 function stepNiuList(delta) {
-  niuPrevCutoff = delta < 0 ? 0 : niuLastCutoff;
-  niuTargetCount = delta < 0 ? NIU_DEFAULT_COUNT : niuTargetCount + 3;
+  if (delta < 0) {
+    niuTargetCount = NIU_DEFAULT_COUNT;
+    niuPrevSelectedIds = new Set();
+  } else {
+    niuPrevSelectedIds = new Set(selectDisplayTasks(getNiuTasks(), niuTargetCount).map(t => t.id));
+    niuTargetCount += 3;
+  }
   renderNiuList();
 }
 
 function renderNiuList() {
-  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
-  const gtdNiu = t => getProp(t,'GTD 種別')==='💨 important URGENT';
-  const tasks = allTasks.filter(t => !isDone(t) && gtdNiu(t));
+  const tasks = getNiuTasks();
   const el = document.getElementById('niu-list');
   if (!el) return;
   if (!tasks.length) { el.innerHTML = '<div class="section-empty">対象のタスクがありません</div>'; return; }
+
+  const selected = selectDisplayTasks(tasks, niuTargetCount);
+  const isFaded = t => niuPrevSelectedIds.has(t.id);
 
   const byDeadline = (a, b) => {
     const ma = dlMs(a), mb = dlMs(b);
@@ -4818,49 +4836,18 @@ function renderNiuList() {
 
   let html = '';
   const byArea = {};
-  tasks.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
+  selected.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
   const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
     let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
-    inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'niu')).join('');
+    inner += [...aTasks].sort(byDeadline).map(t => renderCard(t,'niu',isFaded(t))).join('');
     html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
-  applyNiuListLimit(el, tasks.length);
-}
-
-function applyNiuListLimit(el, total) {
-  const cards = Array.from(el.querySelectorAll('.task-card'));
-  if (total <= NIU_DEFAULT_COUNT || cards.length <= NIU_DEFAULT_COUNT) { niuLastCutoff = cards.length; return; }
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  let cutoff = Math.min(niuTargetCount, cards.length);
-  while (cutoff < cards.length) {
-    const dl = cards[cutoff].dataset.deadline;
-    if (dl && dl.startsWith(todayStr)) cutoff++;
-    else break;
-  }
-
-  if (niuPrevCutoff > 0) {
-    cards.forEach((c, i) => { if (i < niuPrevCutoff) c.classList.add('task-card-faded'); });
-  }
-
-  if (cutoff < cards.length) {
-    for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
-    el.querySelectorAll('.card-group').forEach(g => {
-      const visible = g.querySelectorAll('.task-card:not([style*="none"])');
-      if (!visible.length) g.style.display = 'none';
-    });
-  }
-
-  niuLastCutoff = cutoff;
-  const rest = cards.length - cutoff;
-  el.insertAdjacentHTML('beforeend',
-    `<div class="expand-pagination-bar"><button class="expand-page-btn expand-page-btn-up" ${niuTargetCount<=NIU_DEFAULT_COUNT?'disabled':''} onclick="stepNiuList(-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="stepNiuList(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span></div>`
-  );
+  renderPaginationBar(el, niuTargetCount, NIU_DEFAULT_COUNT, tasks.length, selected.length, 'stepNiuList');
 }
 
 function deadlineTag(dateStr, isDone, isImportant) {
@@ -5020,7 +5007,7 @@ async function loadTasks() {
 }
 
 // ===== タスクカード描画 =====
-function renderCard(task, mode='today') {
+function renderCard(task, mode='today', faded=false) {
   const id = task.id;
   const title = getProp(task,'タイトル') || '無題';
   const area = getProp(task,'エリア');
@@ -5080,7 +5067,7 @@ function renderCard(task, mode='today') {
 
   if (mode === 'next' || mode === 'niu') {
     return `
-    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''} ${ttCls}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
+    <div class="task-card ${areaBorderCls(effectiveArea)} ${s.pinned?'confirmed-dim':''} ${s.done?'done':''} ${s.important?'imp':''} ${ttCls}${faded?' task-card-faded':''}" id="tc-${id}" data-deadline="${deadline||''}" style="margin-bottom:6px">
       <div class="pin-badge">✕</div>
       <div class="tag-row">${leftBtn}${propTags}<div class="card-spacer"></div>${deadlineTag2}</div>
       <div class="card-lower">
