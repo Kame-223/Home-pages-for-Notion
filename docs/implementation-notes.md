@@ -95,3 +95,6 @@ Notionの選択肢名は装飾（太字・打ち消し線）を持てないた�
 - `taskState`はlocalStorageに保存（done/pinned/important/jikantai/timeIdx/links）
 - 振り返りは3時リセット、frPageIdで重複保存防止
 - `day-schedule-content` IDは存在しない→renderAllでnullチェック済み
+
+## 締切タグ表記（2026-07 英語化・色簡略化）
+`deadlineTag()`のラベルを英語表記に変更（今日→Today、明日→Tomorrow、期限切れ→Overdue等）。日数が正確な範囲（今日・明日・2〜7日後/前）はそのまま、週・月単位の目安になる範囲（1週間後〜2ヶ月後、期限切れ側の1週間前・2週間前）は「以上」の意味で`+`を付けて表記（例: `1 Week+`, `2 Months+`）。色分けも今日/明日/期限切れ=赤（`tag-red`）・それ以外=グレー（`tag-gray`）の2色に簡略化（`tag-amber`/`tag-blue`はCSS定義のみ残存、未使用）。Importantタスクは従来通り`tag-imp-dl`。
