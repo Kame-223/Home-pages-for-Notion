@@ -4658,23 +4658,20 @@ const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 
 function setNextFilter(f) {
   nextFilter = f;
-  nextListExpanded = false;
+  nextTargetCount = NEXT_DEFAULT_COUNT;
+  nextPrevCutoff = 0;
   document.querySelectorAll('.next-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
   renderNextList();
 }
 
-let nextListExpanded = false;
+const NEXT_DEFAULT_COUNT = 3;
+let nextTargetCount = NEXT_DEFAULT_COUNT;
 let nextPrevCutoff = 0;
-const NEXT_DEFAULT_COUNT = 5;
+let nextLastCutoff = 0;
 
-function expandNextList() {
-  nextListExpanded = true;
-  renderNextList();
-}
-
-function collapseNextList() {
-  nextListExpanded = false;
-  nextPrevCutoff = 0;
+function stepNextList(delta) {
+  nextPrevCutoff = delta < 0 ? 0 : nextLastCutoff;
+  nextTargetCount = delta < 0 ? NEXT_DEFAULT_COUNT : nextTargetCount + 3;
   renderNextList();
 }
 
@@ -4771,51 +4768,44 @@ function renderNextList() {
 
 function applyNextListLimit(el, total) {
   const cards = Array.from(el.querySelectorAll('.task-card'));
+  if (total <= NEXT_DEFAULT_COUNT || cards.length <= NEXT_DEFAULT_COUNT) { nextLastCutoff = cards.length; return; }
 
-  if (nextListExpanded) {
-    if (cards.length > NEXT_DEFAULT_COUNT) {
-      cards.forEach((c, i) => { if (i >= nextPrevCutoff) c.classList.add('newly-shown'); });
-      el.insertAdjacentHTML('beforeend',
-        `<div class="next-show-more"><button class="next-show-less-btn" onclick="collapseNextList()">▲ 表示数を減らす</button></div>`
-      );
-    }
-    return;
-  }
-
-  if (total <= NEXT_DEFAULT_COUNT || cards.length <= NEXT_DEFAULT_COUNT) return;
   const todayStr = new Date().toISOString().split('T')[0];
-  let cutoff = NEXT_DEFAULT_COUNT;
+  let cutoff = Math.min(nextTargetCount, cards.length);
   while (cutoff < cards.length) {
     const dl = cards[cutoff].dataset.deadline;
     if (dl && dl.startsWith(todayStr)) cutoff++;
     else break;
   }
-  if (cutoff >= cards.length) return;
-  nextPrevCutoff = cutoff;
-  for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
-  el.querySelectorAll('.card-group').forEach(g => {
-    const visible = g.querySelectorAll('.task-card:not([style*="none"])');
-    if (!visible.length) g.style.display = 'none';
-  });
-  const remaining = cards.length - cutoff;
+
+  if (nextPrevCutoff > 0) {
+    cards.forEach((c, i) => { if (i >= nextPrevCutoff && i < cutoff) c.classList.add('newly-shown'); });
+  }
+
+  if (cutoff < cards.length) {
+    for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
+    el.querySelectorAll('.card-group').forEach(g => {
+      const visible = g.querySelectorAll('.task-card:not([style*="none"])');
+      if (!visible.length) g.style.display = 'none';
+    });
+  }
+
+  nextLastCutoff = cutoff;
+  const rest = cards.length - cutoff;
   el.insertAdjacentHTML('beforeend',
-    `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandNextList()">もっと見る（あと${remaining}件）</button></div>`
+    `<div class="expand-pagination-bar"><button class="expand-page-btn expand-page-btn-up" ${nextTargetCount<=NEXT_DEFAULT_COUNT?'disabled':''} onclick="stepNextList(-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="stepNextList(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span></div>`
   );
 }
 
 // ===== important URGENT（Not Important×Urgent）パネル =====
-let niuListExpanded = false;
-let niuPrevCutoff = 0;
 const NIU_DEFAULT_COUNT = 3;
+let niuTargetCount = NIU_DEFAULT_COUNT;
+let niuPrevCutoff = 0;
+let niuLastCutoff = 0;
 
-function expandNiuList() {
-  niuListExpanded = true;
-  renderNiuList();
-}
-
-function collapseNiuList() {
-  niuListExpanded = false;
-  niuPrevCutoff = 0;
+function stepNiuList(delta) {
+  niuPrevCutoff = delta < 0 ? 0 : niuLastCutoff;
+  niuTargetCount = delta < 0 ? NIU_DEFAULT_COUNT : niuTargetCount + 3;
   renderNiuList();
 }
 
@@ -4853,35 +4843,32 @@ function renderNiuList() {
 
 function applyNiuListLimit(el, total) {
   const cards = Array.from(el.querySelectorAll('.task-card'));
+  if (total <= NIU_DEFAULT_COUNT || cards.length <= NIU_DEFAULT_COUNT) { niuLastCutoff = cards.length; return; }
 
-  if (niuListExpanded) {
-    if (cards.length > NIU_DEFAULT_COUNT) {
-      cards.forEach((c, i) => { if (i >= niuPrevCutoff) c.classList.add('newly-shown'); });
-      el.insertAdjacentHTML('beforeend',
-        `<div class="next-show-more"><button class="next-show-less-btn" onclick="collapseNiuList()">▲ 表示数を減らす</button></div>`
-      );
-    }
-    return;
-  }
-
-  if (total <= NIU_DEFAULT_COUNT || cards.length <= NIU_DEFAULT_COUNT) return;
   const todayStr = new Date().toISOString().split('T')[0];
-  let cutoff = NIU_DEFAULT_COUNT;
+  let cutoff = Math.min(niuTargetCount, cards.length);
   while (cutoff < cards.length) {
     const dl = cards[cutoff].dataset.deadline;
     if (dl && dl.startsWith(todayStr)) cutoff++;
     else break;
   }
-  if (cutoff >= cards.length) return;
-  niuPrevCutoff = cutoff;
-  for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
-  el.querySelectorAll('.card-group').forEach(g => {
-    const visible = g.querySelectorAll('.task-card:not([style*="none"])');
-    if (!visible.length) g.style.display = 'none';
-  });
-  const remaining = cards.length - cutoff;
+
+  if (niuPrevCutoff > 0) {
+    cards.forEach((c, i) => { if (i >= niuPrevCutoff && i < cutoff) c.classList.add('newly-shown'); });
+  }
+
+  if (cutoff < cards.length) {
+    for (let i = cutoff; i < cards.length; i++) cards[i].style.display = 'none';
+    el.querySelectorAll('.card-group').forEach(g => {
+      const visible = g.querySelectorAll('.task-card:not([style*="none"])');
+      if (!visible.length) g.style.display = 'none';
+    });
+  }
+
+  niuLastCutoff = cutoff;
+  const rest = cards.length - cutoff;
   el.insertAdjacentHTML('beforeend',
-    `<div class="next-show-more"><button class="next-show-more-btn" onclick="expandNiuList()">もっと見る（あと${remaining}件）</button></div>`
+    `<div class="expand-pagination-bar"><button class="expand-page-btn expand-page-btn-up" ${niuTargetCount<=NIU_DEFAULT_COUNT?'disabled':''} onclick="stepNiuList(-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="stepNiuList(1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span></div>`
   );
 }
 
