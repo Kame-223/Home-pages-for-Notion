@@ -356,6 +356,8 @@ body::before {
 .banner-en { font-size: 13px; color: var(--text-sub); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 6px; }
 .banner-phil { font-size: 10px; color: var(--purple); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
 .phil-line { flex: 1; height: 0.5px; background: rgba(127,119,221,0.2); }
+/* 日替わり哲学パネルは機能停止中（日時ウィジェットは同じbanner-area内だが別要素なので維持） */
+.banner-content, .banner-orb { display: none; }
 
 /* ===== モードスイッチ ===== */
 .mode-switch {
@@ -393,6 +395,8 @@ body::before {
   flex-shrink: 0;
   background: rgba(13,13,26,0.55);
 }
+/* 進捗度パネルは機能停止中 */
+.progress-area { display: none; }
 .prog-card {
   flex: 1; background: rgba(26,26,36,0.6);
   border-radius: 6px; padding: 5px 10px;
@@ -4988,7 +4992,8 @@ async function loadTasks() {
     if (currentMode === 'exec') applyExecFixed();
     syncExecScroll();
   });
-  try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
+  // 進捗度パネルは機能停止中（復活させる場合はコメントを外す）
+  // try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
   // 開いていた子タスクパネルを復元
   openSubtaskPanels.forEach(id => {
@@ -5584,7 +5589,7 @@ function toggleDone(id) {
     delete taskState[id].doneSessionDate;
   }
   saveTaskState();
-  updateProgress();
+  // updateProgress(); // 進捗度パネルは機能停止中
   updateExecHint();
 }
 
@@ -6091,7 +6096,7 @@ function togglePin(id) {
   }
   saveTaskState();
   renderAll();
-  updateProgress();
+  // updateProgress(); // 進捗度パネルは機能停止中
   updateExecHint();
 }
 
@@ -8411,7 +8416,7 @@ window.onload = () => {
   preloadSubtaskCache(); // 子タスク進捗をカード描画前に復元
   // setupBackground(); // 時間帯ローテーション背景は停止中（再開する場合はコメントを外す）
   document.getElementById('bg-layer').style.backgroundImage = "url('/backgrounds/fixed-space.jpg')"; // 固定背景（一時的）
-  setupBanner();
+  // setupBanner(); // 日替わり哲学パネルは機能停止中（再開する場合はコメントを外す）
   setupDatetime();
   const _restoreMode = loadLastMode();
   if (_restoreMode !== 'exec') {
