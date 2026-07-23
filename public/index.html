@@ -356,8 +356,10 @@ body::before {
 .banner-en { font-size: 13px; color: var(--text-sub); font-family: 'Cormorant Garamond', serif; font-style: italic; margin-bottom: 6px; }
 .banner-phil { font-size: 10px; color: var(--purple); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
 .phil-line { flex: 1; height: 0.5px; background: rgba(127,119,221,0.2); }
-/* 日替わり哲学パネルは機能停止中（日時ウィジェットは同じbanner-area内だが別要素なので維持） */
-.banner-content, .banner-orb { display: none; }
+/* 日替わり哲学パネルは機能停止中（日時ウィジェットはposition:fixedの別要素なので維持） */
+.banner-content, .banner-orb, .banner-grid { display: none; }
+.banner-area { background: transparent; border-bottom: none; min-height: 0; padding: 0; }
+html[data-theme="light"] .banner-area { background: transparent; }
 
 /* ===== モードスイッチ ===== */
 .mode-switch {
