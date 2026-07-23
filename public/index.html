@@ -821,7 +821,10 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   min-height: 200px;
   display: flex;
   flex-direction: column;
+  opacity: 1;
+  transition: opacity .22s ease;
 }
+.today-board.gtd-fading { opacity: 0; }
 /* select モード用デフォルト */
 .today-board-inner {
   display: flex;
@@ -844,7 +847,7 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   transition: transform .22s cubic-bezier(.2,1.4,.4,1), opacity .15s ease;
 }
 .bottom-row.gtd-collapsing { transform: scaleY(0); opacity: 0; }
-.bottom-row.no-anim { transition: none !important; }
+.no-anim { transition: none !important; }
 /* GTDラベル(IMPORTANT/urgent)をパネル見出しでも大文字強制なしで表示するためのラッパー */
 .panel-header-gtd { text-transform: none; display: inline-flex; align-items: center; gap: 4px; }
 .bottom-section { display: contents; }
@@ -2703,7 +2706,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
     </div>
 
     <!-- 今日やること -->
-    <div class="today-board">
+    <div class="today-board hidden">
       <div class="today-board-inner" id="today-board-inner">
         <button class="gtd-arrow-btn gtd-arrow-up hidden" id="gtd-expand-btn" onclick="setSelectSubState('next')" title="タスクを選ぶ画面へ">▲</button>
         <div class="section-header green">✅ 今日やること</div>
@@ -5890,25 +5893,53 @@ let _tdContainerId = 'today-tasks';
 function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 
 // ===== GTDパネル折りたたみ（選択モード内の状態A/B切替） =====
-// 状態A：3パネル(next/niu/project)表示 / 状態B：今日やること＋スケジュールのみ
-// transform+opacityのみでアニメーションし、終了後にdisplay:noneへ切り替える（レイアウト再計算を伴わない）
+// 状態A：3パネル(next/niu/project)のみ表示 / 状態B：今日やること＋スケジュールのみ表示（排他）
+// 3パネルはtransform+opacityで折りたたみ、今日やることはopacityでフェード。
+// どちらも終了後にdisplay:noneへ切り替え（レイアウト再計算を伴わない）
 function applyGtdVisibility(panel, { instant = false } = {}) {
-  const bottomRowEl = document.querySelector('.bottom-row');
-  if (!bottomRowEl) return;
+  const bottomRowEl  = document.querySelector('.bottom-row');
+  const todayBoardEl = document.querySelector('.today-board');
+  if (!bottomRowEl || !todayBoardEl) return;
   const isToday = panel === 'today';
   document.getElementById('gtd-expand-btn')?.classList.toggle('hidden', !isToday);
-  if (instant) bottomRowEl.classList.add('no-anim');
+  if (instant) { bottomRowEl.classList.add('no-anim'); todayBoardEl.classList.add('no-anim'); }
+
+  // 3パネル：状態Bでのみ折りたたむ
   if (isToday) {
     bottomRowEl.classList.add('gtd-collapsing');
-    const finish = () => bottomRowEl.classList.add('hidden');
-    if (instant) finish();
-    else { bottomRowEl.addEventListener('transitionend', finish, { once: true }); setTimeout(finish, 260); }
+    const finishRow = () => bottomRowEl.classList.add('hidden');
+    if (instant) finishRow();
+    else { bottomRowEl.addEventListener('transitionend', finishRow, { once: true }); setTimeout(finishRow, 260); }
   } else {
     bottomRowEl.classList.remove('hidden');
     if (instant) bottomRowEl.classList.remove('gtd-collapsing');
     else requestAnimationFrame(() => requestAnimationFrame(() => bottomRowEl.classList.remove('gtd-collapsing')));
   }
-  if (instant) requestAnimationFrame(() => bottomRowEl.classList.remove('no-anim'));
+
+  // 今日やることパネル：状態Bでのみ表示（3パネルと逆方向）
+  if (isToday) {
+    todayBoardEl.classList.remove('hidden');
+    if (instant) todayBoardEl.classList.remove('gtd-fading');
+    else requestAnimationFrame(() => requestAnimationFrame(() => todayBoardEl.classList.remove('gtd-fading')));
+  } else {
+    todayBoardEl.classList.add('gtd-fading');
+    const finishBoard = () => todayBoardEl.classList.add('hidden');
+    if (instant) finishBoard();
+    else { todayBoardEl.addEventListener('transitionend', finishBoard, { once: true }); setTimeout(finishBoard, 260); }
+  }
+
+  if (instant) {
+    requestAnimationFrame(() => { bottomRowEl.classList.remove('no-anim'); todayBoardEl.classList.remove('no-anim'); });
+  } else {
+    setTimeout(() => scrollGtdTargetIntoView(panel), 260);
+  }
+}
+function scrollGtdTargetIntoView(panel) {
+  const targetEl = panel === 'today' ? document.querySelector('.today-board') : document.getElementById('next-panel');
+  if (!targetEl) return;
+  const headerH = 62;
+  const top = targetEl.getBoundingClientRect().top + window.scrollY - headerH;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 function setSelectSubState(panel, opts) {
   if (currentMode !== 'select' || (focusedPanel === panel && !opts?.instant)) return;
@@ -6752,12 +6783,15 @@ function setMode(mode) {
   renderAll();
   updateExecHint();
   if (isSelect) {
+    // 実行モード中は今日やることパネルを強制表示していたため、選択モードの現在のサブ状態を再適用する
+    applyGtdVisibility(focusedPanel, { instant: true });
     requestAnimationFrame(resetStarAnchor);
   }
   if (!isSelect) {
     orbFilter = null;
     focusedPanel = 'next';
-    applyGtdVisibility('next', { instant: true });
+    // 実行モードでは今日やることパネルを選択モードのサブ状態に関わらず常に表示する
+    document.querySelector('.today-board')?.classList.remove('hidden', 'gtd-fading', 'no-anim');
     requestAnimationFrame(() => {
       const now = new Date();
       const minH = _calEarly ? 2.5 : 5.5;
