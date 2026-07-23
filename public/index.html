@@ -425,7 +425,7 @@ body::before {
   grid-column: 1; grid-row: 1; order: unset;
   display: flex; flex-direction: column; gap: 12px;
 }
-.content-grid.select-mode .today-board { grid-column: 1; grid-row: 2; order: unset; }
+.content-grid.select-mode .today-board-wrap { grid-column: 1; grid-row: 2; order: unset; }
 .content-grid.select-mode .s-star-col {
   display: none !important; grid-column: 2; grid-row: 1 / -1;
   position: relative;
@@ -865,7 +865,7 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .bottom-label-red, .bottom-label-blue { display: none; }
 
 /* Eモード：今日やること=左、スケジュール=右 */
-.content-grid:not(.select-mode) .today-board { order: -1; }
+.content-grid:not(.select-mode) .today-board-wrap { order: -1; }
 
 /* ===== 実行モード下段 ===== */
 .day-schedule {
@@ -2705,12 +2705,14 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       </button>
     </div>
 
-    <!-- 今日やること -->
-    <div class="today-board hidden">
-      <div class="today-board-inner" id="today-board-inner">
-        <button class="gtd-arrow-btn gtd-arrow-up hidden" id="gtd-expand-btn" onclick="setSelectSubState('next')" title="タスクを選ぶ画面へ">▲</button>
-        <div class="section-header green">✅ 今日やること</div>
-        <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
+    <!-- 今日やること（▲ボタンはパネルの中身とは別概念のため分離） -->
+    <div class="today-board-wrap" id="today-board-wrap">
+      <button class="gtd-arrow-btn gtd-arrow-up hidden" id="gtd-expand-btn" onclick="setSelectSubState('next')" title="タスクを選ぶ画面へ">▲</button>
+      <div class="today-board hidden gtd-fading">
+        <div class="today-board-inner" id="today-board-inner">
+          <div class="section-header green">✅ 今日やること</div>
+          <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
+        </div>
       </div>
     </div>
 
@@ -5894,45 +5896,46 @@ function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 
 // ===== GTDパネル折りたたみ（選択モード内の状態A/B切替） =====
 // 状態A：3パネル(next/niu/project)のみ表示 / 状態B：今日やること＋スケジュールのみ表示（排他）
-// 3パネルはtransform+opacityで折りたたみ、今日やることはopacityでフェード。
-// どちらも終了後にdisplay:noneへ切り替え（レイアウト再計算を伴わない）
+// 「消える側が完全に畳み終わってから、出す側を流し込んでフェードイン」の順序で実行する。
+// 同時に進行させると、消える側のレイアウト領域が確保されたままなのに
+// 出す側も流し込まれてしまい、両方が一瞬同居して折りたたみが埋もれて見えるため。
 function applyGtdVisibility(panel, { instant = false } = {}) {
   const bottomRowEl  = document.querySelector('.bottom-row');
   const todayBoardEl = document.querySelector('.today-board');
   if (!bottomRowEl || !todayBoardEl) return;
   const isToday = panel === 'today';
   document.getElementById('gtd-expand-btn')?.classList.toggle('hidden', !isToday);
-  if (instant) { bottomRowEl.classList.add('no-anim'); todayBoardEl.classList.add('no-anim'); }
 
-  // 3パネル：状態Bでのみ折りたたむ
-  if (isToday) {
-    bottomRowEl.classList.add('gtd-collapsing');
-    const finishRow = () => bottomRowEl.classList.add('hidden');
-    if (instant) finishRow();
-    else { bottomRowEl.addEventListener('transitionend', finishRow, { once: true }); setTimeout(finishRow, 260); }
-  } else {
-    bottomRowEl.classList.remove('hidden');
-    if (instant) bottomRowEl.classList.remove('gtd-collapsing');
-    else requestAnimationFrame(() => requestAnimationFrame(() => bottomRowEl.classList.remove('gtd-collapsing')));
-  }
-
-  // 今日やることパネル：状態Bでのみ表示（3パネルと逆方向）
-  if (isToday) {
-    todayBoardEl.classList.remove('hidden');
-    if (instant) todayBoardEl.classList.remove('gtd-fading');
-    else requestAnimationFrame(() => requestAnimationFrame(() => todayBoardEl.classList.remove('gtd-fading')));
-  } else {
-    todayBoardEl.classList.add('gtd-fading');
-    const finishBoard = () => todayBoardEl.classList.add('hidden');
-    if (instant) finishBoard();
-    else { todayBoardEl.addEventListener('transitionend', finishBoard, { once: true }); setTimeout(finishBoard, 260); }
-  }
+  // isToday: outEl=3パネルを畳む→inEl=今日やることを出す（逆はその反対）
+  const outEl      = isToday ? bottomRowEl : todayBoardEl;
+  const inEl       = isToday ? todayBoardEl : bottomRowEl;
+  const outAnimCls = isToday ? 'gtd-collapsing' : 'gtd-fading';
+  const inAnimCls  = isToday ? 'gtd-fading' : 'gtd-collapsing';
 
   if (instant) {
-    requestAnimationFrame(() => { bottomRowEl.classList.remove('no-anim'); todayBoardEl.classList.remove('no-anim'); });
-  } else {
-    setTimeout(() => scrollGtdTargetIntoView(panel), 260);
+    outEl.classList.add('no-anim'); inEl.classList.add('no-anim');
+    outEl.classList.add(outAnimCls, 'hidden');
+    inEl.classList.remove('hidden', inAnimCls);
+    requestAnimationFrame(() => { outEl.classList.remove('no-anim'); inEl.classList.remove('no-anim'); });
+    return;
   }
+
+  outEl.classList.add(outAnimCls);
+  let _proceeded = false;
+  const proceed = (e) => {
+    if (e && e.target !== outEl) return; // 子要素のtransitionendのbubbleは無視
+    if (_proceeded) return;
+    _proceeded = true;
+    outEl.removeEventListener('transitionend', proceed);
+    outEl.classList.add('hidden');
+    inEl.classList.remove('hidden');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      inEl.classList.remove(inAnimCls);
+      scrollGtdTargetIntoView(panel);
+    }));
+  };
+  outEl.addEventListener('transitionend', proceed);
+  setTimeout(proceed, 260);
 }
 function scrollGtdTargetIntoView(panel) {
   const targetEl = panel === 'today' ? document.querySelector('.today-board') : document.getElementById('next-panel');
