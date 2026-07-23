@@ -3,7 +3,13 @@
     "allow": [
       "Edit(*)",
       "Read",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(python3 -m http.server *)",
+      "Bash(cd public && python3 -m http.server *)",
+      "Bash(pkill -f http.server*)",
+      "Bash(python3 .claude/skills/run/*)",
+      "Bash(python3 -m pip install --user playwright)",
+      "Bash(python3 -m playwright install chromium)"
     ],
     "deny": [
       "Bash(git push --force*)",

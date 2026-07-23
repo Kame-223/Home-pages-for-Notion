@@ -96,7 +96,6 @@ html[data-theme="light"] .bottom-panel {
   background: rgba(255,255,255,0.8);
   border-color: var(--border2);
 }
-html[data-theme="light"] .panel-blurred::before { background: rgba(245,245,247,0.82); }
 html[data-theme="light"] .link-pill { border-color: rgba(0,0,0,0.18); }
 html[data-theme="light"] .link-pill:hover { border-color: rgba(0,0,0,0.4); }
 html[data-theme="light"] #gcal-panel {
@@ -470,33 +469,21 @@ body::before {
   display: flex; flex-direction: column;
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
-/* ===== 霧効果（Sモード 表裏パネル） ===== */
-/* visibility:hidden でパネル背景・コンテンツを完全透明に。
-   ::before に visibility:visible で白い霧だけを表示 → 背景画像がそのまま透けて見える。
-   filter/opacity 不使用のためGPU負荷ゼロ。 */
-.panel-blurred {
-  position: relative;
-  cursor: pointer;
-  visibility: hidden;
-}
-.panel-blurred * { transition: none !important; animation: none !important; }
-.panel-blurred::before {
-  content: ''; position: absolute; inset: 0; z-index: 50;
-  background: rgba(255,255,255,0.18);
-  border-radius: inherit;
-  pointer-events: none;
-  visibility: visible;
-}
-.panel-blurred::after {
-  content: ''; position: absolute; inset: 0; z-index: 200;
-  cursor: pointer; border-radius: inherit;
-  visibility: visible;
-}
 /* ===== 星形ボタン ===== */
 .s-star-col { display: none; }
 /* specificity 0,4,0 で select-mode の flex !important (0,3,0) を確実に上書き */
 .content-grid.select-mode .s-star-col.star-hidden { display: none !important; }
 .content-grid.select-mode .s-orb-col.orb-hidden   { visibility: hidden; pointer-events: none; }
+/* ===== GTDパネル折りたたみ ▼▲ボタン ===== */
+.gtd-arrow-btn {
+  display: block; margin: 10px auto 0; width: 36px; height: 36px;
+  border: none; border-radius: 50%; background: #fff; color: #000;
+  font-size: 14px; line-height: 36px; text-align: center; padding: 0;
+  cursor: pointer; transition: transform .18s, box-shadow .18s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.gtd-arrow-btn:hover { transform: scale(1.15); box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+.gtd-arrow-up { margin: 0 auto 10px; }
 @keyframes starFloat {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   30%      { transform: translateY(-8px) rotate(2.5deg); }
@@ -853,7 +840,11 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
   background: transparent;
+  transform: scaleY(1); opacity: 1; transform-origin: top;
+  transition: transform .22s cubic-bezier(.2,1.4,.4,1), opacity .15s ease;
 }
+.bottom-row.gtd-collapsing { transform: scaleY(0); opacity: 0; }
+.bottom-row.no-anim { transition: none !important; }
 /* GTDラベル(IMPORTANT/urgent)をパネル見出しでも大文字強制なしで表示するためのラッパー */
 .panel-header-gtd { text-transform: none; display: inline-flex; align-items: center; gap: 4px; }
 .bottom-section { display: contents; }
@@ -2712,8 +2703,9 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
     </div>
 
     <!-- 今日やること -->
-    <div class="today-board" onclick="handlePanelClick('today')">
+    <div class="today-board">
       <div class="today-board-inner" id="today-board-inner">
+        <button class="gtd-arrow-btn gtd-arrow-up hidden" id="gtd-expand-btn" onclick="setSelectSubState('next')" title="タスクを選ぶ画面へ">▲</button>
         <div class="section-header green">✅ 今日やること</div>
         <div class="today-content" id="today-tasks"><div class="loading">読み込み中...</div></div>
       </div>
@@ -2736,18 +2728,19 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
     <div class="bottom-row">
 
       <!-- 選択モード：直接パネル -->
-      <div id="next-panel" class="bottom-panel" onclick="handlePanelClick('next')">
+      <div id="next-panel" class="bottom-panel">
         <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-cap">IMPORTANT</span><span class="gtd-cap">URGENT</span></span><div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
-      <div id="niu-panel" class="bottom-panel" onclick="handlePanelClick('next')">
+      <div id="niu-panel" class="bottom-panel">
         <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-low">important</span><span class="gtd-cap">URGENT</span></span></div>
         <div class="bottom-half" id="niu-list"><div class="loading">読み込み中...</div></div>
       </div>
-      <div id="project-panel" class="bottom-panel" onclick="handlePanelClick('next')">
+      <div id="project-panel" class="bottom-panel">
         <div class="section-header blue">PROJECT</div>
         <div class="bottom-half" id="project-list"><div class="section-empty">準備中</div></div>
       </div>
+      <button class="gtd-arrow-btn gtd-arrow-down" id="gtd-collapse-btn" onclick="setSelectSubState('today')" title="今日やることへ">▼</button>
 
       <!-- 実行モード：振り返りのみ -->
       <div id="exec-bottom" class="day-schedule hidden">
@@ -5293,26 +5286,13 @@ function renderAll() {
     o.classList.toggle('orb-active', o.dataset.jk === orbFilter);
   });
 
-  // 霧効果 + ボタン表示制御（Sモードのみ）
-  const todayBoardEl   = document.querySelector('.today-board');
-  const nextPanelEl    = document.getElementById('next-panel');
-  const niuPanelEl     = document.getElementById('niu-panel');
-  const projectPanelEl = document.getElementById('project-panel');
-  const sOrbColEl      = document.getElementById('s-orb-col');
-  const sStarColEl     = document.getElementById('s-star-col');
-  const isToday        = focusedPanel === 'today';
+  // 朝昼夜オーブ列・星ボタン表示制御（Sモードのみ／3パネル折りたたみ自体はsetSelectSubStateが管理）
+  const sOrbColEl  = document.getElementById('s-orb-col');
+  const sStarColEl = document.getElementById('s-star-col');
   if (currentMode === 'select') {
-    todayBoardEl?.classList.toggle('panel-blurred', !isToday);
-    nextPanelEl?.classList.toggle('panel-blurred',   isToday);
-    niuPanelEl?.classList.toggle('panel-blurred',    isToday);
-    projectPanelEl?.classList.toggle('panel-blurred', isToday);
-    sOrbColEl?.classList.toggle('orb-hidden',  !isToday);
-    sStarColEl?.classList.toggle('star-hidden',  isToday);
+    sOrbColEl?.classList.toggle('orb-hidden',   focusedPanel !== 'today');
+    sStarColEl?.classList.toggle('star-hidden', focusedPanel === 'today');
   } else {
-    todayBoardEl?.classList.remove('panel-blurred');
-    nextPanelEl?.classList.remove('panel-blurred');
-    niuPanelEl?.classList.remove('panel-blurred');
-    projectPanelEl?.classList.remove('panel-blurred');
     sOrbColEl?.classList.add('orb-hidden');
     sStarColEl?.classList.add('star-hidden');
   }
@@ -5783,6 +5763,20 @@ function loadTodayOrder() {
 function saveTodayOrder() {
   localStorage.setItem(`todayOrder_${getFurikaeriDate()}`, JSON.stringify(todayTaskOrder));
 }
+function loadLastMode() {
+  try { return localStorage.getItem(`lastMode_${getFurikaeriDate()}`) || 'select'; }
+  catch { return 'select'; }
+}
+function saveLastMode(mode) {
+  localStorage.setItem(`lastMode_${getFurikaeriDate()}`, mode);
+}
+function loadSelectSubState() {
+  try { return localStorage.getItem(`selectSubState_${getFurikaeriDate()}`) || 'next'; }
+  catch { return 'next'; }
+}
+function saveSelectSubState(state) {
+  localStorage.setItem(`selectSubState_${getFurikaeriDate()}`, state);
+}
 function applyTodayOrder(tasks) {
   const ids = tasks.map(t => t.id);
   todayTaskOrder = todayTaskOrder.filter(id => ids.includes(id));
@@ -5894,9 +5888,33 @@ let _tbBottomDoc = 0;
 let _tdContainerId = 'today-tasks';
 
 function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
-function handlePanelClick(panel) {
-  if (currentMode !== 'select' || focusedPanel === panel) return;
+
+// ===== GTDパネル折りたたみ（選択モード内の状態A/B切替） =====
+// 状態A：3パネル(next/niu/project)表示 / 状態B：今日やること＋スケジュールのみ
+// transform+opacityのみでアニメーションし、終了後にdisplay:noneへ切り替える（レイアウト再計算を伴わない）
+function applyGtdVisibility(panel, { instant = false } = {}) {
+  const bottomRowEl = document.querySelector('.bottom-row');
+  if (!bottomRowEl) return;
+  const isToday = panel === 'today';
+  document.getElementById('gtd-expand-btn')?.classList.toggle('hidden', !isToday);
+  if (instant) bottomRowEl.classList.add('no-anim');
+  if (isToday) {
+    bottomRowEl.classList.add('gtd-collapsing');
+    const finish = () => bottomRowEl.classList.add('hidden');
+    if (instant) finish();
+    else { bottomRowEl.addEventListener('transitionend', finish, { once: true }); setTimeout(finish, 260); }
+  } else {
+    bottomRowEl.classList.remove('hidden');
+    if (instant) bottomRowEl.classList.remove('gtd-collapsing');
+    else requestAnimationFrame(() => requestAnimationFrame(() => bottomRowEl.classList.remove('gtd-collapsing')));
+  }
+  if (instant) requestAnimationFrame(() => bottomRowEl.classList.remove('no-anim'));
+}
+function setSelectSubState(panel, opts) {
+  if (currentMode !== 'select' || (focusedPanel === panel && !opts?.instant)) return;
   focusedPanel = panel;
+  applyGtdVisibility(panel, opts);
+  saveSelectSubState(panel);
   renderAll();
   // 2rAF: star-hidden解除→ブラウザlayout確定→位置計算の順を保証
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -6695,6 +6713,7 @@ let _tbResizeObs = null;
 
 function setMode(mode) {
   currentMode = mode;
+  saveLastMode(mode);
   const isSelect = mode === 'select';
   document.getElementById('next-panel').classList.toggle('hidden', !isSelect);
   document.getElementById('niu-panel').classList.toggle('hidden', !isSelect);
@@ -6738,6 +6757,7 @@ function setMode(mode) {
   if (!isSelect) {
     orbFilter = null;
     focusedPanel = 'next';
+    applyGtdVisibility('next', { instant: true });
     requestAnimationFrame(() => {
       const now = new Date();
       const minH = _calEarly ? 2.5 : 5.5;
@@ -8356,8 +8376,16 @@ window.onload = () => {
   document.getElementById('bg-layer').style.backgroundImage = "url('/backgrounds/fixed-space.jpg')"; // 固定背景（一時的）
   setupBanner();
   setupDatetime();
-  document.querySelector('.content-grid').classList.add('select-mode');
+  const _restoreMode = loadLastMode();
+  if (_restoreMode !== 'exec') {
+    document.querySelector('.content-grid').classList.add('select-mode');
+    if (loadSelectSubState() === 'today') {
+      focusedPanel = 'today';
+      applyGtdVisibility('today', { instant: true });
+    }
+  }
   initGoogleCalendar();
+  if (_restoreMode === 'exec') setMode('exec');
   setupFurikaeri();
   loadTasks();
   initTodayCardDrag();
