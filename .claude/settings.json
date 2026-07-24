@@ -9,7 +9,8 @@
       "Bash(pkill -f http.server*)",
       "Bash(python3 .claude/skills/run/*)",
       "Bash(python3 -m pip install --user playwright)",
-      "Bash(python3 -m playwright install chromium)"
+      "Bash(python3 -m playwright install chromium)",
+      "Bash(python3 *)"
     ],
     "deny": [
       "Bash(git push --force*)",
