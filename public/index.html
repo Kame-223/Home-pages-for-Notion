@@ -5945,9 +5945,9 @@ function applyGtdVisibility(panel, { instant = false } = {}) {
   setTimeout(proceed, 260);
 }
 function scrollGtdTargetIntoView(panel) {
-  const targetEl = panel === 'today' ? document.querySelector('.today-board') : document.getElementById('next-panel');
+  const targetEl = panel === 'today' ? document.getElementById('today-board-wrap') : document.getElementById('next-panel');
   if (!targetEl) return;
-  const headerH = 62;
+  const headerH = 12; // 画面上端からの余白（重なる固定ヘッダーはないため最小限の余白のみ）
   const top = targetEl.getBoundingClientRect().top + window.scrollY - headerH;
   window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
