@@ -76,11 +76,7 @@ html[data-theme="light"] .progress-area {
   border-bottom-color: var(--border);
 }
 html[data-theme="light"] .prog-card { background: rgba(255,255,255,0.8); }
-html[data-theme="light"] .schedule-col {
-  background: rgba(255,255,255,0.8);
-  border-color: var(--border2);
-}
-html[data-theme="light"] .content-grid.select-mode .sched-sticky {
+html[data-theme="light"] .sched-sticky {
   background: rgba(255,255,255,0.8);
   border-color: var(--border2);
 }
@@ -422,7 +418,7 @@ html[data-theme="light"] .banner-area { background: transparent; }
   background: transparent;
 }
 /* ===== SELECT MODE 3カラムレイアウト ===== */
-.content-grid.select-mode { grid-template-columns: 1fr 80px 1fr; padding-bottom: 0; }
+.content-grid.select-mode { grid-template-columns: 1fr 1fr; padding-bottom: 0; }
 /* 行3スペーサー：schedule-col に sticky の travel 距離を与えるため行を延長 */
 .content-grid.select-mode::after {
   content: ''; grid-column: 1; grid-row: 3; min-height: 100vh;
@@ -436,16 +432,18 @@ html[data-theme="light"] .banner-area { background: transparent; }
   display: none !important; grid-column: 2; grid-row: 1 / -1;
   position: relative;
 }
-.content-grid.select-mode .s-orb-col {
-  display: flex !important; flex-direction: column;
-  grid-column: 2; grid-row: 1 / span 3;
-  position: sticky; top: 0; align-self: start;
-  height: 100vh; width: 100%;
+.s-orb-col {
+  position: absolute; left: 0; top: 0;
+  width: 68px; height: 100%;
+  display: flex; flex-direction: column;
+  pointer-events: none;
+  z-index: 5;
 }
 .jk-zone {
   display: flex; align-items: center; justify-content: center;
   border-radius: 6px; transition: background .15s;
   cursor: pointer;
+  pointer-events: auto;
 }
 .jk-zone[data-jk="朝"] { flex: 7; }
 .jk-zone[data-jk="昼"] { flex: 5; }
@@ -459,20 +457,7 @@ html[data-theme="light"] .banner-area { background: transparent; }
     inset 0 1px 4px rgba(255,255,255,1);
 }
 .content-grid.select-mode .schedule-col {
-  grid-column: 3; grid-row: 1 / span 3; order: unset;
-  align-self: stretch;
-  height: auto; max-height: none; min-height: 0;
-  overflow: visible;
-  background: transparent; border: none; border-radius: 0;
-  position: static;
-}
-.content-grid.select-mode .sched-sticky {
-  position: sticky; top: 0;
-  height: auto; max-height: none; overflow: hidden;
-  background: rgba(13,13,26,0.72);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  display: flex; flex-direction: column;
+  grid-column: 2; grid-row: 1 / span 3; order: unset;
 }
 .content-grid.select-mode .cal-iframe-wrap { height: calc(100vh - 130px); }
 /* ===== 星形ボタン ===== */
@@ -537,15 +522,20 @@ html[data-theme="light"] .banner-area { background: transparent; }
 
 /* ===== SCHEDULE ===== */
 .schedule-col {
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  overflow: hidden;
-  background: rgba(13,13,26,0.72);
+  align-self: stretch;
+  height: auto; max-height: none; min-height: 0;
+  overflow: visible;
+  background: transparent; border: none; border-radius: 0;
+  position: static;
   display: flex;
   flex-direction: column;
-  align-self: start;
 }
 .sched-sticky {
+  position: sticky; top: 0;
+  height: auto; max-height: none; overflow: hidden;
+  background: rgba(13,13,26,0.72);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
 }
@@ -647,17 +637,14 @@ body.fc-dragging-active > .fc-event-dragging { display: none !important; }
 .fc-col-header-cell { background: var(--surface2) !important; }
 .fc-col-header-cell-cushion { color: var(--text-sub) !important; font-size: 10px; text-decoration: none !important; }
 .fc-timegrid-slot { height: 9px !important; }
-.content-grid.select-mode .fc-scroller { overflow: hidden !important; }
-.content-grid.select-mode .fc-timegrid-slot { height: 20px !important; }
-.content-grid.select-mode .cal-buf-top { height: 9px; }
-.content-grid.select-mode .cal-buf-bot { height: 20px; background: rgba(240,240,246,0.09) !important; border-top: 1px solid rgba(240,240,246,0.14) !important; }
-.content-grid.select-mode #fc-container .fc-view-harness,
-.content-grid.select-mode #fc-container .fc-scroller,
-.content-grid.select-mode #fc-container .fc-timegrid-body,
-.content-grid.select-mode #fc-container .fc-scrollgrid-sync-table,
-.content-grid.select-mode #fc-container .fc-timegrid-col { background: transparent !important; }
+.fc-scroller { overflow: hidden !important; }
+#fc-container .fc-view-harness,
+#fc-container .fc-scroller,
+#fc-container .fc-timegrid-body,
+#fc-container .fc-scrollgrid-sync-table,
+#fc-container .fc-timegrid-col { background: transparent !important; }
 .fc-timegrid-slot-label-cushion { font-size: 9px !important; color: rgba(255,255,255,0.7) !important; font-family: 'JetBrains Mono'; line-height: 1 !important; margin-top: -17px !important; }
-.fc-timegrid-slot-label, .fc-timegrid-axis { width: 50px !important; min-width: 50px !important; overflow: visible !important; }
+.fc-timegrid-slot-label, .fc-timegrid-axis { width: 68px !important; min-width: 68px !important; overflow: visible !important; }
 .fc-timegrid-slot-label-frame, .fc-scrollgrid-shrink-frame { overflow: visible !important; }
 .fc-toolbar-title { font-size: 12px !important; color: var(--text) !important; }
 .fc-toolbar.fc-header-toolbar { position: relative !important; }
@@ -858,6 +845,7 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .panel-header-gtd { text-transform: none; display: inline-flex; align-items: center; gap: 4px; }
 .bottom-section { display: contents; }
 .bottom-panel {
+  position: relative;
   border: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   overflow: hidden;
@@ -869,6 +857,30 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .bottom-half { padding: 10px 12px; }
 .bottom-divider { display: none; }
 .bottom-label-red, .bottom-label-blue { display: none; }
+/* ===== 3パネル排他表示・巡回チェック ===== */
+.gtd-veil {
+  display: none; position: absolute; inset: 0; z-index: 20;
+  background: #0d0d1a;
+  cursor: pointer; align-items: center; justify-content: center;
+}
+.bottom-panel.gtd-veiled .gtd-veil { display: flex; }
+.gtd-veil .gtd-arrow-btn { display: none; }
+.bottom-panel.gtd-unseen .gtd-veil .gtd-arrow-btn { display: block; }
+.gtd-unseen-dot { width: 44px; height: 44px; background: #000; border: 1.5px solid rgba(255,255,255,0.4); box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+.niu-gate {
+  position: absolute; inset: 0; z-index: 15;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(10,8,20,0.95);
+  text-align: center; padding: 0 20px;
+}
+.niu-gate.hidden { display: none; }
+.niu-gate-text { font-size: 13px; color: var(--text-sub); }
+.niu-gate-btn {
+  padding: 8px 18px; border-radius: 8px; border: 0.5px solid var(--border2);
+  background: var(--surface2); color: var(--text); cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12px;
+}
+.niu-gate-btn:hover { background: var(--surface); }
 
 /* Eモード：今日やること=左、スケジュール=右 */
 .content-grid:not(.select-mode) .today-board-wrap { order: -1; }
@@ -1085,17 +1097,18 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 }
 .done-drawer-cards { display: none; }
 .done-drawer-cards.open { display: block; }
-/* ===== 朝昼夜 光の玉 ===== */
+/* ===== 朝昼夜 光の玉（Sモード：スケジュールパネルの時刻軸上にオーバーレイ） ===== */
 .s-orb-col { display: none; }
+.content-grid.select-mode .s-orb-col { display: flex; }
 .jk-orb {
-  width: 62px; height: 62px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%,
     rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.75) 40%,
     rgba(255,255,255,0.25) 80%, rgba(255,255,255,0.08) 100%);
   box-shadow: 0 0 18px rgba(255,255,255,0.55), 0 0 36px rgba(255,255,255,0.22),
     inset 0 1px 4px rgba(255,255,255,0.9);
   display: flex; align-items: center; justify-content: center;
-  color: #111; font-size: 11px; font-weight: 700; cursor: pointer;
+  color: #111; font-size: 9px; font-weight: 700; cursor: pointer;
   transition: transform .18s, box-shadow .18s; user-select: none; letter-spacing: 0.02em;
 }
 .jk-orb.orb-drag-over, .jk-orb:hover {
@@ -1235,7 +1248,10 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .task-card.done { opacity: 0.4; }
 .task-card.done .task-title { text-decoration: line-through; color: var(--text-dim); }
 .task-card.pinned { border-color: rgba(127,119,221,0.4); }
-.task-card.confirmed-dim { opacity: 0.4; border-color: #fff; }
+.task-card.confirmed-dim { border-color: #fff; }
+.task-card.confirmed-dim > .pin-badge,
+.task-card.confirmed-dim > .tag-row,
+.task-card.confirmed-dim > .card-lower { opacity: 0.4; }
 .card-lower { border-radius: 0 0 12px 12px; transition: background .2s; }
 .task-card.imp .card-lower { background: rgba(220,20,20,0.55); padding: 8px 14px 11px; margin: 0 -14px -11px; }
 .task-card.imp { border-color: rgba(220,20,20,0.7); }
@@ -2687,6 +2703,18 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div class="sched-sticky">
         <div class="section-header">📅 スケジュール<span id="cal-login-status" style="margin-left:auto;display:flex;gap:4px"></span><a id="cal-edit-btn" class="cal-edit-btn" href="https://calendar.google.com/calendar/r/day" target="_blank" style="margin-left:4px">GCal →</a></div>
         <div id="fc-container"></div>
+        <!-- 朝昼夜 光の玉 (Sモードのみ、時刻軸上にオーバーレイ) -->
+        <div class="s-orb-col" id="s-orb-col">
+          <div class="jk-zone" data-jk="朝" onclick="setOrbFilter('朝')">
+            <div class="jk-orb" data-jk="朝" id="orb-asa">朝</div>
+          </div>
+          <div class="jk-zone" data-jk="昼" onclick="setOrbFilter('昼')">
+            <div class="jk-orb" data-jk="昼" id="orb-hiru">昼</div>
+          </div>
+          <div class="jk-zone" data-jk="夜" onclick="setOrbFilter('夜')">
+            <div class="jk-orb" data-jk="夜" id="orb-yoru">夜</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2722,19 +2750,6 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       </div>
     </div>
 
-    <!-- 朝昼夜 光の玉 (Sモードのみ) -->
-    <div class="s-orb-col" id="s-orb-col">
-      <div class="jk-zone" data-jk="朝" onclick="setOrbFilter('朝')">
-        <div class="jk-orb" data-jk="朝" id="orb-asa">朝</div>
-      </div>
-      <div class="jk-zone" data-jk="昼" onclick="setOrbFilter('昼')">
-        <div class="jk-orb" data-jk="昼" id="orb-hiru">昼</div>
-      </div>
-      <div class="jk-zone" data-jk="夜" onclick="setOrbFilter('夜')">
-        <div class="jk-orb" data-jk="夜" id="orb-yoru">夜</div>
-      </div>
-    </div>
-
     <!-- 下段 -->
     <div class="bottom-row">
 
@@ -2742,14 +2757,21 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div id="next-panel" class="bottom-panel">
         <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-cap">IMPORTANT</span><span class="gtd-cap">URGENT</span></span><div class="next-filter-btns" style="display:none"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
+        <div class="gtd-veil" onclick="openGtdPanel('next')"><button class="gtd-arrow-btn gtd-unseen-dot"></button></div>
       </div>
       <div id="niu-panel" class="bottom-panel">
         <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-low">important</span><span class="gtd-cap">URGENT</span></span></div>
         <div class="bottom-half" id="niu-list"><div class="loading">読み込み中...</div></div>
+        <div class="niu-gate hidden" id="niu-gate">
+          <div class="niu-gate-text">今日締切の重要タスクがあります</div>
+          <button class="niu-gate-btn" onclick="confirmNiuGate()">確認して表示</button>
+        </div>
+        <div class="gtd-veil" onclick="openGtdPanel('niu')"><button class="gtd-arrow-btn gtd-unseen-dot"></button></div>
       </div>
       <div id="project-panel" class="bottom-panel">
         <div class="section-header blue">PROJECT</div>
         <div class="bottom-half" id="project-list"><div class="section-empty">準備中</div></div>
+        <div class="gtd-veil" onclick="openGtdPanel('project')"><button class="gtd-arrow-btn gtd-unseen-dot"></button></div>
       </div>
       <button class="gtd-arrow-btn gtd-arrow-down" id="gtd-collapse-btn" onclick="setSelectSubState('today')" title="今日やることへ">▼</button>
 
@@ -3488,7 +3510,7 @@ function toggleCalLatenight() {
   requestAnimationFrame(reapplyCalLabelStyles);
   requestAnimationFrame(addCalBufferOverlays);
   requestAnimationFrame(setupHighlightClipping);
-  if (currentMode === 'select') requestAnimationFrame(applySModeCalLayout);
+  requestAnimationFrame(applyCalLayout);
 }
 
 function toggleCalEarly() {
@@ -3500,7 +3522,7 @@ function toggleCalEarly() {
   requestAnimationFrame(reapplyCalLabelStyles);
   requestAnimationFrame(addCalBufferOverlays);
   requestAnimationFrame(setupHighlightClipping);
-  if (currentMode === 'select') requestAnimationFrame(applySModeCalLayout);
+  requestAnimationFrame(applyCalLayout);
 }
 
 function reapplyCalLabelStyles() {
@@ -3643,7 +3665,7 @@ function renderFullCalendar() {
       _pendingCushionFits.push({ el: arg.el, cushion });
       if (!_cushionFitRaf) _cushionFitRaf = requestAnimationFrame(_flushCushionFits);
     },
-    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); requestAnimationFrame(applySModeCalLayout); },
+    viewDidMount: () => { requestAnimationFrame(addFcExpandBtns); requestAnimationFrame(addCalBufferOverlays); requestAnimationFrame(setupHighlightClipping); requestAnimationFrame(applyCalLayout); },
     slotLaneDidMount: (arg) => {
       const h = arg.date.getHours();
       const m = arg.date.getMinutes();
@@ -4990,10 +5012,6 @@ async function loadTasks() {
   }
   syncDoneTasksToNotion();
   try { renderAll(); } catch(e) { console.error('renderAll error:', e); }
-  requestAnimationFrame(() => {
-    if (currentMode === 'exec') applyExecFixed();
-    syncExecScroll();
-  });
   // 進捗度パネルは機能停止中（復活させる場合はコメントを外す）
   // try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
@@ -5044,15 +5062,7 @@ function renderCard(task, mode='today', faded=false) {
 
   const effectiveArea = area || (subjects?.length ? 'OFFICIAL' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
-  const isDeadlineToday = (() => {
-    if (!deadline || s.done) return false;
-    const hasTime = deadline.length > 10;
-    const dl = new Date(hasTime ? deadline : deadline + 'T00:00:00');
-    const now = new Date();
-    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dlLocal = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
-    return Math.round((dlLocal - todayLocal) / 86400000) === 0;
-  })();
+  const isDeadlineToday = isTaskDeadlineToday(deadline, s.done);
   const subjectToShow = (effectiveArea === 'OFFICIAL') ? (subjects?.[0] || null) : null;
   const elaToShow = (effectiveArea === 'OFFICIAL' && subjectToShow === 'ELA') ? ela : null;
 
@@ -5289,6 +5299,7 @@ function renderAll() {
 
   // IMPORTANT URGENT / important URGENT
   if (currentMode !== 'select' || focusedPanel === 'next') { renderNextList(); renderNiuList(); }
+  if (currentMode === 'select') applyGtdPanelVeils();
 
   // 子タスクキャッシュがあるカードの進捗を常に表示
   requestAnimationFrame(() => Object.keys(subtaskData).forEach(id => updateSubtaskProgress(id)));
@@ -5898,6 +5909,63 @@ let _starAnchorScrollY = null;
 let _starAnchorViewportTop = null;
 let _tbBottomDoc = 0;
 let _tdContainerId = 'today-tasks';
+
+// ===== 3パネル（IMPORTANT URGENT / important urgent / PROJECT）排他表示・巡回チェック =====
+// focusedPanel（3パネル vs 今日やること）とは別軸の状態。3パネルのうちどれが開いているか。
+let openGtdSubPanel = 'next'; // 'next' | 'niu' | 'project'
+
+function loadGtdPanelSeen() {
+  try { return JSON.parse(localStorage.getItem('gtdPanelSeen') || '{}'); } catch { return {}; }
+}
+function saveGtdPanelSeen(seen) { localStorage.setItem('gtdPanelSeen', JSON.stringify(seen)); }
+const gtdPanelSeen = loadGtdPanelSeen();
+// 初期表示で開いているnextパネルは、クリック操作なしで最初から見えているため「確認済み」扱いにする
+if (gtdPanelSeen.next === undefined) { gtdPanelSeen.next = true; saveGtdPanelSeen(gtdPanelSeen); }
+
+function openGtdPanel(panel) {
+  if (currentMode !== 'select') return;
+  openGtdSubPanel = panel;
+  gtdPanelSeen[panel] = true;
+  saveGtdPanelSeen(gtdPanelSeen);
+  applyGtdPanelVeils();
+}
+function applyGtdPanelVeils() {
+  ['next', 'niu', 'project'].forEach(p => {
+    const el = document.getElementById(`${p}-panel`);
+    if (!el) return;
+    el.classList.toggle('gtd-veiled', p !== openGtdSubPanel);
+    el.classList.toggle('gtd-unseen', !gtdPanelSeen[p]);
+  });
+  updateNiuGate();
+}
+
+function isTaskDeadlineToday(deadline, done) {
+  if (!deadline || done) return false;
+  const hasTime = deadline.length > 10;
+  const dl = new Date(hasTime ? deadline : deadline + 'T00:00:00');
+  const now = new Date();
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dlLocal = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
+  return Math.round((dlLocal - todayLocal) / 86400000) === 0;
+}
+function hasNextPanelDeadlineToday() {
+  return getNextTasks().some(t => isTaskDeadlineToday(getProp(t, '締切日'), taskState[t.id]?.done || getProp(t, 'ステータス') === '完了'));
+}
+function isNiuGateConfirmedToday() {
+  return localStorage.getItem('niuGateConfirmed_' + getFurikaeriDate()) === 'true';
+}
+function confirmNiuGate() {
+  localStorage.setItem('niuGateConfirmed_' + getFurikaeriDate(), 'true');
+  updateNiuGate();
+}
+function updateNiuGate() {
+  const niuList = document.getElementById('niu-list');
+  const gate = document.getElementById('niu-gate');
+  if (!niuList || !gate) return;
+  const needsGate = hasNextPanelDeadlineToday() && !isNiuGateConfirmedToday();
+  gate.classList.toggle('hidden', !needsGate);
+  niuList.classList.toggle('hidden', needsGate);
+}
 
 function toggleBunbun() { bunbunOpen = !bunbunOpen; renderAll(); }
 
@@ -6586,29 +6654,17 @@ function completeFocus() {
 // ===== モード切替 =====
 let currentMode = 'select';
 
-// sticky panel 上のホイールイベントをページスクロールに転送する
-// （position:sticky + overflow:hidden の組み合わせでブラウザがイベントを消費してしまうため）
-let _todayWheelBound = false;
-function _todayWheelHandler(e) {
-  if (currentMode !== 'exec') return;
-  const tc = document.getElementById('today-tasks');
-  // tc が独立スクロール中（タスク溢れ）なら tc に任せる
-  if (tc && tc.scrollHeight > tc.clientHeight) return;
-  e.preventDefault();
-  window.scrollBy({ top: e.deltaY, behavior: 'auto' });
-}
-
 window.addEventListener('resize', () => {
-  if (currentMode === 'exec') _cacheExecScrollRange();
-  if (currentMode === 'select') { applySModeCalLayout(); }
+  applyCalLayout();
 }, { passive: true });
 
-function applySModeCalLayout() {
-  if (currentMode !== 'select' || !fcCalendar) return;
+// 選択モード・実行モード共通：スケジュールパネルを画面内に収め、内部スクロールに任せる
+function applyCalLayout() {
+  if (!fcCalendar) return;
   const sHdr = document.querySelector('.sched-sticky .section-header');
   const btmNav = document.querySelector('.bottom-nav');
   const fcColHeaderSection = document.querySelector('#fc-container .fc-scrollgrid-section-header');
-  const schedSticky = document.querySelector('.content-grid.select-mode .sched-sticky');
+  const schedSticky = document.querySelector('.sched-sticky');
   const fcScrollgrid = document.querySelector('#fc-container .fc-scrollgrid');
   const sHdrH = sHdr?.offsetHeight || 38;
   const fcColH = fcColHeaderSection?.offsetHeight || 25;
@@ -6621,12 +6677,15 @@ function applySModeCalLayout() {
     if (diff > 0) aboveFC = diff;
   }
   if (schedSticky) { schedSticky.style.height = targetH + 'px'; schedSticky.style.maxHeight = targetH + 'px'; }
-  fcCalendar.setOption('contentHeight', 20 * 37 + fcColH + 20); // +20でcal-buf-botをスクローラー内に確実に収める
+  const minMin = _calEarly ? 150 : 330;
+  const maxMin = _calLatenight ? (27 * 60 + 45) : (24 * 60 + 45);
+  const totalSlots = Math.round((maxMin - minMin) / 15) - 1;
+  fcCalendar.setOption('contentHeight', 9 * totalSlots + fcColH + 20); // +20でcal-buf-botをスクローラー内に確実に収める
   // FCのデフォルトscrollTime(06:00)でスクロールされた状態を先頭にリセット → 06:00ラベルを確実に表示
   requestAnimationFrame(() => {
     document.querySelectorAll('#fc-container .fc-scroller').forEach(s => { s.scrollTop = 0; });
   });
-  updateOrbZoneOffsets(aboveFC + fcColH, btmNavH);
+  if (currentMode === 'select') updateOrbZoneOffsets(aboveFC + fcColH, 0);
 }
 
 function updateOrbZoneOffsets(topOffset, bottomOffset) {
@@ -6635,20 +6694,21 @@ function updateOrbZoneOffsets(topOffset, bottomOffset) {
   if (!orbCol) return;
   orbCol.style.paddingTop = (topOffset || 0) + 'px';
   orbCol.style.paddingBottom = (bottomOffset || 0) + 'px';
-  // ゾーン高さをFCスロット（20px/slot, 30min/slot）に正確に合わせる
-  const slotPx   = 20;
-  const visSlots = 38; // S-modeのcontentHeightで表示されるスロット数
+  // ゾーン高さをFCスロット（9px/slot, 15min/slot）に正確に合わせる
+  const slotPx   = 9;
   const minMin   = _calEarly ? 150 : 330; // 02:30=150, 05:30=330
-  const asaSlots  = Math.min((13 * 60 - minMin) / 30, visSlots);
-  const hiruSlots = Math.min(10, Math.max(0, visSlots - asaSlots));
+  const maxMin   = _calLatenight ? (27 * 60 + 45) : (24 * 60 + 45);
+  const visSlots = (maxMin - minMin) / 15; // S-modeのcontentHeightで表示されるスロット数
+  const asaSlots  = Math.min((13 * 60 - minMin) / 15, visSlots);
+  const hiruSlots = Math.min(20, Math.max(0, visSlots - asaSlots));
   const yoruSlots = Math.max(0, visSlots - asaSlots - hiruSlots);
   const asaZone  = orbCol.querySelector('.jk-zone[data-jk="朝"]');
   const hiruZone = orbCol.querySelector('.jk-zone[data-jk="昼"]');
   const yoruZone = orbCol.querySelector('.jk-zone[data-jk="夜"]');
   // 朝=8:30, 昼=15:00 の位置に玉を合わせる（padding-bottomで重心をずらす）
   // orb中心 = (zoneH - pb) / 2 → pb = (asaSlots - desiredSlots*2) * slotPx
-  const asaDesiredSlots  = (8.5 * 60 - minMin) / 30; // 8:30 から slotMin までのスロット数
-  const hiruDesiredSlots = 3.75; // 14:52 基準（朝↔昼・昼↔夜のギャップを均等化）
+  const asaDesiredSlots  = (8.5 * 60 - minMin) / 15; // 8:30 から slotMin までのスロット数
+  const hiruDesiredSlots = 7.5; // 14:52 基準（朝↔昼・昼↔夜のギャップを均等化）
   const asaPb  = Math.max(0, (asaSlots  - asaDesiredSlots  * 2) * slotPx);
   const hiruPb = Math.max(0, (hiruSlots - hiruDesiredSlots * 2) * slotPx);
   if (asaZone)  { asaZone.style.height  = (asaSlots  * slotPx) + 'px'; asaZone.style.flex  = 'none'; asaZone.style.paddingBottom  = asaPb  + 'px'; }
@@ -6656,101 +6716,6 @@ function updateOrbZoneOffsets(topOffset, bottomOffset) {
   if (yoruZone) { yoruZone.style.height = (yoruSlots * slotPx) + 'px'; yoruZone.style.flex = 'none'; }
 }
 
-// スクロール範囲をキャッシュ（exec 開始時に 1 回計算）
-let _execBoardTop    = 0;
-let _execScrollRange = 0;
-function _cacheExecScrollRange() {
-  const sc    = document.querySelector('.schedule-col');
-  const inner = document.getElementById('today-board-inner');
-  if (!sc || !inner) return;
-  const scH     = sc.offsetHeight;
-  const stickyH = inner.offsetHeight;
-  if (scH < 200 || stickyH < 200) return;
-  _execBoardTop    = sc.getBoundingClientRect().top + window.scrollY;
-  _execScrollRange = Math.max(1, scH - stickyH);
-}
-
-function applyExecFixed() {
-  const board = document.querySelector('.today-board');
-  const inner = document.getElementById('today-board-inner');
-  const tc    = document.getElementById('today-tasks');
-  if (!board || !inner || !tc) return;
-
-  // board: sticky 子要素がはみ出せるよう overflow:visible（背景は CSS のまま保持）
-  Object.assign(board.style, {
-    overflow : 'visible',
-    minHeight: '0',
-  });
-
-  // inner: sticky を外し高さ 100% に。tc の sticky がスクロール全域で有効になる
-  Object.assign(inner.style, {
-    position     : 'relative',
-    height       : '100%',
-    display      : 'flex',
-    flexDirection: 'column',
-    overflow     : 'visible',
-    background   : 'none',
-    border       : 'none',
-    borderRadius : '0',
-  });
-
-  // header: sticky なし → カレンダーヘッダーと同様にスクロールで消える
-  const headerEl = inner.querySelector('.section-header');
-  if (headerEl) {
-    inner._headerNaturalH = headerEl.offsetHeight || 38;
-    headerEl.style.flexShrink = '0';
-  }
-
-  // tc: header が流れ去った分だけ空白を残して sticky
-  // → スペースが 0→headerH まで徐々に広がり、以降 headerH で固定
-  const headerH = inner._headerNaturalH || 38;
-  Object.assign(tc.style, {
-    position: 'sticky',
-    top     : headerH + 'px',
-    flex    : 'none',
-    overflow: 'hidden',
-    zIndex  : '50',
-  });
-
-  if (!_todayWheelBound) {
-    inner.addEventListener('wheel', _todayWheelHandler, { passive: false });
-    _todayWheelBound = true;
-  }
-}
-
-function _syncExecPanelPos() { /* 新方式では不要 */ }
-function syncExecScroll() { /* 新方式では不要: tc が sticky で自動追従 */ }
-
-let _execRafId = null;
-function _startExecRaf() {}
-function _stopExecRaf() {
-  if (_execRafId) { cancelAnimationFrame(_execRafId); _execRafId = null; }
-}
-
-function resetExecFixed() {
-  const board = document.querySelector('.today-board');
-  const inner = document.getElementById('today-board-inner');
-  if (!board) return;
-  if (inner && _todayWheelBound) {
-    inner.removeEventListener('wheel', _todayWheelHandler);
-    _todayWheelBound = false;
-  }
-  board.removeAttribute('style');
-  if (inner) {
-    const headerEl = inner.querySelector('.section-header');
-    if (headerEl) {
-      headerEl.style.flexShrink = '';
-    }
-    inner.removeAttribute('style');
-  }
-  const tc = document.getElementById('today-tasks');
-  if (tc) {
-    tc.removeAttribute('style');
-    tc.scrollTop = 0;
-  }
-}
-
-let _tbResizeObs = null;
 
 function setMode(mode) {
   currentMode = mode;
@@ -6764,31 +6729,17 @@ function setMode(mode) {
   document.getElementById('btn-exec').classList.toggle('active', !isSelect);
   document.querySelector('.content-grid').classList.toggle('select-mode', isSelect);
   if (fcCalendar) {
-    if (isSelect) {
-      fcCalendar.batchRendering(() => {
-        fcCalendar.setOption('expandRows', false);
-        fcCalendar.setOption('slotMinTime', '05:30:00');
-        fcCalendar.setOption('slotMaxTime', '24:30:00');
-        fcCalendar.setOption('slotDuration', '00:30:00');
-        fcCalendar.setOption('slotLabelInterval', '00:30:00');
-      });
-      requestAnimationFrame(() => { addFcExpandBtns(); applySModeCalLayout(); requestAnimationFrame(reapplyCalLabelStyles); });
-      requestAnimationFrame(addCalBufferOverlays);
-      requestAnimationFrame(setupHighlightClipping);
-    } else {
-      // Sモードで設定したsched-stickyの固定高さを解除（Eモードは全スロット表示）
-      const schedSticky = document.querySelector('.sched-sticky');
-      if (schedSticky) { schedSticky.style.height = ''; schedSticky.style.maxHeight = ''; }
-      fcCalendar.batchRendering(() => {
-        fcCalendar.setOption('expandRows', false);
-        fcCalendar.setOption('contentHeight', 'auto');
-        fcCalendar.setOption('slotDuration', '00:15:00');
-        fcCalendar.setOption('slotLabelInterval', '00:30:00');
-        fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
-        fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
-      });
-      requestAnimationFrame(() => { addFcExpandBtns(); fcCalendar.updateSize(); requestAnimationFrame(reapplyCalLabelStyles); });
-    }
+    // 選択・実行モード共通：15分刻み、画面内に収めて内部スクロール
+    fcCalendar.batchRendering(() => {
+      fcCalendar.setOption('expandRows', false);
+      fcCalendar.setOption('slotDuration', '00:15:00');
+      fcCalendar.setOption('slotLabelInterval', '00:30:00');
+      fcCalendar.setOption('slotMinTime', _calEarly ? '02:30:00' : '05:30:00');
+      fcCalendar.setOption('slotMaxTime', _calLatenight ? '27:45:00' : '24:45:00');
+    });
+    requestAnimationFrame(() => { addFcExpandBtns(); applyCalLayout(); requestAnimationFrame(reapplyCalLabelStyles); });
+    requestAnimationFrame(addCalBufferOverlays);
+    requestAnimationFrame(setupHighlightClipping);
   }
   renderAll();
   updateExecHint();
@@ -6802,41 +6753,17 @@ function setMode(mode) {
     focusedPanel = 'next';
     // 実行モードでは今日やることパネルを選択モードのサブ状態に関わらず常に表示する
     document.querySelector('.today-board')?.classList.remove('hidden', 'gtd-fading', 'no-anim');
+    // 実行モード開始時、カレンダー内部スクロールを現在時刻へ合わせる（ページ自体はスクロールしない）
     requestAnimationFrame(() => {
       const now = new Date();
       const minH = _calEarly ? 2.5 : 5.5;
       const hoursFromStart = Math.max(0, now.getHours() + now.getMinutes() / 60 - minH);
-      const pxPerHour = 22 * 4;
-      const fcEl = document.getElementById('fc-el');
-      if (!fcEl) return;
-      const calTop = fcEl.getBoundingClientRect().top + window.scrollY;
-      const target = Math.max(0, calTop + hoursFromStart * pxPerHour - window.innerHeight / 2);
-      // スクロール前に暫定的にパネルを設定（exec 開始の瞬間から見える）
-      applyExecFixed();
-
-      window.scrollTo({ top: target, behavior: 'smooth' });
-
-      // スクロール完了後に再設定（board.top が最終位置を反映してから top を確定）
-      if (_tbResizeObs) _tbResizeObs.disconnect();
-      _tbResizeObs = new ResizeObserver(() => {}); // 空：sticky+calc(100vh)が自動追従
-      const sc = document.querySelector('.schedule-col');
-      if (sc) _tbResizeObs.observe(sc);
-
-      let _applied = false;
-      const _doApply = () => {
-        if (_applied) return;
-        _applied = true;
-        window.removeEventListener('scrollend', _doApply);
-        applyExecFixed(); // top を最終スクロール位置で確定
-      };
-      // scrollend イベント（Chrome 114+）+ 1.2秒フォールバック
-      window.addEventListener('scrollend', _doApply, { once: true });
-      setTimeout(_doApply, 1200);
-      // 新方式では追加処理不要
+      const pxPerHour = 9 * 4; // 15分刻み・9px/スロット
+      const scroller = document.querySelector('#fc-container .fc-scroller');
+      if (!scroller) return;
+      const target = Math.max(0, hoursFromStart * pxPerHour - scroller.clientHeight / 2);
+      scroller.scrollTop = target;
     });
-  } else {
-    if (_tbResizeObs) { _tbResizeObs.disconnect(); _tbResizeObs = null; }
-    resetExecFixed();
   }
 }
 
@@ -7694,7 +7621,7 @@ function showPage(page) {
         reapplyCalLabelStyles();
         addCalBufferOverlays();
         setupHighlightClipping();
-        if (currentMode === 'select') applySModeCalLayout();
+        applyCalLayout();
         addFcExpandBtns();
       });
     });
