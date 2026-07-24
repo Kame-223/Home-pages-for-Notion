@@ -209,9 +209,9 @@ html[data-theme="light"] .card-group-header.area-personal { color: #b87a00; back
 html[data-theme="light"] .card-group-header.area-seikatsu { color: #3A7840; background: rgba(58,120,64,0.10);  }
 html[data-theme="light"] .card-group-header.area-other    { color: rgba(0,0,0,0.45); }
 /* セクションヘッダー（今日やること・持ち越し・次やること） */
-html[data-theme="light"] .section-header.green { color: #0f7a5a; border-bottom-color: rgba(15,122,90,0.18); }
+html[data-theme="light"] .section-header.green { color: #111; border-bottom-color: rgba(15,122,90,0.18); }
 html[data-theme="light"] .section-header.red   { color: #c03030; border-bottom-color: rgba(192,48,48,0.18); }
-html[data-theme="light"] .section-header.blue  { color: #1a60b0; border-bottom-color: rgba(26,96,176,0.18); }
+html[data-theme="light"] .section-header.blue  { color: #111; border-bottom-color: rgba(26,96,176,0.18); }
 /* タスクページ展開オーバーレイのエリアヘッダー */
 html[data-theme="light"] .expand-area-header.area-kadai    { color: #5030A0; }
 html[data-theme="light"] .expand-area-header.area-personal { color: #b87a00; }
@@ -2672,7 +2672,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div class="prog-bar"><div class="prog-fill" id="prog-task-fill" style="width:0%;background:var(--green)"></div></div>
     </div>
     <div class="prog-card">
-      <div class="prog-label">その他</div>
+      <div class="prog-label">Others</div>
       <div class="prog-val" id="prog-other">—</div>
       <div class="prog-sub" id="prog-other-sub">読み込み中</div>
       <div class="prog-bar"><div class="prog-fill" id="prog-other-fill" style="width:0%;background:var(--pink)"></div></div>
@@ -2740,7 +2740,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
 
       <!-- 選択モード：直接パネル -->
       <div id="next-panel" class="bottom-panel">
-        <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-cap">IMPORTANT</span><span class="gtd-cap">URGENT</span></span><div class="next-filter-btns"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
+        <div class="section-header blue"><span class="panel-header-gtd"><span class="gtd-cap">IMPORTANT</span><span class="gtd-cap">URGENT</span></span><div class="next-filter-btns" style="display:none"><button class="next-filter-btn active" data-filter="prop" onclick="setNextFilter('prop')">プロパティ</button><button class="next-filter-btn" data-filter="deadline" onclick="setNextFilter('deadline')">締切</button></div></div>
         <div class="bottom-half" id="next-list"><div class="loading">読み込み中...</div></div>
       </div>
       <div id="niu-panel" class="bottom-panel">
@@ -2762,51 +2762,51 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
               <div class="furikaeri-date" id="furikaeri-date"></div>
             </div>
             <div class="furikaeri-dragon-wrap">
-              <div class="furikaeri-bubble">一言でもいいよ！<br>思ったこと書こ！</div>
+              <div class="furikaeri-bubble">Just a line is fine!<br>Write what's on your mind!</div>
               <img src="/dragon.png" class="furikaeri-dragon" alt="dragon">
             </div>
           </div>
 
           <div class="fr-row">
-            <span class="fr-label">気分</span>
+            <span class="fr-label">Mood</span>
             <div class="fr-options" id="fr-mood">
-              <button class="fr-opt" data-val="☀ 最高"><span class="fr-emoji">☀️</span><span class="fr-opt-label">最高</span></button>
-              <button class="fr-opt" data-val="🌤 良い"><span class="fr-emoji">🌤</span><span class="fr-opt-label">良い</span></button>
-              <button class="fr-opt" data-val="⛅ 普通"><span class="fr-emoji">⛅</span><span class="fr-opt-label">普通</span></button>
-              <button class="fr-opt" data-val="🌧 しんどい"><span class="fr-emoji">🌧</span><span class="fr-opt-label">しんどい</span></button>
-              <button class="fr-opt" data-val="⛈ 最悪"><span class="fr-emoji">⛈️</span><span class="fr-opt-label">最悪</span></button>
+              <button class="fr-opt" data-val="☀ 最高"><span class="fr-emoji">☀️</span><span class="fr-opt-label">Great</span></button>
+              <button class="fr-opt" data-val="🌤 良い"><span class="fr-emoji">🌤</span><span class="fr-opt-label">Good</span></button>
+              <button class="fr-opt" data-val="⛅ 普通"><span class="fr-emoji">⛅</span><span class="fr-opt-label">Okay</span></button>
+              <button class="fr-opt" data-val="🌧 しんどい"><span class="fr-emoji">🌧</span><span class="fr-opt-label">Rough</span></button>
+              <button class="fr-opt" data-val="⛈ 最悪"><span class="fr-emoji">⛈️</span><span class="fr-opt-label">Awful</span></button>
             </div>
           </div>
           <div class="fr-row">
-            <span class="fr-label">体調</span>
+            <span class="fr-label">Condition</span>
             <div class="fr-options" id="fr-energy">
-              <button class="fr-opt" data-val="🤩 最高"><span class="fr-emoji">🤩</span><span class="fr-opt-label">最高</span></button>
-              <button class="fr-opt" data-val="💪 元気"><span class="fr-emoji">😆</span><span class="fr-opt-label">元気</span></button>
-              <button class="fr-opt" data-val="🙂 まあまあ"><span class="fr-emoji">🙂</span><span class="fr-opt-label">まあまあ</span></button>
-              <button class="fr-opt" data-val="😪 疲れてる"><span class="fr-emoji">😪</span><span class="fr-opt-label">疲れてる</span></button>
-              <button class="fr-opt" data-val="🤒 体調悪い"><span class="fr-emoji">🤒</span><span class="fr-opt-label">体調悪い</span></button>
+              <button class="fr-opt" data-val="🤩 最高"><span class="fr-emoji">🤩</span><span class="fr-opt-label">Great</span></button>
+              <button class="fr-opt" data-val="💪 元気"><span class="fr-emoji">😆</span><span class="fr-opt-label">Energetic</span></button>
+              <button class="fr-opt" data-val="🙂 まあまあ"><span class="fr-emoji">🙂</span><span class="fr-opt-label">So-so</span></button>
+              <button class="fr-opt" data-val="😪 疲れてる"><span class="fr-emoji">😪</span><span class="fr-opt-label">Tired</span></button>
+              <button class="fr-opt" data-val="🤒 体調悪い"><span class="fr-emoji">🤒</span><span class="fr-opt-label">Unwell</span></button>
             </div>
           </div>
 
-          <div class="fr-section-label">📅 あったこと・感想</div>
-          <textarea class="fr-textarea" id="fr-event" placeholder="今日あったことを書こう..."></textarea>
+          <div class="fr-section-label">📅 What Happened</div>
+          <textarea class="fr-textarea" id="fr-event" placeholder="Write about your day..."></textarea>
 
 
           <div id="weekly-section" class="hidden">
-            <div class="fr-weekly-header">🌟 週次レビュー — 1週間おつかれ！ゆっくり振り返ろ〜</div>
-            <div class="fr-section-label">📝 今週の振り返り</div>
-            <textarea class="fr-textarea" id="fr-weekly" placeholder="今週どうだった？"></textarea>
-            <div class="fr-section-label">🎯 来週の目標</div>
-            <textarea class="fr-textarea" id="fr-next-week" placeholder="来週は何をしたい？"></textarea>
+            <div class="fr-weekly-header">🌟 Weekly Review — Great week! Let's look back~</div>
+            <div class="fr-section-label">📝 This Week</div>
+            <textarea class="fr-textarea" id="fr-weekly" placeholder="How was this week?"></textarea>
+            <div class="fr-section-label">🎯 Next Week's Goals</div>
+            <textarea class="fr-textarea" id="fr-next-week" placeholder="What do you want to do next week?"></textarea>
           </div>
 
           <div class="furikaeri-actions">
             <span class="furikaeri-hint" id="furikaeri-hint"></span>
-            <button class="furikaeri-done-btn" onclick="completeFurikaeri()">完了</button>
+            <button class="furikaeri-done-btn" onclick="completeFurikaeri()">Done</button>
           </div>
           <div class="fr-done-overlay" id="fr-done-overlay" onclick="editFurikaeri()">
             <div class="fr-done-check">✅</div>
-            <div class="fr-done-label">振り返り完了</div>
+            <div class="fr-done-label">Reflection Done</div>
           </div>
         </div>
       </div>
@@ -5079,7 +5079,7 @@ function renderCard(task, mode='today', faded=false) {
       <div class="card-body">
         <div class="task-title-box" id="tt-${id}">${title}</div>
         <div class="card-side">
-          <button class="btn-pin-big ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'取り消し':'今日する'}</button>
+          <button class="btn-pin-big ${s.pinned?'pinned':''}" id="pin-${id}" onclick="togglePin('${id}')">${s.pinned?'CANCEL':'TODAY'}</button>
         </div>
       </div>
       <div style="position:relative">
