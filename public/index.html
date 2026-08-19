@@ -2267,6 +2267,21 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 .wish-tri-grid:has(.wish-tri.expand-target) .wish-tri-borders { display: none; }
 .wish-tri-label .gtd-quadrant-count { color: rgba(0,0,0,0.45); }
 
+/* ===== INBOX仕分け画面：GTD種別=INBOXかつエリア未設定のタスクだけをTASK/WISHへ振り分ける ===== */
+#triage-content { display: none; }
+.triage-page-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+.triage-gtd-col {
+  display: flex; flex-direction: column; gap: 12px;
+  min-height: calc(100vh - 76px);
+}
+.triage-slot { flex: 1; cursor: pointer; min-height: 200px; }
+.triage-slot .gtd-slot-header-centered { font-size: 22px; }
+
 .task-gtd-col {
   display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 12px; align-self: start;
@@ -2760,6 +2775,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
   <button class="sb-btn active" data-page="home" onclick="showPage('home')"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></button>
   <button class="sb-btn" data-page="task" onclick="showPage('task')"><span class="sb-icon">📋</span><span class="sb-label">Task</span></button>
   <button class="sb-btn" data-page="wish" onclick="showPage('wish')"><span class="sb-icon">✨</span><span class="sb-label">Wish</span></button>
+  <button class="sb-btn" data-page="triage" onclick="showPage('triage')"><span class="sb-icon">🔀</span><span class="sb-label">Sort</span></button>
   <button class="sb-btn" data-page="project" onclick="showPage('project')"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></button>
   <!-- <a class="sb-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank"><span class="sb-icon">📝</span><span class="sb-label">Note</span></a> -->
   <!-- <a class="sb-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank"><span class="sb-icon">📚</span><span class="sb-label">資料</span></a> -->
@@ -3078,6 +3094,32 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       </div>
     </div>
   </div><!-- /#wish-content -->
+
+  <!-- INBOX仕分け画面：GTD種別=INBOXかつエリア未設定のタスクだけを対象に、TASK/WISHへ明示的に振り分ける。
+       振り分け後は各画面（TASK/WISH）が持つ既存のINBOX列に自然に現れる -->
+  <div id="triage-content">
+    <div class="triage-page-grid">
+
+      <!-- 左：エリア未設定のINBOX -->
+      <div class="task-inbox-col" id="triage-inbox-col-wrap">
+        <div class="task-toggle-header">
+          <span id="triage-left-label">📥 INBOX</span>
+        </div>
+        <div class="task-section-body" id="triage-inbox-list"><div class="loading">読み込み中...</div></div>
+      </div>
+
+      <!-- 右：TASK/WISHの振り分け先 -->
+      <div class="triage-gtd-col">
+        <div class="task-gtd-area gtd-area-project-simple triage-slot" id="triage-slot-task" data-area="TASK">
+          <div class="gtd-slot-header gtd-slot-header-centered">TASK</div>
+        </div>
+        <div class="task-gtd-area gtd-area-project-simple triage-slot" id="triage-slot-wish" data-area="WISH">
+          <div class="gtd-slot-header gtd-slot-header-centered">WISH</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /#triage-content -->
 
   <!-- プロジェクト画面 -->
   <div id="project-content">
@@ -7805,12 +7847,14 @@ function showPage(page) {
   document.getElementById('home-content').style.display = page === 'home' ? 'block' : 'none';
   document.getElementById('task-content').style.display = page === 'task' ? 'block' : 'none';
   document.getElementById('wish-content').style.display = page === 'wish' ? 'block' : 'none';
+  document.getElementById('triage-content').style.display = page === 'triage' ? 'block' : 'none';
   document.getElementById('project-content').style.display = page === 'project' ? 'block' : 'none';
   document.querySelectorAll('.sb-btn[data-page]').forEach(b => {
     b.classList.toggle('active', b.dataset.page === page);
   });
   if (page === 'task') renderTaskPage();
   if (page === 'wish') renderWishPage();
+  if (page === 'triage') renderTriagePage();
   if (page === 'project') renderProjectList();
   if (page === 'home') {
     // display:none中にサイズ計測できなかったFullCalendarのレイアウトを再計算
@@ -8319,6 +8363,18 @@ async function moveWishToTask(id) {
   try { renderAll(); } catch(e) { console.error('renderAll in moveWishToTask:', e); }
 }
 
+// INBOX仕分け画面：エリア未設定のタスクにTASK/WISHを設定する。以後はTASK画面またはWISH画面の
+// 既存INBOX列にそのまま現れるため、ここでは仕分け画面自身の再描画だけ行えばよい
+async function setTriageArea(id, areaVal) {
+  const task = allTasks.find(t => t.id === id);
+  if (task) task.properties['エリア'] = {type: 'select', select: {name: areaVal}};
+  notionUpdate(id, {'エリア': {select: {name: areaVal}}}).catch(console.error);
+  renderTriagePage();
+  try { renderTaskPage(); } catch(e) {}
+  try { renderWishPage(); } catch(e) {}
+  try { renderAll(); } catch(e) { console.error('renderAll in setTriageArea:', e); }
+}
+
 // ===== タスクカード：2本指クリック（右クリック相当）での簡易メニュー =====
 let _taskCtxMenuEl = null;
 
@@ -8467,6 +8523,27 @@ function renderWishPage() {
   requestAnimationFrame(() => { initGtdDrag(); });
 }
 
+// ===== INBOX仕分け画面 =====
+// GTD種別=INBOXかつエリア未設定のタスクだけが対象。エリアが決まればTASK/WISH各画面の
+// 既存INBOX列（エリア未設定はTASK扱いで表示する側／エリア=WISHのみ表示する側）に自然に現れるため、
+// この画面自体はエリアを設定するだけで、以後のカードの行き先には関与しない
+function renderTriagePage() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+  const getGtd = t => getProp(t,'GTD 種別');
+  const triageTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX' && !getProp(t,'エリア'));
+
+  const label = document.getElementById('triage-left-label');
+  const list  = document.getElementById('triage-inbox-list');
+  if (label) label.innerHTML = `📥 INBOX<span class="task-count">${triageTasks.length ? `(${triageTasks.length})` : ''}</span>`;
+  if (list) {
+    list.innerHTML = triageTasks.length
+      ? triageTasks.map(t => renderGtdCard(t)).join('')
+      : '<div class="section-empty">仕分けるタスクはありません 🎉</div>';
+  }
+
+  requestAnimationFrame(() => { initGtdDrag(); });
+}
+
 function _renderProjMini() {
   const grid = document.getElementById('proj-mini-grid');
   const moreBtn = document.getElementById('proj-mini-more');
@@ -8567,6 +8644,12 @@ const WISH_DROP_AREAS = [
   { elId: 'wish-slot-task',    gtdVal: 'TASK',          action: 'toTask' },
 ];
 
+// INBOX仕分け画面用のドロップ先。「エリア」プロパティを直接TASK/WISHに設定するだけの単純な分岐
+const TRIAGE_DROP_AREAS = [
+  { elId: 'triage-slot-task', gtdVal: 'TASK', action: 'setArea' },
+  { elId: 'triage-slot-wish', gtdVal: 'WISH', action: 'setArea' },
+];
+
 // GTDボタン・タイムボタン等、カード内の個別操作は拾い上げ判定から除外する
 const GTD_PICKUP_EXCLUDE = '.btn-gtd,.time-btn,.gtd-btn-wrap,.subtask-toggle-btn,.bear-btn,.btn-set-prop,.tag.clickable';
 
@@ -8586,8 +8669,8 @@ function initGtdDrag() {
       finishGtdDrag(e.clientX, e.clientY);
       return;
     }
-    // 1回目のクリック：タスクカードの拾い上げ判定（TASK画面・WISH画面どちらのカードも対象）
-    const card = e.target.closest('#task-content .task-card, #wish-content .task-card');
+    // 1回目のクリック：タスクカードの拾い上げ判定（TASK画面・WISH画面・INBOX仕分け画面どのカードも対象）
+    const card = e.target.closest('#task-content .task-card, #wish-content .task-card, #triage-content .task-card');
     if (!card) return;
     if (e.target.closest(GTD_PICKUP_EXCLUDE)) return;
 
@@ -8597,11 +8680,12 @@ function initGtdDrag() {
     if (!task) return;
 
     const inWish = !!card.closest('#wish-content');
+    const inTriage = !!card.closest('#triage-content');
     gtdDragId = id;
     gtdDragEl = card;
-    gtdDragProp = inWish ? 'WISH 種別' : 'GTD 種別';
-    gtdDragAreas = inWish ? WISH_DROP_AREAS : GTD_DROP_AREAS;
-    gtdDragSrcVal = getProp(task, gtdDragProp) || '📥 INBOX';
+    gtdDragProp = inTriage ? 'エリア' : (inWish ? 'WISH 種別' : 'GTD 種別');
+    gtdDragAreas = inTriage ? TRIAGE_DROP_AREAS : (inWish ? WISH_DROP_AREAS : GTD_DROP_AREAS);
+    gtdDragSrcVal = inTriage ? (getProp(task, 'エリア') || '') : (getProp(task, gtdDragProp) || '📥 INBOX');
     card.classList.add('gtd-dragging');
     gtdDragGhost = document.createElement('div');
     gtdDragGhost.className = 'gtd-drag-ghost';
@@ -8682,6 +8766,7 @@ function finishGtdDrag(cx, cy) {
 
   if (target.action === 'complete') { completeWishTask(savedId); return; }
   if (target.action === 'toTask') { moveWishToTask(savedId); return; }
+  if (target.action === 'setArea') { setTriageArea(savedId, target.gtdVal); return; }
 
   const currentVal = getProp(task, savedProp) || '📥 INBOX';
   if (target.gtdVal === currentVal) return;
