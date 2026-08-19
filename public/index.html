@@ -7690,6 +7690,32 @@ function openGtdQuadrant(key) {
   openOverlay(key);
 }
 
+// ===== 右側GTDパネルの常時固定表示 =====
+// position:stickyだと、左INBOX列が短い日に「.task-page-gridの下端に追いついて
+// 一緒にスクロールしてしまう」不具合があるため、常にposition:fixedで
+// 画面上の同じ位置に固定する。左INBOX列（通常時は普通にスクロールする）の
+// 現在位置を毎回測定し、その右隣にfixedで重ねる。
+function applyGtdColFixed() {
+  if (overlayMode) return; // 展開中はopenOverlay側が管理するので触らない
+  const gtdCol   = document.getElementById('task-gtd-col');
+  const inboxCol = document.getElementById('task-inbox-col-wrap');
+  if (!gtdCol || !inboxCol) return;
+  const inboxR = inboxCol.getBoundingClientRect();
+  if (inboxR.width === 0) return; // タスクページが非表示中は何もしない
+  const btmNav = document.querySelector('.bottom-nav');
+  const btmTop = btmNav ? btmNav.getBoundingClientRect().top : window.innerHeight;
+  const gap = 12; // .task-page-grid の gap と揃える
+  Object.assign(gtdCol.style, {
+    position: 'fixed', top: '12px',
+    left: (inboxR.right + gap) + 'px',
+    width: inboxR.width + 'px',
+    height: (btmTop - 12 - 2) + 'px'
+  });
+}
+window.addEventListener('resize', () => {
+  if (currentPage === 'task') applyGtdColFixed();
+});
+
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
@@ -7700,9 +7726,9 @@ function openOverlay(key) {
   const gtdCol   = document.getElementById('task-gtd-col');
   const btmNav   = document.querySelector('.bottom-nav');
   const btmTop   = btmNav ? btmNav.getBoundingClientRect().top : window.innerHeight;
-  // パネルはtop:20pxから始まるため、下部ナビとの間に2pxの隙間を残すには
-  // 単純に btmTop-2 ではなく、開始位置の20pxも合わせて引く必要がある
-  const panelH   = btmTop - 20 - 2;
+  // パネルはtop:12pxから始まる（通常時のパネル上部の余白と揃える）。
+  // 下部ナビとの間に2pxの隙間を残すには、開始位置の12pxも合わせて引く必要がある
+  const panelH   = btmTop - 12 - 2;
   const inboxR   = inboxCol ? inboxCol.getBoundingClientRect() : null;
   const gtdR     = gtdCol   ? gtdCol.getBoundingClientRect()   : null;
 
@@ -7710,7 +7736,7 @@ function openOverlay(key) {
   if (inboxCol && inboxR) {
     inboxCol._expandOrigStyle = inboxCol.style.cssText;
     Object.assign(inboxCol.style, {
-      position: 'fixed', top: '20px', left: inboxR.left + 'px',
+      position: 'fixed', top: '12px', left: inboxR.left + 'px',
       width: inboxR.width + 'px', height: panelH + 'px',
       overflowY: 'auto', zIndex: '10', boxSizing: 'border-box'
     });
@@ -7720,7 +7746,7 @@ function openOverlay(key) {
   if (gtdCol && gtdR) {
     gtdCol._expandOrigStyle = gtdCol.style.cssText;
     Object.assign(gtdCol.style, {
-      position: 'fixed', top: '20px', left: gtdR.left + 'px',
+      position: 'fixed', top: '12px', left: gtdR.left + 'px',
       width: gtdR.width + 'px', height: panelH + 'px',
       zIndex: '10', boxSizing: 'border-box', overflow: 'hidden'
     });
@@ -8175,7 +8201,7 @@ function renderTaskPage() {
   // オーバーレイが開いていれば内容も更新
   if (overlayMode) _renderOverlay();
 
-  requestAnimationFrame(() => { initGtdDrag(); });
+  requestAnimationFrame(() => { initGtdDrag(); applyGtdColFixed(); });
 }
 
 function _renderProjMini() {
