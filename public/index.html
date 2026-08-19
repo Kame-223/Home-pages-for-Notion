@@ -5054,11 +5054,8 @@ function renderCard(task, mode='today', faded=false) {
   const s = taskState[id];
   const _tt = s.timeType || 'Normal';
   const ttCls = `tt-${_tt.toLowerCase()}`;
-  const timeTypeHtml = `<div class="time-wrap">
-    <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
-    <span class="time-val tt-${_tt.toLowerCase()}" id="tv-${id}" title="${_tt}">${TIME_TYPE_ICONS[_tt]}</span>
-    <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
-  </div>`;
+  // QNH（Quick/Normal/Heavy）UIは非表示化。データ自体（s.timeType等）は温存し、後で復活できるようにする。
+  const timeTypeHtml = '';
 
   const effectiveArea = area || (subjects?.length ? 'OFFICIAL' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
@@ -7925,11 +7922,8 @@ function renderGtdCard(task, faded) {
   const s = taskState[id];
   const _ttG = s.timeType || 'Normal';
   const ttClsG = `tt-${_ttG.toLowerCase()}`;
-  const timeTypeHtmlG = `<div class="time-wrap">
-    <button class="time-btn" onclick="cycleTimeType('${id}',-1)">−</button>
-    <span class="time-val tt-${_ttG.toLowerCase()}" id="gtv-${id}" title="${_ttG}">${TIME_TYPE_ICONS[_ttG]}</span>
-    <button class="time-btn" onclick="cycleTimeType('${id}',1)">＋</button>
-  </div>`;
+  // QNH（Quick/Normal/Heavy）UIは非表示化。データ自体（s.timeType等）は温存し、後で復活できるようにする。
+  const timeTypeHtmlG = '';
 
   const effectiveAreaG = area || (subjects?.length ? 'OFFICIAL' : null);
   const dt = deadlineTag(deadline, false, false);
