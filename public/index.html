@@ -148,7 +148,8 @@ html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active:not(.expand-target) { background: rgba(255,255,255,1) !important; border-color: rgba(0,0,0,0.3); box-shadow: inset 0 0 16px rgba(0,0,0,0.08); }
 /* 今すぐやるパネルは背景に炎の画像を敷いているため、ドラッグ中の白背景ハイライトで画像を隠さない。
    枠線・内側の影だけで強調し、画像はそのまま見せる */
-html[data-theme="light"] #task-gtd-col #gtd-slot-imasugu.gtd-drop-active:not(.expand-target) {
+html[data-theme="light"] #task-gtd-col #gtd-slot-imasugu.gtd-drop-active:not(.expand-target),
+html[data-theme="light"] #wish-gtd-col #wish-slot-imasugu.gtd-drop-active:not(.expand-target) {
   background-color: transparent !important;
   background-image: url('/backgrounds/imasugu-flame-black-red.png') !important;
   background-size: cover !important;
@@ -2201,24 +2202,70 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   background: rgba(10,8,20,0.72);
 }
 
-/* ===== WISH PAGE（Next/Plan/Dreamを横並びで同時表示） ===== */
+/* ===== WISH PAGE：TASK画面と同じ左右分割レイアウト（.task-page-grid/.task-gtd-colを共用） =====
+   Next/Plan/DreamはTASKの4象限と同じ「クリックで展開」方式だが、形は逆三角クラスターにする */
 #wish-content { display: none; }
-.wish-page-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  padding: 12px;
+.wish-tri-grid {
+  position: relative;
+  flex: 3;
+  min-height: 0;
+  border: 1.5px solid #000000;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.8);
 }
-.wish-page-grid .task-inbox-col,
-.wish-col {
-  height: calc(100vh - 100px);
+/* クリック判定・ドラッグ&ドロップの当たり判定・展開パネルへの差し替えは今まで通りこのdiv自身が担う
+   （elementFromPointはclip-pathで切り取られた部分をヒットしないため、divのままでも重なった3枚を正しく判別できる）。
+   ただしCSSのborderはclip-pathで切り取った斜め辺には描画されないため、境界線だけは下の装飾用SVGで描く。 */
+.wish-tri {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  transition: background .15s;
 }
-.wish-col .task-section-body,
-.wish-page-grid .task-inbox-col .task-section-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px;
+.wish-tri:hover { background: rgba(0,0,0,0.04); }
+.wish-tri.gtd-drop-active { background: rgba(127,119,221,0.18); }
+.wish-tri-next  { clip-path: polygon(0% 0%, 50% 0%, 0% 100%); }
+.wish-tri-plan  { clip-path: polygon(50% 0%, 100% 0%, 100% 100%); }
+.wish-tri-dream { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+/* 境界線専用の装飾SVG。クリックを奪わないようpointer-events:noneにし、当たり判定は上のdivのまま維持する */
+.wish-tri-borders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
 }
+.wish-tri-borders line {
+  stroke: #000000;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.wish-tri-label {
+  position: absolute;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+  color: #000000; text-align: center; white-space: nowrap;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.wish-tri-next .wish-tri-label  { left: 17%; top: 33%; }
+.wish-tri-plan .wish-tri-label  { left: 83%; top: 33%; }
+.wish-tri-dream .wish-tri-label { left: 50%; top: 67%; }
+/* 展開中：TASKの4象限（.task-gtd-area.expand-target）と同じく、選ばれた1枚だけがパネル全体に広がる。
+   clip-pathは（2クラス指定で.wish-tri-nextより詳細度が高いため）自動的に解除される */
+.wish-tri.expand-target {
+  clip-path: none;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.8);
+}
+.wish-tri.expand-target .wish-tri-label { display: none; }
+.wish-tri-grid:has(.wish-tri.expand-target) .wish-tri-borders { display: none; }
+.wish-tri-label .gtd-quadrant-count { color: rgba(0,0,0,0.45); }
 
 .task-gtd-col {
   display: flex; flex-direction: column; gap: 12px;
@@ -2263,7 +2310,8 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 /* #task-gtd-col .task-gtd-area（ID+クラス）の方が単独ID指定より詳細度が高く背景を上書きしてしまうため、
    !importantで確実に背景画像を適用する */
-#gtd-slot-imasugu {
+#gtd-slot-imasugu,
+#wish-slot-imasugu {
   background-image: url('/backgrounds/imasugu-flame-black-red.png') !important;
   background-size: cover !important;
   background-position: center !important;
@@ -2984,9 +3032,10 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
     </div>
   </div><!-- /#task-content -->
 
-  <!-- WISH画面：Next/Plan/Dreamの3カラムを横並びで同時表示する。重要×緊急とは別軸 -->
+  <!-- WISH画面：TASK画面と同じ左右分割（INBOX／分類先）。分類先はNext・Plan・Dreamの
+       逆三角クラスター＋今すぐやる（炎）＋TASKへ戻すパネルを縦に並べる -->
   <div id="wish-content">
-    <div class="wish-page-grid">
+    <div class="task-page-grid">
 
       <!-- 左：WISH専用INBOX（まだNext/Plan/Dreamに仕分けていないもの） -->
       <div class="task-inbox-col" id="wish-inbox-col-wrap">
@@ -2996,24 +3045,37 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
         <div class="task-section-body" id="wish-inbox-list"><div class="loading">読み込み中...</div></div>
       </div>
 
-      <!-- Next -->
-      <div class="task-gtd-area wish-col" id="wish-slot-next" data-wish="Next">
-        <div class="gtd-slot-header">Next</div>
-        <div class="task-section-body" id="wish-list-next"></div>
-      </div>
+      <!-- 右：分類先（sticky） -->
+      <div class="task-gtd-col" id="wish-gtd-col">
 
-      <!-- Plan -->
-      <div class="task-gtd-area wish-col" id="wish-slot-plan" data-wish="Plan">
-        <div class="gtd-slot-header">Plan</div>
-        <div class="task-section-body" id="wish-list-plan"></div>
-      </div>
+        <!-- Next/Plan/Dreamの逆三角クラスター。当たり判定・展開はdiv自身が担う（elementFromPointは
+             clip-pathの外側をヒットしないため重なった3枚でも正しく判別できる）。境界線だけは
+             clip-pathの斜め辺にborderが描画されない制約があるため、下に敷いた装飾用SVGで描く -->
+        <div class="wish-tri-grid">
+          <svg class="wish-tri-borders" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line x1="50" y1="0" x2="0" y2="100"></line>
+            <line x1="50" y1="0" x2="100" y2="100"></line>
+          </svg>
+          <div class="wish-tri wish-tri-next" id="wish-slot-next" data-wish="Next" onclick="openGtdQuadrant('wnext')">
+            <div class="wish-tri-label">NEXT<span class="gtd-quadrant-count" id="gtd-wnext-count"></span></div>
+          </div>
+          <div class="wish-tri wish-tri-plan" id="wish-slot-plan" data-wish="Plan" onclick="openGtdQuadrant('wplan')">
+            <div class="wish-tri-label">PLAN<span class="gtd-quadrant-count" id="gtd-wplan-count"></span></div>
+          </div>
+          <div class="wish-tri wish-tri-dream" id="wish-slot-dream" data-wish="Dream" onclick="openGtdQuadrant('wdream')">
+            <div class="wish-tri-label">DREAM<span class="gtd-quadrant-count" id="gtd-wdream-count"></span></div>
+          </div>
+        </div>
 
-      <!-- Dream -->
-      <div class="task-gtd-area wish-col" id="wish-slot-dream" data-wish="Dream">
-        <div class="gtd-slot-header">Dream</div>
-        <div class="task-section-body" id="wish-list-dream"></div>
-      </div>
+        <!-- 今すぐやる：ドロップ専用（TASKと同じ炎パネル。落とした瞬間に完了扱い） -->
+        <div class="task-gtd-area gtd-area-imasugu" id="wish-slot-imasugu" data-wish="🔥 今すぐやる"></div>
 
+        <!-- TASKへ戻す：ドロップするとAREAがTASKに変わる -->
+        <div class="task-gtd-area gtd-area-project-simple" id="wish-slot-task">
+          <div class="gtd-slot-header gtd-slot-header-centered">TASK</div>
+        </div>
+
+      </div>
     </div>
   </div><!-- /#wish-content -->
 
@@ -7771,12 +7833,15 @@ let overlayMode = null;         // null | 'impurg' | 'imp' | 'urg' | 'trash' | '
 let overlayProjectId = null;
 let projMiniExpanded = false;
 
-const _OVERLAY_GTD_MAP = { impurg: '▶️ IMPORTANT URGENT', imp: '💫 IMPORTANT urgent', urg: '💨 important URGENT', trash: '🗑️important urgent' };
-const _OVERLAY_KEYS = ['impurg', 'imp', 'urg', 'trash'];
+// TASK側（GTD 種別）・WISH側（WISH 種別）の展開パネルをまとめて同じ仕組みで扱う。
+// wnext/wplan/wdreamはWISH画面の逆三角クラスター（Next/Plan/Dream）に対応する
+const _OVERLAY_GTD_MAP = { impurg: '▶️ IMPORTANT URGENT', imp: '💫 IMPORTANT urgent', urg: '💨 important URGENT', trash: '🗑️important urgent', wnext: 'Next', wplan: 'Plan', wdream: 'Dream' };
+const _OVERLAY_PROP = { impurg: 'GTD 種別', imp: 'GTD 種別', urg: 'GTD 種別', trash: 'GTD 種別', wnext: 'WISH 種別', wplan: 'WISH 種別', wdream: 'WISH 種別' };
+const _OVERLAY_KEYS = ['impurg', 'imp', 'urg', 'trash', 'wnext', 'wplan', 'wdream'];
 // ▼を押す直前に表示していたタスクID集合。null＝まだ一度も▼を押していない（何も薄くしない）。
 // ここに含まれるもの＝既存カード（薄く表示）、含まれないもの＝今回新しく表示された分
-const _overlayListPrevIds = { impurg: null, imp: null, urg: null, trash: null };
-const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
+const _overlayListPrevIds = { impurg: null, imp: null, urg: null, trash: null, wnext: null, wplan: null, wdream: null };
+const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project', wnext: 'wish-slot-next', wplan: 'wish-slot-plan', wdream: 'wish-slot-dream' };
 
 // 4象限パネル全体のクリックで展開する。展開後はパネルが画面いっぱいに広がり、
 // 中の要素（タスクカードやページネーション）のクリックがこのonclickまで泡上がってくるため、
@@ -7818,9 +7883,14 @@ function openOverlay(key) {
   overlayProjectId = null;
   _OVERLAY_KEYS.forEach(k => { pinnedCollapse(k); _overlayListPrevIds[k] = null; });
 
+  // TASK画面の展開かWISH画面の展開かで、操作対象のINBOX列・分類先列が変わる
+  const isWish = _OVERLAY_PROP[key] === 'WISH 種別';
+  const inboxColId = isWish ? 'wish-inbox-col-wrap' : 'task-inbox-col-wrap';
+  const gtdColId    = isWish ? 'wish-gtd-col' : 'task-gtd-col';
+
   // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
-  const inboxCol = document.getElementById('task-inbox-col-wrap');
-  const gtdCol   = document.getElementById('task-gtd-col');
+  const inboxCol = document.getElementById(inboxColId);
+  const gtdCol   = document.getElementById(gtdColId);
   const btmNav   = document.querySelector('.bottom-nav');
   const btmTop   = btmNav ? btmNav.getBoundingClientRect().top : window.innerHeight;
   // パネルはtop:12pxから始まる（通常時のパネル上部の余白と揃える）。
@@ -7870,13 +7940,16 @@ function openOverlay(key) {
   // 「今すぐやる」は_OVERLAY_SLOTSに含まれず上のループで隠されないため、
   // 展開パネル（inset:0で列全体に重なる）の下に元の位置のまま残り、
   // 半透明背景越しに黒い炎の画像が透けて見えてしまう。個別に隠す。
-  const imasuguEl = document.getElementById('gtd-slot-imasugu');
+  const imasuguEl = document.getElementById(isWish ? 'wish-slot-imasugu' : 'gtd-slot-imasugu');
   if (imasuguEl) imasuguEl.style.display = 'none';
+  // WISHの「TASKへ戻す」パネルも同様に隠す
+  if (isWish) { const taskPanelEl = document.getElementById('wish-slot-task'); if (taskPanelEl) taskPanelEl.style.display = 'none'; }
 
   document.body.style.overflow = 'hidden';
 }
 
 function closeOverlay() {
+  const isWish = _OVERLAY_PROP[overlayMode] === 'WISH 種別';
   overlayMode = null;
   overlayProjectId = null;
   _OVERLAY_KEYS.forEach(k => { pinnedCollapse(k); _overlayListPrevIds[k] = null; });
@@ -7885,7 +7958,7 @@ function closeOverlay() {
   document.getElementById('task-overlay').style.display = 'none';
 
   // INBOXパネルのインラインスタイルを元に戻す
-  const inboxCol = document.getElementById('task-inbox-col-wrap');
+  const inboxCol = document.getElementById(isWish ? 'wish-inbox-col-wrap' : 'task-inbox-col-wrap');
   if (inboxCol) {
     inboxCol.style.cssText = inboxCol._expandOrigStyle || '';
     inboxCol._expandOrigStyle = null;
@@ -7893,7 +7966,7 @@ function closeOverlay() {
   }
 
   // GTD列のインラインスタイルを元に戻す
-  const gtdCol = document.getElementById('task-gtd-col');
+  const gtdCol = document.getElementById(isWish ? 'wish-gtd-col' : 'task-gtd-col');
   if (gtdCol) {
     gtdCol.style.cssText = gtdCol._expandOrigStyle || '';
     gtdCol._expandOrigStyle = null;
@@ -7910,20 +7983,22 @@ function closeOverlay() {
     if (content) content.remove();
     const pag = el.querySelector('.expand-pagination-bar');
     if (pag) pag.remove();
-    // gtd-slot-headerのテキストをリセット
+    // gtd-slot-headerのテキストをリセット（WISHの三角形はgtd-slot-headerを持たないため対象外）
     const sh = el.querySelector('.gtd-slot-header');
     if (sh) sh.textContent = slotId === 'gtd-slot-project' ? 'PROJECT' : '';
   });
 
   // 「今すぐやる」を再表示
-  const imasuguEl = document.getElementById('gtd-slot-imasugu');
+  const imasuguEl = document.getElementById(isWish ? 'wish-slot-imasugu' : 'gtd-slot-imasugu');
   if (imasuguEl) imasuguEl.style.display = '';
+  if (isWish) { const taskPanelEl = document.getElementById('wish-slot-task'); if (taskPanelEl) taskPanelEl.style.display = ''; }
 
   document.body.style.overflow = '';
   renderAll();
   // overlayMode が null になった後に renderTaskPage を呼ぶことで
   // !overlayMode ガードが通り INBOX リストが最新状態に更新される
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+  if (currentPage === 'wish') try { renderWishPage(); } catch(e) {}
 }
 
 function _injectExpandContent(panel, key) {
@@ -7961,7 +8036,10 @@ function _injectExpandContent(panel, key) {
 
   const gtdVal = _OVERLAY_GTD_MAP[key];
   if (!gtdVal) return;
-  let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal && getProp(t,'エリア') !== 'WISH');
+  const prop = _OVERLAY_PROP[key] || 'GTD 種別';
+  let tasks = prop === 'WISH 種別'
+    ? allTasks.filter(t => !isDoneT(t) && getProp(t,'エリア') === 'WISH' && getProp(t, prop) === gtdVal)
+    : allTasks.filter(t => !isDoneT(t) && getProp(t, prop) === gtdVal && getProp(t,'エリア') !== 'WISH');
 
   if (key === 'impurg') {
     // 重要×緊急はエリア別グループ＋締切順（旧「次やる」の表示を踏襲）
@@ -8060,7 +8138,10 @@ function _overlayListStep(key, delta) {
     _overlayListPrevIds[key] = new Set(_pinnedDisplay[key] || []);
     const isDoneT = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
     const gtdVal = _OVERLAY_GTD_MAP[key];
-    let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal && getProp(t,'エリア') !== 'WISH');
+    const prop = _OVERLAY_PROP[key] || 'GTD 種別';
+    let tasks = prop === 'WISH 種別'
+      ? allTasks.filter(t => !isDoneT(t) && getProp(t,'エリア') === 'WISH' && getProp(t, prop) === gtdVal)
+      : allTasks.filter(t => !isDoneT(t) && getProp(t, prop) === gtdVal && getProp(t,'エリア') !== 'WISH');
     if (key === 'impurg') {
       const byDl = (a, b) => { const ma = dlMs(a), mb = dlMs(b); if (!isFinite(ma)&&!isFinite(mb)) return 0; if (!isFinite(ma)) return 1; if (!isFinite(mb)) return -1; return ma-mb; };
       tasks = [...tasks].sort(byDl);
@@ -8220,6 +8301,24 @@ async function setWishKind(id, wishVal) {
   try { renderAll(); } catch(e) { console.error('renderAll in setWishKind:', e); }
 }
 
+// WISH画面の「今すぐやる」（炎パネル）：TASK側と同じく、落とした瞬間に完了扱いにする
+async function completeWishTask(id) {
+  if (taskState[id]) { taskState[id].done = true; saveTaskState(); }
+  notionUpdate(id, {'ステータス': {status: {name: '完了'}}}).catch(console.error);
+  renderWishPage();
+  try { renderAll(); } catch(e) { console.error('renderAll in completeWishTask:', e); }
+}
+
+// WISH画面の「TASK」パネル：AREAをTASKに変更し、TASK画面側へ渡す
+async function moveWishToTask(id) {
+  const task = allTasks.find(t => t.id === id);
+  if (task) task.properties['エリア'] = {type: 'select', select: {name: 'TASK'}};
+  notionUpdate(id, {'エリア': {select: {name: 'TASK'}}}).catch(console.error);
+  renderWishPage();
+  try { renderTaskPage(); } catch(e) {}
+  try { renderAll(); } catch(e) { console.error('renderAll in moveWishToTask:', e); }
+}
+
 // ===== タスクカード：2本指クリック（右クリック相当）での簡易メニュー =====
 let _taskCtxMenuEl = null;
 
@@ -8305,8 +8404,8 @@ function renderTaskPage() {
 
   const inboxTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX' && notWish(t));
   const gtdCounts = {};
-  Object.entries(_OVERLAY_GTD_MAP).forEach(([key, val]) => {
-    gtdCounts[key] = allTasks.filter(t => !isDone(t) && getGtd(t) === val && notWish(t)).length;
+  ['impurg', 'imp', 'urg', 'trash'].forEach(key => {
+    gtdCounts[key] = allTasks.filter(t => !isDone(t) && getGtd(t) === _OVERLAY_GTD_MAP[key] && notWish(t)).length;
   });
 
   // 左：常時INBOX
@@ -8358,12 +8457,11 @@ function renderWishPage() {
       : '<div class="section-empty">INBOXは空です 🎉</div>';
   }
 
-  ['Next', 'Plan', 'Dream'].forEach(kind => {
-    const el = document.getElementById(`wish-list-${kind.toLowerCase()}`);
-    if (!el) return;
-    el.innerHTML = byKind[kind].length
-      ? byKind[kind].map(t => renderGtdCard(t)).join('')
-      : '<div class="section-empty">なし</div>';
+  // Next/Plan/Dreamの逆三角形は普段は件数バッジのみ。中身はクリックで展開して見る（TASK画面と同じ方式）
+  ['wnext', 'wplan', 'wdream'].forEach(key => {
+    const kind = _OVERLAY_GTD_MAP[key];
+    const badge = document.getElementById(`gtd-${key}-count`);
+    if (badge) badge.textContent = byKind[kind].length ? `${byKind[kind].length}` : '';
   });
 
   requestAnimationFrame(() => { initGtdDrag(); });
@@ -8458,12 +8556,15 @@ const GTD_DROP_AREAS = [
   { elId: 'gtd-slot-imasugu', gtdVal: '🔥 今すぐやる' },
 ];
 
-// WISH画面（Next/Plan/Dream）用のドロップ先。TASK側とは別の「WISH 種別」プロパティを使う
+// WISH画面（Next/Plan/Dream）用のドロップ先。TASK側とは別の「WISH 種別」プロパティを使う。
+// imasugu／taskはWISH 種別ではなく別の挙動（即完了／AREAをTASKへ）を持つため action で分岐する
 const WISH_DROP_AREAS = [
   { elId: 'wish-inbox-col-wrap', gtdVal: '📥 INBOX' },
   { elId: 'wish-slot-next',  gtdVal: 'Next' },
   { elId: 'wish-slot-plan',  gtdVal: 'Plan' },
   { elId: 'wish-slot-dream', gtdVal: 'Dream' },
+  { elId: 'wish-slot-imasugu', gtdVal: '🔥 今すぐやる', action: 'complete' },
+  { elId: 'wish-slot-task',    gtdVal: 'TASK',          action: 'toTask' },
 ];
 
 // GTDボタン・タイムボタン等、カード内の個別操作は拾い上げ判定から除外する
@@ -8536,15 +8637,29 @@ function initGtdDrag() {
   });
 }
 
+// WISHの逆三角クラスターは3つとも同じ矩形（position:absolute;inset:0）をclip-pathで
+// 見た目だけ切り抜いているため、矩形の重なり判定では常に配列の先頭が勝ってしまう。
+// 実際に見えている（描画されている）要素を返すelementFromPointで判定する
+function _dropAreaAtPoint(areas, cx, cy) {
+  const el = document.elementFromPoint(cx, cy);
+  if (!el) return null;
+  const ids = new Set(areas.map(a => a.elId));
+  let node = el;
+  while (node && node !== document.body) {
+    if (ids.has(node.id)) return areas.find(a => a.elId === node.id);
+    node = node.parentElement;
+  }
+  return null;
+}
+
 function updateGtdDropHighlight(cx, cy) {
+  const hit = _dropAreaAtPoint(gtdDragAreas || [], cx, cy);
   (gtdDragAreas || []).forEach(({ elId, gtdVal }) => {
     const el = document.getElementById(elId);
     if (!el) return;
     // ドラッグ元のパネルはハイライトしない
     if (gtdVal === gtdDragSrcVal) { el.classList.remove('gtd-drop-active'); return; }
-    const r = el.getBoundingClientRect();
-    const over = r.width > 0 && cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
-    el.classList.toggle('gtd-drop-active', over);
+    el.classList.toggle('gtd-drop-active', !!hit && hit.elId === elId);
   });
 }
 
@@ -8559,16 +8674,15 @@ function finishGtdDrag(cx, cy) {
   const savedAreas = gtdDragAreas || [];
   gtdDragId = null; gtdDragEl = null; gtdDragSrcVal = null; gtdDragAreas = null;
 
-  const target = savedAreas.find(({ elId }) => {
-    const el = document.getElementById(elId);
-    if (!el) return false;
-    const r = el.getBoundingClientRect();
-    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
-  });
+  const target = _dropAreaAtPoint(savedAreas, cx, cy);
   if (!target) return;
 
   const task = allTasks.find(t => t.id === savedId);
   if (!task) return;
+
+  if (target.action === 'complete') { completeWishTask(savedId); return; }
+  if (target.action === 'toTask') { moveWishToTask(savedId); return; }
+
   const currentVal = getProp(task, savedProp) || '📥 INBOX';
   if (target.gtdVal === currentVal) return;
 
