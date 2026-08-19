@@ -2401,11 +2401,13 @@ html[data-theme="light"] .gtd-slot-header-centered { background: transparent; co
   border: none;
   border-radius: 7px;
   background: none;
-  color: #c0392b;
+  color: #000000;
   font-size: 12px;
   cursor: pointer;
 }
-.task-ctx-item:hover { background: rgba(192,57,43,0.08); }
+.task-ctx-item:hover { background: rgba(0,0,0,0.06); }
+.task-ctx-item-danger { color: #c0392b; }
+.task-ctx-item-danger:hover { background: rgba(192,57,43,0.08); }
 /* PROJECTミニグリッド */
 .proj-mini-grid {
   display: grid;
@@ -8085,7 +8087,10 @@ function openTaskCtxMenu(id, x, y) {
   _closeTaskCtxMenu();
   const menu = document.createElement('div');
   menu.className = 'task-ctx-menu';
-  menu.innerHTML = `<button class="task-ctx-item" data-act="complete-delete">完了にすると削除する</button>`;
+  menu.innerHTML = `
+    <button class="task-ctx-item" data-act="complete">完了にする</button>
+    <button class="task-ctx-item task-ctx-item-danger" data-act="delete">削除する</button>
+  `;
   document.body.appendChild(menu);
   // 画面外にはみ出さないよう、追加後の実サイズを見てから位置決めする
   const menuW = menu.offsetWidth, menuH = menu.offsetHeight;
@@ -8093,7 +8098,12 @@ function openTaskCtxMenu(id, x, y) {
   menu.style.top  = Math.min(y, window.innerHeight - menuH - 8) + 'px';
   _taskCtxMenuEl = menu;
 
-  menu.querySelector('[data-act="complete-delete"]').onclick = e => {
+  menu.querySelector('[data-act="complete"]').onclick = e => {
+    e.stopPropagation();
+    if (taskState[id] && !taskState[id].done) toggleDone(id);
+    _closeTaskCtxMenu();
+  };
+  menu.querySelector('[data-act="delete"]').onclick = e => {
     e.stopPropagation();
     setGtdKind(id, '🗑️important urgent'); // 完了扱い＋「非重要×非緊急（ゴミ箱）」への分類。Notionからの削除ではない
     _closeTaskCtxMenu();
