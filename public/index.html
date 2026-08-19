@@ -2200,6 +2200,26 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   overflow: hidden;
   background: rgba(10,8,20,0.72);
 }
+
+/* ===== WISH PAGE（Next/Plan/Dreamを横並びで同時表示） ===== */
+#wish-content { display: none; }
+.wish-page-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px;
+}
+.wish-page-grid .task-inbox-col,
+.wish-col {
+  height: calc(100vh - 100px);
+}
+.wish-col .task-section-body,
+.wish-page-grid .task-inbox-col .task-section-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+}
+
 .task-gtd-col {
   display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 12px; align-self: start;
@@ -2691,6 +2711,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
 <div class="sidebar">
   <button class="sb-btn active" data-page="home" onclick="showPage('home')"><span class="sb-icon">🏠</span><span class="sb-label">Home</span></button>
   <button class="sb-btn" data-page="task" onclick="showPage('task')"><span class="sb-icon">📋</span><span class="sb-label">Task</span></button>
+  <button class="sb-btn" data-page="wish" onclick="showPage('wish')"><span class="sb-icon">✨</span><span class="sb-label">Wish</span></button>
   <button class="sb-btn" data-page="project" onclick="showPage('project')"><span class="sb-icon">🗂</span><span class="sb-label">Project</span></button>
   <!-- <a class="sb-btn" href="https://www.notion.so/ede1fe04ef4948d49d525d24868b9858" target="_blank"><span class="sb-icon">📝</span><span class="sb-label">Note</span></a> -->
   <!-- <a class="sb-btn" href="https://www.notion.so/3524c1ec140d8127a9a2c7c3aae1d99b" target="_blank"><span class="sb-icon">📚</span><span class="sb-label">資料</span></a> -->
@@ -2962,6 +2983,39 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       </div>
     </div>
   </div><!-- /#task-content -->
+
+  <!-- WISH画面：Next/Plan/Dreamの3カラムを横並びで同時表示する。重要×緊急とは別軸 -->
+  <div id="wish-content">
+    <div class="wish-page-grid">
+
+      <!-- 左：WISH専用INBOX（まだNext/Plan/Dreamに仕分けていないもの） -->
+      <div class="task-inbox-col" id="wish-inbox-col-wrap">
+        <div class="task-toggle-header">
+          <span id="wish-left-label">📥 INBOX</span>
+        </div>
+        <div class="task-section-body" id="wish-inbox-list"><div class="loading">読み込み中...</div></div>
+      </div>
+
+      <!-- Next -->
+      <div class="task-gtd-area wish-col" id="wish-slot-next" data-wish="Next">
+        <div class="gtd-slot-header">Next</div>
+        <div class="task-section-body" id="wish-list-next"></div>
+      </div>
+
+      <!-- Plan -->
+      <div class="task-gtd-area wish-col" id="wish-slot-plan" data-wish="Plan">
+        <div class="gtd-slot-header">Plan</div>
+        <div class="task-section-body" id="wish-list-plan"></div>
+      </div>
+
+      <!-- Dream -->
+      <div class="task-gtd-area wish-col" id="wish-slot-dream" data-wish="Dream">
+        <div class="gtd-slot-header">Dream</div>
+        <div class="task-section-body" id="wish-list-dream"></div>
+      </div>
+
+    </div>
+  </div><!-- /#wish-content -->
 
   <!-- プロジェクト画面 -->
   <div id="project-content">
@@ -4794,7 +4848,8 @@ function renderPaginationBar(el, targetCount, defaultCount, totalCount, selected
 function getNextTasks() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
   const gtdNext = t => getProp(t,'GTD 種別')==='▶️ IMPORTANT URGENT';
-  return allTasks.filter(t => !isDone(t) && gtdNext(t));
+  const notWish = t => getProp(t,'エリア') !== 'WISH';
+  return allTasks.filter(t => !isDone(t) && gtdNext(t) && notWish(t));
 }
 
 function stepNextList(delta) {
@@ -4904,7 +4959,8 @@ let niuPrevSelectedIds = new Set();
 function getNiuTasks() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス')==='完了';
   const gtdNiu = t => getProp(t,'GTD 種別')==='💨 important URGENT';
-  return allTasks.filter(t => !isDone(t) && gtdNiu(t));
+  const notWish = t => getProp(t,'エリア') !== 'WISH';
+  return allTasks.filter(t => !isDone(t) && gtdNiu(t) && notWish(t));
 }
 
 function stepNiuList(delta) {
@@ -5092,6 +5148,7 @@ async function loadTasks() {
   // 進捗度パネルは機能停止中（復活させる場合はコメントを外す）
   // try { updateProgress(); } catch(e) { console.error('updateProgress error:', e); }
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) { console.error('renderTaskPage error:', e); }
+  if (currentPage === 'wish') try { renderWishPage(); } catch(e) { console.error('renderWishPage error:', e); }
   // 開いていた子タスクパネルを復元
   openSubtaskPanels.forEach(id => {
     const panel = document.getElementById(`stp-${id}`);
@@ -7065,6 +7122,7 @@ async function saveEditModal() {
   closeEditModal();
   renderAll();
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+  if (currentPage === 'wish') try { renderWishPage(); } catch(e) {}
 
   const props = {
     'GTD 種別': {status: {name: gtdVal}},
@@ -7165,6 +7223,7 @@ async function addToInbox() {
   allTasks.unshift(tempTask);
   try { renderAll(); } catch(e) {}
   if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+  if (currentPage === 'wish') try { renderWishPage(); } catch(e) {}
 
   // Notion保存はバックグラウンドで実行、完了後に仮IDを本IDへ差し替え
   notionCreate(DB.tasks, props).then(page => {
@@ -7177,6 +7236,7 @@ async function addToInbox() {
     if (idx !== -1) { if (page?.id) allTasks[idx] = page; else allTasks.splice(idx, 1); }
     try { renderAll(); } catch(e) {}
     if (currentPage === 'task') try { renderTaskPage(); } catch(e) {}
+    if (currentPage === 'wish') try { renderWishPage(); } catch(e) {}
   }).catch(e => {
     console.error(e);
     const idx = allTasks.findIndex(t => t.id === tempId);
@@ -7185,6 +7245,7 @@ async function addToInbox() {
     saveTaskState();
     try { renderAll(); } catch(e2) {}
     if (currentPage === 'task') try { renderTaskPage(); } catch(e2) {}
+    if (currentPage === 'wish') try { renderWishPage(); } catch(e2) {}
     showToast('❌ 追加に失敗しました', 'rgba(220,50,50,0.92)');
   });
 }
@@ -7681,11 +7742,13 @@ function showPage(page) {
   currentPage = page;
   document.getElementById('home-content').style.display = page === 'home' ? 'block' : 'none';
   document.getElementById('task-content').style.display = page === 'task' ? 'block' : 'none';
+  document.getElementById('wish-content').style.display = page === 'wish' ? 'block' : 'none';
   document.getElementById('project-content').style.display = page === 'project' ? 'block' : 'none';
   document.querySelectorAll('.sb-btn[data-page]').forEach(b => {
     b.classList.toggle('active', b.dataset.page === page);
   });
   if (page === 'task') renderTaskPage();
+  if (page === 'wish') renderWishPage();
   if (page === 'project') renderProjectList();
   if (page === 'home') {
     // display:none中にサイズ計測できなかったFullCalendarのレイアウトを再計算
@@ -7898,7 +7961,7 @@ function _injectExpandContent(panel, key) {
 
   const gtdVal = _OVERLAY_GTD_MAP[key];
   if (!gtdVal) return;
-  let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
+  let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal && getProp(t,'エリア') !== 'WISH');
 
   if (key === 'impurg') {
     // 重要×緊急はエリア別グループ＋締切順（旧「次やる」の表示を踏襲）
@@ -7997,7 +8060,7 @@ function _overlayListStep(key, delta) {
     _overlayListPrevIds[key] = new Set(_pinnedDisplay[key] || []);
     const isDoneT = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
     const gtdVal = _OVERLAY_GTD_MAP[key];
-    let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
+    let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal && getProp(t,'エリア') !== 'WISH');
     if (key === 'impurg') {
       const byDl = (a, b) => { const ma = dlMs(a), mb = dlMs(b); if (!isFinite(ma)&&!isFinite(mb)) return 0; if (!isFinite(ma)) return 1; if (!isFinite(mb)) return -1; return ma-mb; };
       tasks = [...tasks].sort(byDl);
@@ -8147,6 +8210,16 @@ async function setGtdKind(id, gtdVal) {
   try { renderAll(); } catch(e) { console.error('renderAll in setGtdKind:', e); }
 }
 
+// WISH画面（Next/Plan/Dream）の分類。GTD 種別とは独立した「WISH 種別」プロパティを使う。
+// TASK側のような自動完了などの特殊挙動は持たない
+async function setWishKind(id, wishVal) {
+  const task = allTasks.find(t => t.id === id);
+  if (task) task.properties['WISH 種別'] = {type: 'select', select: {name: wishVal}};
+  notionUpdate(id, {'WISH 種別': {select: {name: wishVal}}}).catch(console.error);
+  renderWishPage();
+  try { renderAll(); } catch(e) { console.error('renderAll in setWishKind:', e); }
+}
+
 // ===== タスクカード：2本指クリック（右クリック相当）での簡易メニュー =====
 let _taskCtxMenuEl = null;
 
@@ -8228,11 +8301,12 @@ function collapseTaskNext()  { taskNextExpanded  = false; renderTaskPage(); }
 function renderTaskPage() {
   const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
   const getGtd = t => getProp(t,'GTD 種別');
+  const notWish = t => getProp(t,'エリア') !== 'WISH';
 
-  const inboxTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX');
+  const inboxTasks = allTasks.filter(t => !isDone(t) && getGtd(t) === '📥 INBOX' && notWish(t));
   const gtdCounts = {};
   Object.entries(_OVERLAY_GTD_MAP).forEach(([key, val]) => {
-    gtdCounts[key] = allTasks.filter(t => !isDone(t) && getGtd(t) === val).length;
+    gtdCounts[key] = allTasks.filter(t => !isDone(t) && getGtd(t) === val && notWish(t)).length;
   });
 
   // 左：常時INBOX
@@ -8260,6 +8334,39 @@ function renderTaskPage() {
   if (overlayMode) _renderOverlay();
 
   requestAnimationFrame(() => { initGtdDrag(); applyGtdColFixed(); });
+}
+
+// ===== WISH画面（Next/Plan/Dream） =====
+function renderWishPage() {
+  const isDone = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+  const isWish = t => getProp(t,'エリア') === 'WISH';
+  const wishTasks = allTasks.filter(t => !isDone(t) && isWish(t));
+
+  const byKind = { inbox: [], Next: [], Plan: [], Dream: [] };
+  wishTasks.forEach(t => {
+    const k = getProp(t, 'WISH 種別') || '📥 INBOX';
+    if (k === 'Next' || k === 'Plan' || k === 'Dream') byKind[k].push(t);
+    else byKind.inbox.push(t);
+  });
+
+  const inboxLabel = document.getElementById('wish-left-label');
+  const inboxList  = document.getElementById('wish-inbox-list');
+  if (inboxLabel) inboxLabel.innerHTML = `📥 INBOX<span class="task-count">${byKind.inbox.length ? `(${byKind.inbox.length})` : ''}</span>`;
+  if (inboxList) {
+    inboxList.innerHTML = byKind.inbox.length
+      ? byKind.inbox.map(t => renderGtdCard(t)).join('')
+      : '<div class="section-empty">INBOXは空です 🎉</div>';
+  }
+
+  ['Next', 'Plan', 'Dream'].forEach(kind => {
+    const el = document.getElementById(`wish-list-${kind.toLowerCase()}`);
+    if (!el) return;
+    el.innerHTML = byKind[kind].length
+      ? byKind[kind].map(t => renderGtdCard(t)).join('')
+      : '<div class="section-empty">なし</div>';
+  });
+
+  requestAnimationFrame(() => { initGtdDrag(); });
 }
 
 function _renderProjMini() {
@@ -8339,7 +8446,8 @@ function _buildProjectLeftHtml(pid) {
 }
 
 // ===== タスクページ GTD分類（クリックで持ち上げ→クリックで確定） =====
-let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragSrcGtd = null;
+let gtdDragId = null, gtdDragEl = null, gtdDragGhost = null, gtdDragSrcVal = null;
+let gtdDragProp = 'GTD 種別', gtdDragAreas = null;
 
 const GTD_DROP_AREAS = [
   { elId: 'task-inbox-col-wrap', gtdVal: '📥 INBOX' },
@@ -8348,6 +8456,14 @@ const GTD_DROP_AREAS = [
   { elId: 'gtd-slot-urg',     gtdVal: '💨 important URGENT' },
   { elId: 'gtd-slot-trash',   gtdVal: '🗑️important urgent' },
   { elId: 'gtd-slot-imasugu', gtdVal: '🔥 今すぐやる' },
+];
+
+// WISH画面（Next/Plan/Dream）用のドロップ先。TASK側とは別の「WISH 種別」プロパティを使う
+const WISH_DROP_AREAS = [
+  { elId: 'wish-inbox-col-wrap', gtdVal: '📥 INBOX' },
+  { elId: 'wish-slot-next',  gtdVal: 'Next' },
+  { elId: 'wish-slot-plan',  gtdVal: 'Plan' },
+  { elId: 'wish-slot-dream', gtdVal: 'Dream' },
 ];
 
 // GTDボタン・タイムボタン等、カード内の個別操作は拾い上げ判定から除外する
@@ -8369,8 +8485,8 @@ function initGtdDrag() {
       finishGtdDrag(e.clientX, e.clientY);
       return;
     }
-    // 1回目のクリック：タスクカードの拾い上げ判定
-    const card = e.target.closest('#task-content .task-card');
+    // 1回目のクリック：タスクカードの拾い上げ判定（TASK画面・WISH画面どちらのカードも対象）
+    const card = e.target.closest('#task-content .task-card, #wish-content .task-card');
     if (!card) return;
     if (e.target.closest(GTD_PICKUP_EXCLUDE)) return;
 
@@ -8379,9 +8495,12 @@ function initGtdDrag() {
     const task = allTasks.find(t => t.id === id);
     if (!task) return;
 
+    const inWish = !!card.closest('#wish-content');
     gtdDragId = id;
     gtdDragEl = card;
-    gtdDragSrcGtd = getProp(task, 'GTD 種別') || '📥 INBOX';
+    gtdDragProp = inWish ? 'WISH 種別' : 'GTD 種別';
+    gtdDragAreas = inWish ? WISH_DROP_AREAS : GTD_DROP_AREAS;
+    gtdDragSrcVal = getProp(task, gtdDragProp) || '📥 INBOX';
     card.classList.add('gtd-dragging');
     gtdDragGhost = document.createElement('div');
     gtdDragGhost.className = 'gtd-drag-ghost';
@@ -8400,7 +8519,8 @@ function initGtdDrag() {
       finishGtdDrag(-1, -1); // 画面外座標＝どのGTD_DROP_AREASにも一致しない＝キャンセル
       return;
     }
-    const card = e.target.closest('.task-card');
+    // 完了/削除メニューはTASK画面のカードのみ対象（削除＝GTD種別のゴミ箱行きはWISHには存在しないため）
+    const card = e.target.closest('#task-content .task-card');
     if (!card) return;
     const id = card.id.replace(/^(tc-|gtc-)/, '');
     if (!id) return;
@@ -8417,11 +8537,11 @@ function initGtdDrag() {
 }
 
 function updateGtdDropHighlight(cx, cy) {
-  GTD_DROP_AREAS.forEach(({ elId, gtdVal }) => {
+  (gtdDragAreas || []).forEach(({ elId, gtdVal }) => {
     const el = document.getElementById(elId);
     if (!el) return;
     // ドラッグ元のパネルはハイライトしない
-    if (gtdVal === gtdDragSrcGtd) { el.classList.remove('gtd-drop-active'); return; }
+    if (gtdVal === gtdDragSrcVal) { el.classList.remove('gtd-drop-active'); return; }
     const r = el.getBoundingClientRect();
     const over = r.width > 0 && cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
     el.classList.toggle('gtd-drop-active', over);
@@ -8432,12 +8552,14 @@ function finishGtdDrag(cx, cy) {
   gtdDragEl?.classList.remove('gtd-dragging');
   gtdDragGhost?.remove();
   gtdDragGhost = null;
-  GTD_DROP_AREAS.forEach(({ elId }) => document.getElementById(elId)?.classList.remove('gtd-drop-active'));
+  (gtdDragAreas || []).forEach(({ elId }) => document.getElementById(elId)?.classList.remove('gtd-drop-active'));
 
   const savedId = gtdDragId;
-  gtdDragId = null; gtdDragEl = null; gtdDragSrcGtd = null;
+  const savedProp = gtdDragProp;
+  const savedAreas = gtdDragAreas || [];
+  gtdDragId = null; gtdDragEl = null; gtdDragSrcVal = null; gtdDragAreas = null;
 
-  const target = GTD_DROP_AREAS.find(({ elId }) => {
+  const target = savedAreas.find(({ elId }) => {
     const el = document.getElementById(elId);
     if (!el) return false;
     const r = el.getBoundingClientRect();
@@ -8447,8 +8569,10 @@ function finishGtdDrag(cx, cy) {
 
   const task = allTasks.find(t => t.id === savedId);
   if (!task) return;
-  const currentGtd = getProp(task, 'GTD 種別') || '📥 INBOX';
-  if (target.gtdVal === currentGtd) return;
+  const currentVal = getProp(task, savedProp) || '📥 INBOX';
+  if (target.gtdVal === currentVal) return;
+
+  if (savedProp === 'WISH 種別') { setWishKind(savedId, target.gtdVal); return; }
 
   setGtdKind(savedId, target.gtdVal);
 }

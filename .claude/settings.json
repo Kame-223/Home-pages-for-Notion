@@ -12,7 +12,13 @@
       "Bash(python3 -m pip install --user playwright)",
       "Bash(python3 -m playwright install chromium)",
       "Bash(python3 *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "mcp__Notion__notion-fetch",
+      "mcp__Notion__notion-search",
+      "mcp__Notion__notion-query-data-sources",
+      "mcp__Notion__notion-update-data-source",
+      "mcp__Notion__notion-update-page",
+      "mcp__Notion__notion-create-pages"
     ],
     "deny": [
       "Bash(git push --force*)",
