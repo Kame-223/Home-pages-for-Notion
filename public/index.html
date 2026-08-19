@@ -146,6 +146,14 @@ html[data-theme="light"] .gtd-reveal-btn:hover { background: rgba(0,0,0,0.07); b
 html[data-theme="light"] .gtd-slot-header { color: var(--text); background: var(--surface2); border-bottom-color: var(--border); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area { background: rgba(255,255,255,0.8); }
 html[data-theme="light"] #task-gtd-col .task-gtd-area.gtd-drop-active:not(.expand-target) { background: rgba(255,255,255,1) !important; border-color: rgba(0,0,0,0.3); box-shadow: inset 0 0 16px rgba(0,0,0,0.08); }
+/* 今すぐやるパネルは背景に炎の画像を敷いているため、ドラッグ中の白背景ハイライトで画像を隠さない。
+   枠線・内側の影だけで強調し、画像はそのまま見せる */
+html[data-theme="light"] #task-gtd-col #gtd-slot-imasugu.gtd-drop-active:not(.expand-target) {
+  background-color: transparent !important;
+  background-image: url('/backgrounds/imasugu-flame-black-red.png') !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
 
 /* ===== ライトモード: GTDドロップダウン ===== */
 html[data-theme="light"] .gtd-dropdown {
@@ -2360,6 +2368,44 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 .gtd-slot-header:empty {
   display: none;
 }
+/* PROJECT：個別プロジェクトの選択UIを持たない単一エリア。パネル中央にタイトルだけを置く */
+.gtd-area-project-simple {
+  align-items: center;
+  justify-content: center;
+}
+.gtd-slot-header-centered {
+  flex: none;
+  justify-content: center;
+  border-bottom: none;
+  background: transparent;
+}
+html[data-theme="light"] .gtd-slot-header-centered { background: transparent; color: #000000; }
+
+/* タスクカードの2本指クリック（右クリック相当）簡易メニュー */
+.task-ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #ffffff;
+  border: 0.5px solid rgba(0,0,0,0.15);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  padding: 4px;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.task-ctx-item {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  text-align: left;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: #c0392b;
+  font-size: 12px;
+  cursor: pointer;
+}
+.task-ctx-item:hover { background: rgba(192,57,43,0.08); }
 /* PROJECTミニグリッド */
 .proj-mini-grid {
   display: grid;
@@ -2906,14 +2952,9 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
         <!-- 今すぐやる：ドロップ専用（展開・一覧は無し、落とした瞬間に完了扱い） -->
         <div class="task-gtd-area gtd-area-imasugu" id="gtd-slot-imasugu" data-gtd="🔥 今すぐやる"></div>
 
-        <!-- PROJECT -->
-        <div class="task-gtd-area" id="gtd-slot-project">
-          <div class="gtd-slot-header">PROJECT</div>
-          <div class="proj-mini-grid" id="proj-mini-grid"></div>
-          <div class="proj-mini-footer">
-            <button class="proj-mini-more-btn" id="proj-mini-more" style="display:none" onclick="toggleProjMini()"></button>
-            <button class="gtd-reveal-btn" id="gtd-project-expand-btn" onclick="openOverlay('project')">展開（0件）</button>
-          </div>
+        <!-- PROJECT：個別プロジェクトの選択UIは持たず、単一のエリアとしてタイトルのみ表示 -->
+        <div class="task-gtd-area gtd-area-project-simple" id="gtd-slot-project">
+          <div class="gtd-slot-header gtd-slot-header-centered">PROJECT</div>
         </div>
 
       </div>
@@ -8032,6 +8073,35 @@ async function setGtdKind(id, gtdVal) {
   try { renderAll(); } catch(e) { console.error('renderAll in setGtdKind:', e); }
 }
 
+// ===== タスクカード：2本指クリック（右クリック相当）での簡易メニュー =====
+let _taskCtxMenuEl = null;
+
+function _closeTaskCtxMenu() {
+  if (_taskCtxMenuEl) { _taskCtxMenuEl.remove(); _taskCtxMenuEl = null; }
+  document.removeEventListener('click', _closeTaskCtxMenu);
+}
+
+function openTaskCtxMenu(id, x, y) {
+  _closeTaskCtxMenu();
+  const menu = document.createElement('div');
+  menu.className = 'task-ctx-menu';
+  menu.innerHTML = `<button class="task-ctx-item" data-act="complete-delete">完了にすると削除する</button>`;
+  document.body.appendChild(menu);
+  // 画面外にはみ出さないよう、追加後の実サイズを見てから位置決めする
+  const menuW = menu.offsetWidth, menuH = menu.offsetHeight;
+  menu.style.left = Math.min(x, window.innerWidth  - menuW - 8) + 'px';
+  menu.style.top  = Math.min(y, window.innerHeight - menuH - 8) + 'px';
+  _taskCtxMenuEl = menu;
+
+  menu.querySelector('[data-act="complete-delete"]').onclick = e => {
+    e.stopPropagation();
+    setGtdKind(id, '🗑️important urgent'); // 完了扱い＋「非重要×非緊急（ゴミ箱）」への分類。Notionからの削除ではない
+    _closeTaskCtxMenu();
+  };
+
+  setTimeout(() => document.addEventListener('click', _closeTaskCtxMenu), 0);
+}
+
 const TASK_PAGE_DEFAULT_COUNT = 5;
 let taskInboxExpanded = false;
 let taskNextExpanded  = false;
@@ -8229,10 +8299,19 @@ function initGtdDrag() {
 
   // 2本指クリック（右クリック相当）でその場キャンセル。通常のclickとは別系統のイベントなので、
   // ダブルクリックのように1回目のクリックで先にキャンセル判定が走ってしまう衝突が起きない。
+  // カードを持っていない状態での2本指クリックは、そのカードの簡易メニュー（完了にすると削除する）を開く。
   document.addEventListener('contextmenu', e => {
-    if (!gtdDragGhost) return;
+    if (gtdDragGhost) {
+      e.preventDefault();
+      finishGtdDrag(-1, -1); // 画面外座標＝どのGTD_DROP_AREASにも一致しない＝キャンセル
+      return;
+    }
+    const card = e.target.closest('.task-card');
+    if (!card) return;
+    const id = card.id.replace(/^(tc-|gtc-)/, '');
+    if (!id) return;
     e.preventDefault();
-    finishGtdDrag(-1, -1); // 画面外座標＝どのGTD_DROP_AREASにも一致しない＝キャンセル
+    openTaskCtxMenu(id, e.clientX, e.clientY);
   });
 
   document.addEventListener('pointermove', e => {
