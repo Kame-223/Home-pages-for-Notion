@@ -114,3 +114,46 @@ Notionの選択肢名は装飾（太字・打ち消し線）を持てないた�
 
 ## 締切タグ表記（2026-07 英語化・色簡略化）
 `deadlineTag()`のラベルを英語表記に変更（今日→Today、明日→Tomorrow、期限切れ→Overdue等）。日数が正確な範囲（今日・明日・2〜7日後/前）はそのまま、週・月単位の目安になる範囲（1週間後〜2ヶ月後、期限切れ側の1週間前・2週間前）は「以上」の意味で`+`を付けて表記（例: `1 Week+`, `2 Months+`）。色分けも今日/明日/期限切れ=赤（`tag-red`）・それ以外=グレー（`tag-gray`）の2色に簡略化（`tag-amber`/`tag-blue`はCSS定義のみ残存、未使用）。Importantタスクは従来通り`tag-imp-dl`。
+
+## QNH非表示化（2026-08）
+「決めること自体がストレスだった」という理由で、QNH（Quick/Normal/Heavy）関連のUI（タスクカードの時間タイプボタン、集中モードの見積もり選択など）を全て非表示にした。`taskState`の`timeType`等の保存データ・保存処理自体は削除していない（将来の復活・既存データ保護のため）。あわせて、構想のみで実装・設計書ともに存在していなかった「AIが当日の気分を見てQNHをおすすめする」機能は、着手前の時点で不採用と決定した（今後も追加しない）。
+
+## AREAプロパティのTASK/WISH改名とタスク/ウィッシュ分類の再設計（2026-08）
+`docs/chapter3-planning.md`・`docs/chapter4-projects.md`の追記（2026-08）も参照。
+
+### Notion側の変更
+- 「エリア」プロパティ（select型）の選択肢をOFFICIAL/PRIVATE→TASK/WISHへリネーム。`.claude/skills/notion-api-safety/SKILL.md`の安全手順（新option追加→ページ付け替え→旧option参照0件確認→旧option削除）に従って実施。色（TASK=`#9070C0`紫、WISH=`#F8D8B0`ピーチ）は維持
+- 新規プロパティ「WISH 種別」（select型：📥 INBOX/Next/Plan/Dream）を追加。既存の「GTD 種別」とは完全に独立しており、TASK側の自動化ロジック（今すぐやる/ゴミ箱の自動完了など）に影響しない
+
+### TASK画面（既存4象限グリッド）をTASK専用に絞り込み
+- 「次やる」（`getNextTasks()`）・「important urgent」（`getNiuTasks()`）・INBOX列・4象限バッジ集計（`gtdCounts`）に、それぞれ`getProp(t,'エリア') !== 'WISH'`のフィルタを追加。エリア未設定のタスクは（明示的にWISHにされない限り）引き続きTASK側に表示される
+- 4象限展開オーバーレイの汎用化：`_OVERLAY_GTD_MAP`/`_OVERLAY_PROP`/`_OVERLAY_KEYS`/`_OVERLAY_SLOTS`にWISH側のキー（`wnext`/`wplan`/`wdream`）を追加し、`openOverlay()`/`closeOverlay()`が対象プロパティ（GTD 種別／WISH 種別）に応じてTASK側・WISH側どちらのINBOX列・分類先列を操作するか自動判定するようにした
+
+### WISH画面（新規・#wish-content）
+TASK画面と同じ左右分割レイアウト（左：WISH専用INBOX、右：分類先）を採用。分類先は次の3段構成：
+1. **Next/Plan/Dreamの逆三角クラスター**（`.wish-tri-grid`）：左上NEXT・右上PLAN・下DREAM（大）の3枚を`clip-path`で三角形に切り抜いたdiv。TASK画面の4象限と同じ「クリックで展開」方式（`openGtdQuadrant('wnext'|'wplan'|'wdream')`）で、普段はラベル＋件数バッジのみ、クリックで該当パネルが列全体に展開しカード一覧を表示する。
+   - `clip-path`で切り取った斜め辺には`border`が描画されないCSS上の制約があるため、境界線は`pointer-events:none`の装飾用SVG（`.wish-tri-borders`、対角線2本の`<line>`）で別途描画し、外枠は`.wish-tri-grid`自身の`border`で描く。当たり判定・展開パネルへの差し替えは従来通りdiv自身が担う（`elementFromPoint`ベースの`_dropAreaAtPoint()`はclip-pathで切り取られた領域をヒットしないため、3枚が矩形として重なっていても正しく判別できる）
+   - 展開中（`.expand-target`）はclip-pathを解除し列全体に広がるよう`.wish-tri.expand-target`で上書き。装飾用SVGの境界線も`:has()`セレクタで非表示にする
+2. **今すぐやる（炎パネル）**：TASK画面と同じ背景画像。ドロップした瞬間に完了扱いにする（`completeWishTask()`、`ステータス`→`完了`）
+3. **TASKパネル**：ドロップすると`エリア`を`TASK`に変更し、WISHから完全に外れてTASK画面側へ移る（`moveWishToTask()`）
+
+分類（`setWishKind()`）はGTD側の`setGtdKind()`と独立した専用関数とし、TASK側のような自動完了などの特殊挙動は持たせていない。
+
+### ドラッグ&ドロップ機構の汎用化
+従来TASK専用だった「クリックで持ち上げ→クリックで確定」のGTD分類機構（`initGtdDrag()`/`updateGtdDropHighlight()`/`finishGtdDrag()`）を、対象プロパティ（`gtdDragProp`）とドロップ先定義（`gtdDragAreas`）を持ち回る形に一般化。ピックアップ元（`#task-content`/`#wish-content`/`#triage-content`のどのカードか）に応じて`GTD_DROP_AREAS`/`WISH_DROP_AREAS`/`TRIAGE_DROP_AREAS`のいずれかを選択する。ドロップ先の`action`フィールド（`complete`＝即完了、`toTask`＝AREAをTASKへ、`setArea`＝AREAを指定値へ）で、単純なプロパティ差し替え以外の特殊挙動を`finishGtdDrag()`内で分岐させている。
+
+### INBOX仕分け画面（新規・#triage-content、サイドバー「Sort」）
+GTD種別=`📥 INBOX`かつエリア未設定のタスクだけを対象に、左にINBOX一覧、右にTASK/WISHの振り分け先（大きな2枚のパネル）を配置。既存のクリック持ち上げ→クリック確定の分類機構をそのまま流用し、`エリア`プロパティを直接設定する（`setTriageArea()`）。振り分け後は仕分け画面から消え、TASK画面またはWISH画面の既存INBOX列にそのまま現れる（両画面とも別途再描画するのみで、この画面自体は行き先には関与しない）。
+
+## 今すぐやるパネルの白背景バグ修正・WISH側への展開（2026-08）
+ライトモードで`.task-gtd-area.gtd-drop-active`が背景を白へ差し替える通常のドラッグハイライトが、炎の背景画像を持つ「今すぐやる」パネル（`#gtd-slot-imasugu`）にもそのまま適用され、ドラッグ中に画像が真っ白に隠れてしまっていた。`html[data-theme="light"] #task-gtd-col #gtd-slot-imasugu.gtd-drop-active`に対して背景色を透明化し背景画像を維持する専用ルールを追加。WISH画面の`#wish-slot-imasugu`にも同様のルールを適用し、また炎の背景画像自体（`#gtd-slot-imasugu`にのみ効いていた`background-image`指定）も`#wish-slot-imasugu`に対して有効になるよう修正した（元々WISH側には未適用でパネルが白いままだった）。
+
+## タスクページ右パネルの常時固定表示（2026-08）
+`.task-gtd-col`が`position:sticky`のとき、左INBOX列が短い日に「`.task-page-grid`の下端に追いついて一緒にスクロールしてしまう」不具合があったため、常に`position:fixed`で画面上の同じ位置に固定する`applyGtdColFixed()`を追加（左INBOX列の現在位置を毎回測定し、その右隣にfixedで重ねる）。展開時（`openOverlay()`）の上部余白も、通常時と同じ`12px`に統一した。
+
+## 表示件数の自動繰り上げ（バックフィル）廃止（2026-08）
+INBOX列・IMPORTANT URGENTパネル・important URGENTパネル・4象限展開パネルの4箇所で採用していた「件数ベースの上位N件選択」を、「今表示している具体的なタスクIDの集合（pinned ids）」ベースの選択に置き換えた。表示中の1枚を完了・移動させて母数が減っても、次点のカードが自動で繰り上がって表示件数が埋まる動きをなくし、「もっと見る」を明示的に押したときだけ表示件数が増えるようにした。折りたたみ（▲）を押すとpinned idsをクリアし、次回描画時に先頭N件から再スタートする。
+
+## その他のUI調整（2026-08）
+- **PROJECTパネルの簡略化**：個別プロジェクトの一覧表示をやめ、パネル中央に「PROJECT」ラベルのみを表示する形に変更（`.gtd-area-project-simple`/`.gtd-slot-header-centered`）。同じスタイルをWISH画面の「TASK」パネルにも流用
+- **タスクカードの2本指クリックメニュー**：TASK画面のカードのみを対象に、2本指クリック（`contextmenu`イベント）で「完了にする」「削除する」の2ボタンを持つ簡易メニュー（`.task-ctx-menu`、`openTaskCtxMenu()`）を表示する。「削除する」はNotionからの削除ではなく、GTD種別を「非重要×非緊急（ゴミ箱）」へ分類する従来の完了扱いと同じ処理
