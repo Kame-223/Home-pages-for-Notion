@@ -4718,14 +4718,13 @@ const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 
 function setNextFilter(f) {
   nextFilter = f;
-  nextTargetCount = NEXT_DEFAULT_COUNT;
+  pinnedCollapse('next');
   nextPrevSelectedIds = new Set();
   document.querySelectorAll('.next-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
   renderNextList();
 }
 
 const NEXT_DEFAULT_COUNT = 3;
-let nextTargetCount = NEXT_DEFAULT_COUNT;
 let nextPrevSelectedIds = new Set();
 
 // 期限切れ／今日締切／明日締切＝deadlineTag()のtag-redと同じ条件
@@ -4743,10 +4742,42 @@ function isRedDeadline(dateStr) {
 
 function byDeadlineAsc(a, b) { return dlMs(a) - dlMs(b); }
 
-// 締切順にtargetCount件を選び、そこに含まれない赤タスク（期限切れ/今日/明日）を全て追加する
-function selectDisplayTasks(tasks, targetCount) {
+// ===== 表示件数の「pinned ids」機構 =====
+// 件数だけを覚えて毎回上位N件を数え直す方式だと、表示中の1件が完了/移動して母数が減った瞬間に
+// 次点のタスクが自動で繰り上がってしまう。そうならないよう「今表示している具体的なタスクID」を
+// 覚えておき、母数が減ってもそこから減った分だけ表示し、新しいIDは補充しない。
+// 「もっと見る」を押したときだけ、まだ表示していないタスクから次のN件をpinned idsに追加する。
+const _pinnedDisplay = { next: null, niu: null, impurg: null, imp: null, urg: null, trash: null };
+
+// pinned idsが未初期化なら先頭defaultCount件で初期化。既にあれば、まだ生きているものだけに絞り込む（補充しない）
+function pinnedSelect(storeKey, sortedTasks, defaultCount) {
+  const pinned = _pinnedDisplay[storeKey];
+  if (!pinned) {
+    _pinnedDisplay[storeKey] = sortedTasks.slice(0, defaultCount).map(t => t.id);
+  } else {
+    const liveIds = new Set(sortedTasks.map(t => t.id));
+    _pinnedDisplay[storeKey] = pinned.filter(id => liveIds.has(id));
+  }
+  const pinnedSet = new Set(_pinnedDisplay[storeKey]);
+  return sortedTasks.filter(t => pinnedSet.has(t.id));
+}
+
+// 「もっと見る」：まだpinされていないタスクから先頭step件をpinned idsに追加する
+function pinnedExpand(storeKey, sortedTasks, step) {
+  const pinnedSet = new Set(_pinnedDisplay[storeKey] || []);
+  const extra = sortedTasks.filter(t => !pinnedSet.has(t.id)).slice(0, step).map(t => t.id);
+  _pinnedDisplay[storeKey] = [...(_pinnedDisplay[storeKey] || []), ...extra];
+}
+
+// 「▲ 折りたたむ」：pinned idsをクリアし、次回描画時に先頭defaultCount件から再スタートする
+function pinnedCollapse(storeKey) {
+  _pinnedDisplay[storeKey] = null;
+}
+
+// 締切順に「今表示しているタスク」を選び、そこに含まれない赤タスク（期限切れ/今日/明日）を全て追加する
+function selectDisplayTasks(tasks, storeKey, defaultCount) {
   const sorted = [...tasks].sort(byDeadlineAsc);
-  const base = sorted.slice(0, targetCount);
+  const base = pinnedSelect(storeKey, sorted, defaultCount);
   const baseIds = new Set(base.map(t => t.id));
   const redExtra = sorted.filter(t => !baseIds.has(t.id) && isRedDeadline(getProp(t, '締切日')));
   return [...base, ...redExtra].sort(byDeadlineAsc);
@@ -4768,11 +4799,12 @@ function getNextTasks() {
 
 function stepNextList(delta) {
   if (delta < 0) {
-    nextTargetCount = NEXT_DEFAULT_COUNT;
+    pinnedCollapse('next');
     nextPrevSelectedIds = new Set();
   } else {
-    nextPrevSelectedIds = new Set(selectDisplayTasks(getNextTasks(), nextTargetCount).map(t => t.id));
-    nextTargetCount += 3;
+    nextPrevSelectedIds = new Set(selectDisplayTasks(getNextTasks(), 'next', NEXT_DEFAULT_COUNT).map(t => t.id));
+    const sorted = [...getNextTasks()].sort(byDeadlineAsc);
+    pinnedExpand('next', sorted, 3);
   }
   renderNextList();
 }
@@ -4819,12 +4851,13 @@ function renderNextList() {
   if (!el) return;
   if (!tasks.length) { el.innerHTML = '<div class="section-empty">次やるタスクがありません</div>'; return; }
 
-  const selected = selectDisplayTasks(tasks, nextTargetCount);
+  const selected = selectDisplayTasks(tasks, 'next', NEXT_DEFAULT_COUNT);
   const isFaded = t => nextPrevSelectedIds.has(t.id);
+  const nextPinnedCount = (_pinnedDisplay.next || []).length;
 
   if (nextFilter === 'deadline') {
     el.innerHTML = selected.map(t => renderCard(t,'next',isFaded(t))).join('');
-    renderPaginationBar(el, nextTargetCount, NEXT_DEFAULT_COUNT, tasks.length, selected.length, 'stepNextList');
+    renderPaginationBar(el, nextPinnedCount, NEXT_DEFAULT_COUNT, tasks.length, selected.length, 'stepNextList');
     return;
   }
 
@@ -4861,12 +4894,11 @@ function renderNextList() {
     html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
-  renderPaginationBar(el, nextTargetCount, NEXT_DEFAULT_COUNT, tasks.length, selected.length, 'stepNextList');
+  renderPaginationBar(el, nextPinnedCount, NEXT_DEFAULT_COUNT, tasks.length, selected.length, 'stepNextList');
 }
 
 // ===== important URGENT（Not Important×Urgent）パネル =====
 const NIU_DEFAULT_COUNT = 3;
-let niuTargetCount = NIU_DEFAULT_COUNT;
 let niuPrevSelectedIds = new Set();
 
 function getNiuTasks() {
@@ -4877,11 +4909,12 @@ function getNiuTasks() {
 
 function stepNiuList(delta) {
   if (delta < 0) {
-    niuTargetCount = NIU_DEFAULT_COUNT;
+    pinnedCollapse('niu');
     niuPrevSelectedIds = new Set();
   } else {
-    niuPrevSelectedIds = new Set(selectDisplayTasks(getNiuTasks(), niuTargetCount).map(t => t.id));
-    niuTargetCount += 3;
+    niuPrevSelectedIds = new Set(selectDisplayTasks(getNiuTasks(), 'niu', NIU_DEFAULT_COUNT).map(t => t.id));
+    const sorted = [...getNiuTasks()].sort(byDeadlineAsc);
+    pinnedExpand('niu', sorted, 3);
   }
   renderNiuList();
 }
@@ -4892,8 +4925,9 @@ function renderNiuList() {
   if (!el) return;
   if (!tasks.length) { el.innerHTML = '<div class="section-empty">対象のタスクがありません</div>'; return; }
 
-  const selected = selectDisplayTasks(tasks, niuTargetCount);
+  const selected = selectDisplayTasks(tasks, 'niu', NIU_DEFAULT_COUNT);
   const isFaded = t => niuPrevSelectedIds.has(t.id);
+  const niuPinnedCount = (_pinnedDisplay.niu || []).length;
 
   const byDeadline = (a, b) => {
     const ma = dlMs(a), mb = dlMs(b);
@@ -4916,7 +4950,7 @@ function renderNiuList() {
     html += `<div class="card-group">${inner}</div>`;
   });
   el.innerHTML = html;
-  renderPaginationBar(el, niuTargetCount, NIU_DEFAULT_COUNT, tasks.length, selected.length, 'stepNiuList');
+  renderPaginationBar(el, niuPinnedCount, NIU_DEFAULT_COUNT, tasks.length, selected.length, 'stepNiuList');
 }
 
 function deadlineTag(dateStr, isDone, isImportant) {
@@ -7675,10 +7709,10 @@ let overlayProjectId = null;
 let projMiniExpanded = false;
 
 const _OVERLAY_GTD_MAP = { impurg: '▶️ IMPORTANT URGENT', imp: '💫 IMPORTANT urgent', urg: '💨 important URGENT', trash: '🗑️important urgent' };
-const _overlayListCounts = { impurg: 3, imp: 3, urg: 3, trash: 3 }; // 各区分の表示件数（最小3）
-// ▼を押す直前の表示件数。0＝まだ一度も▼を押していない（何も薄くしない）。
-// この件数より前＝既存カード（薄く表示）、以降＝今回新しく表示された分
-const _overlayListPrevCounts = { impurg: 0, imp: 0, urg: 0, trash: 0 };
+const _OVERLAY_KEYS = ['impurg', 'imp', 'urg', 'trash'];
+// ▼を押す直前に表示していたタスクID集合。null＝まだ一度も▼を押していない（何も薄くしない）。
+// ここに含まれるもの＝既存カード（薄く表示）、含まれないもの＝今回新しく表示された分
+const _overlayListPrevIds = { impurg: null, imp: null, urg: null, trash: null };
 const _OVERLAY_SLOTS = { impurg: 'gtd-slot-impurg', imp: 'gtd-slot-imp', urg: 'gtd-slot-urg', trash: 'gtd-slot-trash', project: 'gtd-slot-project' };
 
 // 4象限パネル全体のクリックで展開する。展開後はパネルが画面いっぱいに広がり、
@@ -7719,7 +7753,7 @@ window.addEventListener('resize', () => {
 function openOverlay(key) {
   overlayMode = key;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 0; });
+  _OVERLAY_KEYS.forEach(k => { pinnedCollapse(k); _overlayListPrevIds[k] = null; });
 
   // 位置を先に全部測定してからスタイルを適用（測定→適用の間にリフローが起きると両方が同じ位置になるバグを防ぐ）
   const inboxCol = document.getElementById('task-inbox-col-wrap');
@@ -7782,7 +7816,7 @@ function openOverlay(key) {
 function closeOverlay() {
   overlayMode = null;
   overlayProjectId = null;
-  Object.keys(_overlayListCounts).forEach(k => { _overlayListCounts[k] = 3; _overlayListPrevCounts[k] = 0; });
+  _OVERLAY_KEYS.forEach(k => { pinnedCollapse(k); _overlayListPrevIds[k] = null; });
 
   // 暗幕を隠す
   document.getElementById('task-overlay').style.display = 'none';
@@ -7865,17 +7899,16 @@ function _injectExpandContent(panel, key) {
   const gtdVal = _OVERLAY_GTD_MAP[key];
   if (!gtdVal) return;
   let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
-  const count = _overlayListCounts[key];
-  const prevCount = _overlayListPrevCounts[key] ?? 0;
 
   if (key === 'impurg') {
     // 重要×緊急はエリア別グループ＋締切順（旧「次やる」の表示を踏襲）
     const byDl = (a, b) => { const ma = dlMs(a), mb = dlMs(b); if (!isFinite(ma)&&!isFinite(mb)) return 0; if (!isFinite(ma)) return 1; if (!isFinite(mb)) return -1; return ma-mb; };
     tasks = [...tasks].sort(byDl);
-    const shown = tasks.slice(0, count);
-    const rest  = tasks.length - count;
-    // prevCount件より前＝直前まで既に表示されていたカード。今回▼で新しく増えた分と区別して薄く表示する
-    const oldIds = new Set(shown.slice(0, prevCount).map(t => t.id));
+    const shown = pinnedSelect('impurg', tasks, 3);
+    const pinnedCount = (_pinnedDisplay.impurg || []).length;
+    const rest  = tasks.length - shown.length;
+    // 直前まで既に表示されていたカード。今回▼で新しく増えた分と区別して薄く表示する
+    const oldIds = _overlayListPrevIds.impurg || new Set();
     const areaOrder = ['TASK','WISH','ICU','カナダ'];
     const areaSlug = a => a==='TASK'?'kadai':a==='WISH'?'personal':'other';
     const grouped = {};
@@ -7889,7 +7922,7 @@ function _injectExpandContent(panel, key) {
     div.innerHTML = html || '<div class="section-empty">なし</div>';
     const pag = document.createElement('div');
     pag.className = 'expand-pagination-bar';
-    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+    pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${pinnedCount<=3?'disabled':''} onclick="_overlayListStep('impurg',-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="_overlayListStep('impurg',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
     div.appendChild(pag);
     panel.appendChild(div);
     div.scrollTop = savedScrollTop;
@@ -7897,13 +7930,14 @@ function _injectExpandContent(panel, key) {
   }
 
   // imp / urg / trash / imasugu はフラットな一覧（旧「今じゃない」の表示を踏襲）
-  const shown = tasks.slice(0, count);
-  const rest  = tasks.length - count;
-  const oldIds = new Set(shown.slice(0, prevCount).map(t => t.id));
+  const shown = pinnedSelect(key, tasks, 3);
+  const pinnedCount = (_pinnedDisplay[key] || []).length;
+  const rest  = tasks.length - shown.length;
+  const oldIds = _overlayListPrevIds[key] || new Set();
   div.innerHTML = shown.length ? shown.map(t => renderGtdCard(t, oldIds.has(t.id))).join('') : '<div class="section-empty">なし</div>';
   const pag = document.createElement('div');
   pag.className = 'expand-pagination-bar';
-  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${count<=3?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
+  pag.innerHTML = `<button class="expand-page-btn expand-page-btn-up" ${pinnedCount<=3?'disabled':''} onclick="_overlayListStep('${key}',-1)">▲</button><button class="expand-page-btn expand-page-btn-down" ${rest<=0?'disabled':''} onclick="_overlayListStep('${key}',1)">▼</button><span class="expand-page-count">${rest>0?`残り${rest}件`:'全件'}</span>`;
   div.appendChild(pag);
   panel.appendChild(div);
   div.scrollTop = savedScrollTop;
@@ -7954,11 +7988,23 @@ function _renderOverlay() {
 }
 
 function _overlayListStep(key, delta) {
-  // ▼を押す直前の件数を控えておく（既存カードを薄く表示する基準に使う）。
-  // ▲を押したときはリセットなので、既存/新規の区別自体をなくす。
-  _overlayListPrevCounts[key] = delta < 0 ? 0 : _overlayListCounts[key];
-  // ▼：3件ずつ増やす／▲：件数によらず最初の3件までまとめて戻す
-  _overlayListCounts[key] = delta < 0 ? 3 : _overlayListCounts[key] + 3;
+  if (delta < 0) {
+    // ▲：pinned idsをクリアし、次回描画時に先頭3件から再スタート。既存/新規の区別もなくす
+    pinnedCollapse(key);
+    _overlayListPrevIds[key] = null;
+  } else {
+    // ▼を押す直前に表示していたタスクIDを控えておく（既存カードを薄く表示する基準に使う）
+    _overlayListPrevIds[key] = new Set(_pinnedDisplay[key] || []);
+    const isDoneT = t => taskState[t.id]?.done || getProp(t,'ステータス') === '完了';
+    const gtdVal = _OVERLAY_GTD_MAP[key];
+    let tasks = allTasks.filter(t => !isDoneT(t) && getProp(t,'GTD 種別') === gtdVal);
+    if (key === 'impurg') {
+      const byDl = (a, b) => { const ma = dlMs(a), mb = dlMs(b); if (!isFinite(ma)&&!isFinite(mb)) return 0; if (!isFinite(ma)) return 1; if (!isFinite(mb)) return -1; return ma-mb; };
+      tasks = [...tasks].sort(byDl);
+    }
+    // ▼：まだ表示していないタスクから3件をpinned idsに追加する
+    pinnedExpand(key, tasks, 3);
+  }
   const panel = document.getElementById(_OVERLAY_SLOTS[key]);
   if (panel) _injectExpandContent(panel, key);
 }
@@ -8141,6 +8187,9 @@ function openTaskCtxMenu(id, x, y) {
 const TASK_PAGE_DEFAULT_COUNT = 5;
 let taskInboxExpanded = false;
 let taskNextExpanded  = false;
+// INBOX列（折りたたみ時）で「今表示している具体的なタスクID」を覚えておく。
+// nullなら未初期化＝次の描画で先頭5件を選ぶ。母数が減っても新しいIDは補充しない
+let taskInboxPinnedIds = null;
 
 function applyTaskListLimit(el, expanded, expandFn, collapseFn) {
   if (!el) return;
@@ -8152,18 +8201,27 @@ function applyTaskListLimit(el, expanded, expandFn, collapseFn) {
     );
     return;
   }
-  for (let i = TASK_PAGE_DEFAULT_COUNT; i < cards.length; i++) cards[i].style.display = 'none';
+  const getId = card => (card.id || '').replace(/^(tc-|gtc-)/, '');
+  if (!taskInboxPinnedIds) {
+    taskInboxPinnedIds = cards.slice(0, TASK_PAGE_DEFAULT_COUNT).map(getId);
+  } else {
+    const liveIds = new Set(cards.map(getId));
+    taskInboxPinnedIds = taskInboxPinnedIds.filter(id => liveIds.has(id));
+  }
+  const pinnedSet = new Set(taskInboxPinnedIds);
+  cards.forEach(card => { if (!pinnedSet.has(getId(card))) card.style.display = 'none'; });
   el.querySelectorAll('.card-group').forEach(g => {
     if (!g.querySelectorAll('.task-card:not([style*="none"])').length) g.style.display = 'none';
   });
-  const remaining = cards.length - TASK_PAGE_DEFAULT_COUNT;
+  const remaining = cards.length - taskInboxPinnedIds.length;
+  if (remaining <= 0) return;
   el.insertAdjacentHTML('beforeend',
     `<div class="next-show-more"><button class="next-show-more-btn" onclick="${expandFn}()">もっと見る（あと${remaining}件）</button></div>`
   );
 }
 
 function expandTaskInbox()   { taskInboxExpanded = true;  renderTaskPage(); }
-function collapseTaskInbox() { taskInboxExpanded = false; renderTaskPage(); }
+function collapseTaskInbox() { taskInboxExpanded = false; taskInboxPinnedIds = null; renderTaskPage(); }
 function expandTaskNext()    { taskNextExpanded  = true;  renderTaskPage(); }
 function collapseTaskNext()  { taskNextExpanded  = false; renderTaskPage(); }
 
