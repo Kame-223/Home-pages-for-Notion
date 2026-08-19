@@ -186,8 +186,8 @@ html[data-theme="light"] .edit-chips:has(.edit-chip.active) .edit-chip:not(.acti
 html[data-theme="light"] .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.14); --chip-color: #4a46a0; --chip-border: rgba(127,119,221,0.4); }
 html[data-theme="light"] .edit-chip[data-val="▶️ IMPORTANT URGENT"] { --chip-bg: rgba(60,130,200,0.14);  --chip-color: #1a5890; --chip-border: rgba(60,130,200,0.4); }
 html[data-theme="light"] .edit-chip[data-val="🔥 今すぐやる"] { --chip-bg: rgba(220,60,60,0.12);   --chip-color: #b01818; --chip-border: rgba(220,60,60,0.4); }
-html[data-theme="light"] .edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
-html[data-theme="light"] .edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
+html[data-theme="light"] .edit-chip[data-val="TASK"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
+html[data-theme="light"] .edit-chip[data-val="WISH"]    { --chip-bg: rgba(0,0,0,0.06); --chip-color: rgba(0,0,0,0.55); --chip-border: rgba(0,0,0,0.16); }
 html[data-theme="light"] .edit-chip[data-val="ELA"],
 html[data-theme="light"] .edit-chip[data-val="ER4"],
 html[data-theme="light"] .edit-chip[data-val="S&L4"],
@@ -1313,7 +1313,7 @@ html[data-theme="light"] .cal-buf-bot { background: #f5f5f5; }
 .tag-red-vivid { background: rgba(216,60,40,0.25); color: #FF5040; border: 0.5px solid rgba(255,80,64,0.6); font-weight: 700; }
 .tag-magenta { background: rgba(144,112,192,0.15); color: #C0A0E8; border: 0.5px solid rgba(144,112,192,0.35); }
 .tag-rose    { background: rgba(248,216,176,0.12); color: #F8D8B0; border: 0.5px solid rgba(248,216,176,0.3); }
-/* エリア（OFFICIAL/PRIVATE）は毎回文字を読まなくても判別できるよう、
+/* エリア（TASK/WISH）は毎回文字を読まなくても判別できるよう、
    横長のタグではなく色付きの丸1つで表示する */
 .area-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: middle; cursor: pointer; flex-shrink: 0; }
 .area-dot-official { background: #9070C0; }
@@ -1536,8 +1536,8 @@ html[data-theme="light"] .btn-pin-big:hover { background: rgba(255,255,255,0.12)
 .edit-chip[data-val="📥 INBOX"]  { --chip-bg: rgba(127,119,221,0.18); --chip-color: #A09AE8; --chip-border: rgba(127,119,221,0.4); }
 .edit-chip[data-val="▶️ IMPORTANT URGENT"] { --chip-bg: rgba(60,130,200,0.18);  --chip-color: #7CC0F0; --chip-border: rgba(60,130,200,0.4); }
 .edit-chip[data-val="🔥 今すぐやる"] { --chip-bg: rgba(248,113,113,0.18); --chip-color: #F87171; --chip-border: rgba(248,113,113,0.4); }
-.edit-chip[data-val="OFFICIAL"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
-.edit-chip[data-val="PRIVATE"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
+.edit-chip[data-val="TASK"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
+.edit-chip[data-val="WISH"]    { --chip-bg: rgba(255,255,255,0.08); --chip-color: var(--text-sub); --chip-border: var(--border2); }
 .edit-chip[data-val="ELA"]     { --chip-bg: rgba(160,200,232,0.18); --chip-color: #A0C8E8; --chip-border: rgba(160,200,232,0.45); }
 .edit-chip[data-val="ER4"],
 .edit-chip[data-val="S&L4"],
@@ -2730,7 +2730,7 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div class="prog-bar"><div class="prog-fill" id="prog-total-fill" style="width:0%;background:var(--purple)"></div></div>
     </div>
     <div class="prog-card">
-      <div class="prog-label">OFFICIAL</div>
+      <div class="prog-label">TASK</div>
       <div class="prog-val" id="prog-task">—</div>
       <div class="prog-sub" id="prog-task-sub">読み込み中</div>
       <div class="prog-bar"><div class="prog-fill" id="prog-task-fill" style="width:0%;background:var(--green)"></div></div>
@@ -3128,8 +3128,8 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <div class="edit-field">
         <span class="edit-field-label">AREA</span>
         <div class="edit-chips" id="inbox-area">
-          <button class="edit-chip" data-val="OFFICIAL" onclick="toggleInboxChip(this,'inbox-area',false)">OFFICIAL</button>
-          <button class="edit-chip" data-val="PRIVATE" onclick="toggleInboxChip(this,'inbox-area',false)">PRIVATE</button>
+          <button class="edit-chip" data-val="TASK" onclick="toggleInboxChip(this,'inbox-area',false)">TASK</button>
+          <button class="edit-chip" data-val="WISH" onclick="toggleInboxChip(this,'inbox-area',false)">WISH</button>
         </div>
       </div>
       <div class="edit-field">
@@ -4712,7 +4712,7 @@ function getProp(page, name) {
 
 // ===== 次やる フィルター =====
 let nextFilter = 'prop';
-const AREA_ORDER = ['OFFICIAL','PRIVATE'];
+const AREA_ORDER = ['TASK','WISH'];
 const SUBJECT_ORDER = ['憲法','社会学','教育原理','ELA','PE','その他'];
 const ELA_SUB_ORDER = ['ER4','S&L4','RCA','ATS4','ARW'];
 
@@ -4843,11 +4843,11 @@ function renderNextList() {
   selected.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
-  const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal'};
+  const clsMap = {'TASK':'area-kadai','WISH':'area-personal'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
     let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
-    if (area === 'OFFICIAL') {
+    if (area === 'TASK') {
       const bySubject = {};
       aTasks.forEach(t => { const s = t.properties['科目']?.multi_select?.[0]?.name || 'その他'; (bySubject[s]||(bySubject[s]=[])).push(t); });
       const subKeys = [...SUBJECT_ORDER.filter(s => bySubject[s]), ...Object.keys(bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
@@ -4908,7 +4908,7 @@ function renderNiuList() {
   selected.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (byArea[a]||(byArea[a]=[])).push(t); });
   const areaKeys = [...AREA_ORDER.filter(a => byArea[a]), ...Object.keys(byArea).filter(a => !AREA_ORDER.includes(a))];
 
-  const clsMap = {'OFFICIAL':'area-kadai','PRIVATE':'area-personal'};
+  const clsMap = {'TASK':'area-kadai','WISH':'area-personal'};
   areaKeys.forEach(area => {
     const aTasks = byArea[area];
     let inner = `<div class="card-group-header ${clsMap[area]||'area-other'}">${area}</div>`;
@@ -4976,19 +4976,19 @@ function deadlineTag(dateStr, isDone, isImportant) {
 }
 
 function areaBorderCls(area) {
-  if (area==='OFFICIAL') return 'area-kadai';
-  if (area==='PRIVATE') return 'area-personal';
+  if (area==='TASK') return 'area-kadai';
+  if (area==='WISH') return 'area-personal';
   return '';
 }
 
 function areaDotCls(area) {
-  if (area==='OFFICIAL') return 'area-dot-official';
-  if (area==='PRIVATE') return 'area-dot-private';
+  if (area==='TASK') return 'area-dot-official';
+  if (area==='WISH') return 'area-dot-private';
   return 'area-dot-gray';
 }
 function areaTagCls(area) {
-  if (area==='OFFICIAL') return 'tag-magenta';
-  if (area==='PRIVATE') return 'tag-rose';
+  if (area==='TASK') return 'tag-magenta';
+  if (area==='WISH') return 'tag-rose';
   return 'tag-gray';
 }
 function subjectTagCls(s) {
@@ -5100,11 +5100,11 @@ function renderCard(task, mode='today', faded=false) {
   // QNH（Quick/Normal/Heavy）UIは非表示化。データ自体（s.timeType等）は温存し、後で復活できるようにする。
   const timeTypeHtml = '';
 
-  const effectiveArea = area || (subjects?.length ? 'OFFICIAL' : null);
+  const effectiveArea = area || (subjects?.length ? 'TASK' : null);
   const dt = deadlineTag(deadline, s.done, s.important);
   const isDeadlineToday = isTaskDeadlineToday(deadline, s.done);
-  const subjectToShow = (effectiveArea === 'OFFICIAL') ? (subjects?.[0] || null) : null;
-  const elaToShow = (effectiveArea === 'OFFICIAL' && subjectToShow === 'ELA') ? ela : null;
+  const subjectToShow = (effectiveArea === 'TASK') ? (subjects?.[0] || null) : null;
+  const elaToShow = (effectiveArea === 'TASK' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
@@ -5409,14 +5409,14 @@ function updateProgress() {
   if (pct === 100 && todayAll.length > 0 && lastProgressPct < 100) celebrate();
   lastProgressPct = pct;
 
-  const kadai = todayAll.filter(t=>getProp(t,'エリア')==='OFFICIAL');
+  const kadai = todayAll.filter(t=>getProp(t,'エリア')==='TASK');
   const kdone = kadai.filter(isDoneToday).length;
   const kpct = kadai.length ? Math.round(kdone/kadai.length*100) : 0;
   document.getElementById('prog-task').textContent = kpct+'%';
   document.getElementById('prog-task-sub').textContent = `${kdone}/${kadai.length}完了`;
   document.getElementById('prog-task-fill').style.width = kpct+'%';
 
-  const other = todayAll.filter(t=>getProp(t,'エリア')!=='OFFICIAL');
+  const other = todayAll.filter(t=>getProp(t,'エリア')!=='TASK');
   const odone = other.filter(isDoneToday).length;
   const opct = other.length ? Math.round(odone/other.length*100) : 0;
   document.getElementById('prog-other').textContent = opct+'%';
@@ -6356,7 +6356,7 @@ function startFocus(id) {
   const area = getProp(task,'エリア');
   const subjects = getProp(task,'科目')||[];
   const link = s.link || getProp(task,'作業リンク');
-  const subjectF = (area === 'OFFICIAL') ? (subjects?.[0] || null) : null;
+  const subjectF = (area === 'TASK') ? (subjects?.[0] || null) : null;
   const focusTagsHtml = [
     area ? `<span class="tag ${areaTagCls(area)}">${area}</span>` : '',
     subjectF ? `<span class="tag ${subjectTagCls(subjectF)}">${subjectF}</span>` : '',
@@ -6956,14 +6956,14 @@ function toggleEditChip(el, groupId, multi) {
 
   if (nowActive) {
     if (groupId === 'edit-subject') {
-      // SUBJECT選択 → AREAを強制的にOFFICIALに
+      // SUBJECT選択 → AREAを強制的にTASKに
       document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.remove('active'));
-      document.querySelector('#edit-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
+      document.querySelector('#edit-area .edit-chip[data-val="TASK"]')?.classList.add('active');
     }
     if (groupId === 'edit-ela') {
-      // ELA SUBTAG選択 → AREAをOFFICIAL・SUBJECTをELAに強制
+      // ELA SUBTAG選択 → AREAをTASK・SUBJECTをELAに強制
       document.querySelectorAll('#edit-area .edit-chip').forEach(c => c.classList.remove('active'));
-      document.querySelector('#edit-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
+      document.querySelector('#edit-area .edit-chip[data-val="TASK"]')?.classList.add('active');
       document.querySelectorAll('#edit-subject .edit-chip').forEach(c => c.classList.remove('active'));
       document.querySelector('#edit-subject .edit-chip[data-val="ELA"]')?.classList.add('active');
     }
@@ -6972,7 +6972,7 @@ function toggleEditChip(el, groupId, multi) {
   if (groupId === 'edit-area') {
     // AREA変更 → 以下をリセット
     const newArea = document.querySelector('#edit-area .edit-chip.active')?.dataset.val;
-    if (newArea !== 'OFFICIAL') {
+    if (newArea !== 'TASK') {
       document.querySelectorAll('#edit-subject .edit-chip, #edit-ela .edit-chip').forEach(c => c.classList.remove('active'));
     }
   }
@@ -6988,9 +6988,9 @@ function updateEditChipCascade() {
 
   subjectEl.classList.remove('disabled');
   elaEl.classList.remove('disabled');
-  subjectEl.classList.toggle('dimmed', !!area && area !== 'OFFICIAL');
-  // AREAがOFFICIAL以外、またはSUBJECTがELA以外のときにELAを暗くする
-  elaEl.classList.toggle('dimmed', (!!area && area !== 'OFFICIAL') || (!!subject && subject !== 'ELA'));
+  subjectEl.classList.toggle('dimmed', !!area && area !== 'TASK');
+  // AREAがTASK以外、またはSUBJECTがELA以外のときにELAを暗くする
+  elaEl.classList.toggle('dimmed', (!!area && area !== 'TASK') || (!!subject && subject !== 'ELA'));
 }
 
 async function saveEditModal() {
@@ -7003,7 +7003,7 @@ async function saveEditModal() {
   const area = document.querySelector('#edit-area .edit-chip.active')?.dataset.val || null;
   let subject = document.querySelector('#edit-subject .edit-chip.active')?.dataset.val || null;
   let ela = document.querySelector('#edit-ela .edit-chip.active')?.dataset.val || null;
-  if (area !== 'OFFICIAL') { subject = null; ela = null; }
+  if (area !== 'TASK') { subject = null; ela = null; }
   if (subject !== 'ELA') { ela = null; }
   const subjects = subject ? [subject] : [];
   const dlDate = document.getElementById('edit-deadline-date').value;
@@ -7196,18 +7196,18 @@ function toggleInboxChip(el, groupId, multi) {
   if (nowActive) {
     if (groupId === 'inbox-subject') {
       document.querySelectorAll('#inbox-area .edit-chip').forEach(c=>c.classList.remove('active'));
-      document.querySelector('#inbox-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
+      document.querySelector('#inbox-area .edit-chip[data-val="TASK"]')?.classList.add('active');
     }
     if (groupId === 'inbox-ela') {
       document.querySelectorAll('#inbox-area .edit-chip').forEach(c=>c.classList.remove('active'));
-      document.querySelector('#inbox-area .edit-chip[data-val="OFFICIAL"]')?.classList.add('active');
+      document.querySelector('#inbox-area .edit-chip[data-val="TASK"]')?.classList.add('active');
       document.querySelectorAll('#inbox-subject .edit-chip').forEach(c=>c.classList.remove('active'));
       document.querySelector('#inbox-subject .edit-chip[data-val="ELA"]')?.classList.add('active');
     }
   }
   if (groupId === 'inbox-area') {
     const newArea = document.querySelector('#inbox-area .edit-chip.active')?.dataset.val;
-    if (newArea !== 'OFFICIAL') {
+    if (newArea !== 'TASK') {
       document.querySelectorAll('#inbox-subject .edit-chip,#inbox-ela .edit-chip').forEach(c=>c.classList.remove('active'));
     }
   }
@@ -7220,8 +7220,8 @@ function updateInboxChipCascade() {
   const subjectEl = document.getElementById('inbox-subject');
   const elaEl     = document.getElementById('inbox-ela');
   if (!subjectEl || !elaEl) return;
-  subjectEl.classList.toggle('dimmed', !!area && area !== 'OFFICIAL');
-  elaEl.classList.toggle('dimmed', (!!area && area !== 'OFFICIAL') || (!!subject && subject !== 'ELA'));
+  subjectEl.classList.toggle('dimmed', !!area && area !== 'TASK');
+  elaEl.classList.toggle('dimmed', (!!area && area !== 'TASK') || (!!subject && subject !== 'ELA'));
 }
 
 // ===== キーボードショートカット =====
@@ -7850,8 +7850,8 @@ function _injectExpandContent(panel, key) {
     const rest  = tasks.length - count;
     // prevCount件より前＝直前まで既に表示されていたカード。今回▼で新しく増えた分と区別して薄く表示する
     const oldIds = new Set(shown.slice(0, prevCount).map(t => t.id));
-    const areaOrder = ['OFFICIAL','PRIVATE','ICU','カナダ'];
-    const areaSlug = a => a==='OFFICIAL'?'kadai':a==='PRIVATE'?'personal':'other';
+    const areaOrder = ['TASK','WISH','ICU','カナダ'];
+    const areaSlug = a => a==='TASK'?'kadai':a==='WISH'?'personal':'other';
     const grouped = {};
     shown.forEach(t => { const a = getProp(t,'エリア') || 'その他'; (grouped[a] = grouped[a]||[]).push(t); });
     const orderedAreas = [...areaOrder.filter(a => grouped[a]), ...Object.keys(grouped).filter(a => !areaOrder.includes(a))];
@@ -7968,10 +7968,10 @@ function renderGtdCard(task, faded) {
   // QNH（Quick/Normal/Heavy）UIは非表示化。データ自体（s.timeType等）は温存し、後で復活できるようにする。
   const timeTypeHtmlG = '';
 
-  const effectiveAreaG = area || (subjects?.length ? 'OFFICIAL' : null);
+  const effectiveAreaG = area || (subjects?.length ? 'TASK' : null);
   const dt = deadlineTag(deadline, false, false);
-  const subjectToShow = (effectiveAreaG === 'OFFICIAL') ? (subjects?.[0] || null) : null;
-  const elaToShow = (effectiveAreaG === 'OFFICIAL' && subjectToShow === 'ELA') ? ela : null;
+  const subjectToShow = (effectiveAreaG === 'TASK') ? (subjects?.[0] || null) : null;
+  const elaToShow = (effectiveAreaG === 'TASK' && subjectToShow === 'ELA') ? ela : null;
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
@@ -9184,8 +9184,8 @@ async function _wizFinish() {
     <div class="edit-field">
       <span class="edit-field-label">AREA</span>
       <div class="edit-chips" id="edit-area">
-        <button class="edit-chip" data-val="OFFICIAL" onclick="toggleEditChip(this,'edit-area',false)">OFFICIAL</button>
-        <button class="edit-chip" data-val="PRIVATE" onclick="toggleEditChip(this,'edit-area',false)">PRIVATE</button>
+        <button class="edit-chip" data-val="TASK" onclick="toggleEditChip(this,'edit-area',false)">TASK</button>
+        <button class="edit-chip" data-val="WISH" onclick="toggleEditChip(this,'edit-area',false)">WISH</button>
       </div>
     </div>
     <div class="edit-field">
