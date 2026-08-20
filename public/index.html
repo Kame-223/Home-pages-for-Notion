@@ -2203,32 +2203,33 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 }
 
 /* ===== WISH PAGE：TASK画面と同じ左右分割レイアウト（.task-page-grid/.task-gtd-colを共用） =====
-   Next/Plan/DreamはTASKの4象限と同じ「クリックで展開」方式だが、形は逆三角クラスターにする */
+   Next/Plan/Dreamは、添付されたトライフォース画像を上下反転した形＝独立した3枚の三角形（すきま付き、
+   四角形を分割した見た目にしない）。3枚は同じ大きさで、上左NEXT・上右PLAN・下DREAM。 */
 #wish-content { display: none; }
 .wish-tri-grid {
   position: relative;
   flex: 3;
   min-height: 0;
-  border: 1.5px solid #000000;
-  border-radius: 10px;
-  overflow: hidden;
-  background: rgba(255,255,255,0.8);
 }
-/* クリック判定・ドラッグ&ドロップの当たり判定・展開パネルへの差し替えは今まで通りこのdiv自身が担う
-   （elementFromPointはclip-pathで切り取られた部分をヒットしないため、divのままでも重なった3枚を正しく判別できる）。
+/* クリック判定・ドラッグ&ドロップの当たり判定・展開パネルへの差し替えはこのdiv自身が担う
+   （elementFromPointはclip-pathで切り取られた部分をヒットしないため、隙間や角の透明部分はヒットしない）。
    ただしCSSのborderはclip-pathで切り取った斜め辺には描画されないため、境界線だけは下の装飾用SVGで描く。 */
 .wish-tri {
   position: absolute;
-  inset: 0;
   cursor: pointer;
-  transition: background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.8);
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
 }
-.wish-tri:hover { background: rgba(0,0,0,0.04); }
-.wish-tri.gtd-drop-active { background: rgba(127,119,221,0.18); }
-.wish-tri-next  { clip-path: polygon(0% 0%, 50% 0%, 0% 100%); }
-.wish-tri-plan  { clip-path: polygon(50% 0%, 100% 0%, 100% 100%); }
-.wish-tri-dream { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
-/* 境界線専用の装飾SVG。クリックを奪わないようpointer-events:noneにし、当たり判定は上のdivのまま維持する */
+/* ホバー・ドロップ中も背景タイントは重ねない（透明度0＝枠線の色変化だけで示す） */
+.wish-tri:hover { background: rgba(255,255,255,0.95); }
+.wish-tri-next  { left: 0%;  top: 0%;  width: 44%; height: 46%; }
+.wish-tri-plan  { left: 56%; top: 0%;  width: 44%; height: 46%; }
+.wish-tri-dream { left: 28%; top: 50%; width: 44%; height: 46%; }
+/* 境界線専用の装飾SVG。クリックを奪わないようpointer-events:noneにし、当たり判定は上のdivのまま維持する。
+   3枚それぞれの外形をそのままなぞって描くため、独立した三角形として見える（四角形の分割には見えない） */
 .wish-tri-borders {
   position: absolute;
   inset: 0;
@@ -2237,28 +2238,35 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   display: block;
   pointer-events: none;
 }
-.wish-tri-borders line {
+.wish-tri-borders polygon {
+  fill: none;
   stroke: #000000;
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
+  transition: stroke .15s, stroke-width .15s;
+}
+.wish-tri-grid:has(#wish-slot-next.gtd-drop-active) .wish-tri-border-next,
+.wish-tri-grid:has(#wish-slot-plan.gtd-drop-active) .wish-tri-border-plan,
+.wish-tri-grid:has(#wish-slot-dream.gtd-drop-active) .wish-tri-border-dream {
+  stroke: rgba(127,119,221,0.9);
+  stroke-width: 2.5;
 }
 .wish-tri-label {
-  position: absolute;
   font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
   color: #000000; text-align: center; white-space: nowrap;
-  transform: translate(-50%, -50%);
+  /* 下向き三角形の面積は上寄りに偏るため、見た目の重心に合わせてラベルを少し上へ引き上げる */
+  margin-top: -14%;
   pointer-events: none;
 }
-.wish-tri-next .wish-tri-label  { left: 17%; top: 33%; }
-.wish-tri-plan .wish-tri-label  { left: 83%; top: 33%; }
-.wish-tri-dream .wish-tri-label { left: 50%; top: 67%; }
 /* 展開中：TASKの4象限（.task-gtd-area.expand-target）と同じく、選ばれた1枚だけがパネル全体に広がる。
-   clip-pathは（2クラス指定で.wish-tri-nextより詳細度が高いため）自動的に解除される */
+   left/top/width/height・clip-pathは（2クラス指定で.wish-tri-nextより詳細度が高いため）自動的に上書きされる */
 .wish-tri.expand-target {
+  left: 0; top: 0; width: 100%; height: 100%;
   clip-path: none;
   z-index: 2;
-  display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   border-radius: 10px;
   overflow: hidden;
   background: rgba(255,255,255,0.8);
@@ -2368,9 +2376,9 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
   flex: 1;
   min-height: 0;
 }
+/* ホバー中はパネル本来の背景色（TASK=紫等）を隠さないよう、背景タイントは重ねず枠線だけで示す */
 .task-gtd-area.gtd-drop-active {
   border-color: rgba(127,119,221,0.7);
-  background: rgba(127,119,221,0.08);
 }
 .gtd-reveal-wrap {
   flex: 1;
@@ -2411,7 +2419,6 @@ html[data-theme="light"] .fr-done-label { color: rgba(0,0,0,0.85); }
 /* INBOXカラムもドロップ受け取り */
 .task-inbox-col.gtd-drop-active {
   border-color: rgba(127,119,221,0.7);
-  background: rgba(127,119,221,0.08);
 }
 /* GTDドラッグゴースト */
 /* カード名の吹き出しではなく、カーソルに付くやわらかな白い光のオーブ */
@@ -2540,8 +2547,6 @@ html[data-theme="light"] .gtd-slot-header-centered { background: transparent; co
 }
 #task-gtd-col .task-gtd-area.gtd-drop-active {
   border-color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.22);
-  box-shadow: inset 0 0 20px rgba(255,255,255,0.08);
 }
 /* GTDパネル 大ラベル */
 .gtd-panel-name {
@@ -3064,13 +3069,15 @@ html[data-theme="light"] .expand-pagination-bar { border-top-color: rgba(0,0,0,0
       <!-- 右：分類先（sticky） -->
       <div class="task-gtd-col" id="wish-gtd-col">
 
-        <!-- Next/Plan/Dreamの逆三角クラスター。当たり判定・展開はdiv自身が担う（elementFromPointは
-             clip-pathの外側をヒットしないため重なった3枚でも正しく判別できる）。境界線だけは
+        <!-- Next/Plan/Dreamは独立した3枚の三角形（トライフォースを上下反転した配置。すきま付きで、
+             四角形を分割した見た目にはしない）。当たり判定・展開はdiv自身が担う（elementFromPointは
+             clip-pathの外側をヒットしないため隙間や角の透明部分はヒットしない）。境界線だけは
              clip-pathの斜め辺にborderが描画されない制約があるため、下に敷いた装飾用SVGで描く -->
         <div class="wish-tri-grid">
           <svg class="wish-tri-borders" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line x1="50" y1="0" x2="0" y2="100"></line>
-            <line x1="50" y1="0" x2="100" y2="100"></line>
+            <polygon class="wish-tri-border-next"  points="0,0 44,0 22,46"></polygon>
+            <polygon class="wish-tri-border-plan"  points="56,0 100,0 78,46"></polygon>
+            <polygon class="wish-tri-border-dream" points="28,50 72,50 50,96"></polygon>
           </svg>
           <div class="wish-tri wish-tri-next" id="wish-slot-next" data-wish="Next" onclick="openGtdQuadrant('wnext')">
             <div class="wish-tri-label">NEXT<span class="gtd-quadrant-count" id="gtd-wnext-count"></span></div>
@@ -5303,7 +5310,7 @@ function renderCard(task, mode='today', faded=false) {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="area-dot ${areaDotCls(area)} clickable" onclick="${editCall}" title="${area}"></span>` : '',
+    `<span class="area-dot ${areaDotCls(area || 'TASK')} clickable" onclick="${editCall}" title="${area || 'TASK'}"></span>`,
     (subjectToShow && !elaToShow) ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
@@ -8235,7 +8242,7 @@ function renderGtdCard(task, faded) {
 
   const editCall = `openEditModal('${id}',event)`;
   const propTags = [
-    area ? `<span class="area-dot ${areaDotCls(area)} clickable" onclick="${editCall}" title="${area}"></span>` : '',
+    `<span class="area-dot ${areaDotCls(area || 'TASK')} clickable" onclick="${editCall}" title="${area || 'TASK'}"></span>`,
     (subjectToShow && !elaToShow) ? `<span class="tag ${subjectTagCls(subjectToShow)} clickable" onclick="${editCall}">${subjectToShow}</span>` : '',
     elaToShow ? `<span class="tag tag-navy clickable" onclick="${editCall}">${elaToShow}</span>` : '',
   ].filter(Boolean).join('');
