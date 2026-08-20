@@ -7930,8 +7930,27 @@ function applyGtdColFixed() {
     height: (btmTop - 12 - 2) + 'px'
   });
 }
+// 4象限グリッドが正方形（幅=高さ）になるよう、実測して明示的にpx指定を当てる。
+// CSSのaspect-ratioだけに任せると、flex-grow由来の高さと親要素の幅が競合して
+// 比率が崩れるため、WISH画面のlayoutWishTriangles()と同じ実測→適用の考え方をとる。
+function applyGtdGridSquare() {
+  if (overlayMode) return; // 展開中は触らない（applyGtdColFixedと同じ理由）
+  const grid = document.querySelector('.task-gtd-grid');
+  if (!grid) return;
+  grid.style.flex = '';
+  grid.style.width = '';
+  grid.style.height = '';
+  grid.style.margin = '';
+  const rect = grid.getBoundingClientRect();
+  const side = Math.min(rect.width, rect.height);
+  if (!side) return;
+  grid.style.flex = '0 0 auto';
+  grid.style.width = side + 'px';
+  grid.style.height = side + 'px';
+  grid.style.margin = '0 auto';
+}
 window.addEventListener('resize', () => {
-  if (currentPage === 'task') applyGtdColFixed();
+  if (currentPage === 'task') { applyGtdColFixed(); applyGtdGridSquare(); }
 });
 
 function openOverlay(key) {
@@ -8500,7 +8519,7 @@ function renderTaskPage() {
   // オーバーレイが開いていれば内容も更新
   if (overlayMode) _renderOverlay();
 
-  requestAnimationFrame(() => { initGtdDrag(); applyGtdColFixed(); });
+  requestAnimationFrame(() => { initGtdDrag(); applyGtdColFixed(); applyGtdGridSquare(); });
 }
 
 // ===== WISH画面（Next/Plan/Dream） =====
